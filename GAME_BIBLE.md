@@ -806,8 +806,10 @@ Nightly job → checks content_events
 
 ### Known Issues / Not Yet Built
 
-- [ ] No backend — scores not saved anywhere
-- [ ] No user accounts / authentication
+- [x] **Supabase schema built** — `supabase/schema.sql` complete (7 tables, RLS, triggers). Ready to apply.
+- [ ] Supabase project not yet created / schema not yet applied to live project
+- [ ] No user accounts / authentication wired to frontend
+- [ ] No score submission Edge Function — scores not saved anywhere yet
 - [ ] No server-side seed validation (anti-cheat not active)
 - [ ] Service Worker not implemented — no offline support
 - [ ] No PWA manifest — not installable
@@ -821,34 +823,33 @@ Nightly job → checks content_events
 - [ ] Deep Dive narwhal encounter needs more polish
 - [ ] Deep Dive needs daily seed integration
 
-### Repository Structure (Target)
+### Repository Structure (Actual, as of v1.3)
 
 ```
 /
 ├── GAME_BIBLE.md
-├── CURRENT_STATE.md
 ├── README.md
 ├── prototypes/
-│   ├── penguin-fisher.html
-│   ├── fish-stack.html
-│   └── deep-dive.html
-├── src/
-│   ├── game/
-│   ├── pwa/
-│   ├── api/
-│   ├── ui/
-│   └── audio/           ← voiceover + sfx assets (Phase 2)
+│   ├── penguin-game.html     ← Game 01 Pengu Fisher (working prototype)
+│   ├── fish-stack.html       ← Game 02 Fish Stack (working prototype)
+│   ├── deep-dive.html        ← Game 03 Deep Dive (working prototype)
+│   └── assets/
+│       └── pengu-sheet.png   ← transparent sprite sheet (Midjourney, 500×500)
 └── supabase/
-    └── schema.sql
+    └── schema.sql            ← full DB schema (apply once in Supabase SQL Editor)
 ```
+
+*Target structure (src/, audio/, pwa/ dirs) to be created when prototype is promoted to production build.*
 
 ### Next Build Priorities (Phase 1)
 
-1. Proper PWA structure (manifest.json + service worker)
-2. Supabase backend (auth + score submission + leaderboard)
-3. Remove fullscreen button, finalize mobile layout (Game 01)
-4. Score card image generation + Web Share API
-5. Performance pass for mid-range Android
+1. Create Supabase project + apply `schema.sql`
+2. Wire Supabase Auth (email) into prototype — sign-up / sign-in flow
+3. Build score submission Edge Function (Vercel) using schema payload spec
+4. Remove fullscreen button, finalize mobile layout (Game 01)
+5. Proper PWA structure (manifest.json + service worker)
+6. Score card image generation + Web Share API
+7. Performance pass for mid-range Android
 
 ---
 
@@ -877,6 +878,12 @@ Never delete entries — cross them out if reversed and note why.*
 | Mar 2026 | Narwhal fronts Game 03 as world-reveal moment          | It appears as reward signal in Games 01/02 — starring it pays off   |
 | Mar 2026 | Deep Dive: analog joystick not D-pad                  | Swimming game needs fluid directional input, not discrete buttons   |
 | Mar 2026 | Deep Dive: air bubbles as breath collectible           | Gives player agency over survival, rewards exploration over dive depth |
+| Mar 2026 | Supabase schema built before frontend auth             | Schema is the contract — build it first so frontend/API stay aligned |
+| Mar 2026 | `runs.seed` consolidated to `runs.day_seed`            | Single column for date-derived PRNG seed; `weeks.seed` separate      |
+| Mar 2026 | Pengu sprite: single transparent PNG sheet + crop rects | One network request, fast first-frame, falls back to procedural      |
+| Mar 2026 | Midjourney for initial character reference art         | Fast, quality style exploration before committing to character designer |
+| Mar 2026 | Fish backpack added to pengu as persistent visual prop | Reinforces fishing identity, gives visible reward feedback per catch  |
+| Mar 2026 | Sprite and procedural draw coexist behind `USE_PENGU_SPRITE` flag | Toggle during iteration; remove flag once sprite is final  |
 
 ---
 
@@ -949,5 +956,5 @@ Don't waste them." / "Your score has been submitted. Hmph."
 
 ---
 
-*End of Game Bible v1.2*
-*Next review: after Phase 1 build complete*
+*End of Game Bible v1.3*
+*Next review: after Supabase auth + score submission wired to prototype*
