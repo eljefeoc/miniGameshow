@@ -1,6 +1,8 @@
 # GAME BIBLE
+
 ### [WORLD NAME — TBD] — Working Title
-*Last updated: March 2026 | Version 1.1*
+
+*Last updated: March 2026 | Version 1.3*
 
 ---
 
@@ -54,6 +56,7 @@ not just an app. Every technical and design decision should serve this loop.
 Playful and light — pure fun, no pressure.
 
 **What that means in practice:**
+
 - The game should make you smile within the first 5 seconds — character
   animation, sound, and visual warmth all work together toward that
 - Zero onboarding anxiety — a first-time player should understand what
@@ -72,6 +75,7 @@ palette — these create comfort and familiarity over time. First visit is fun.
 Tenth visit feels like coming home.
 
 **What it explicitly is NOT:**
+
 - Not stressful or anxiety-inducing
 - Not dark or aggressive in tone
 - Not designed to maximize session length or exploit habit loops
@@ -130,6 +134,7 @@ to them. But they're one segment of everyone, not the ceiling of ambition.
 ## 5. THE WORLD
 
 ### Setting
+
 The Arctic — ice, ocean, aurora borealis, sunsets, seasons. Cold environment,
 warm soul. The visual palette is sunset oranges and golds against ice blues and
 deep purples. It feels like a place that's magical precisely because it's remote
@@ -140,6 +145,7 @@ as the world expands — the deep ocean below the ice, a distant snowy mountain,
 a summer thaw — but they all connect back to this world and its characters.
 
 ### Tone
+
 - Pixar's warmth applied to an Arctic world
 - Whimsical but never childish — adults should feel at home here
 - Humor comes from character personality, not slapstick
@@ -147,6 +153,7 @@ a summer thaw — but they all connect back to this world and its characters.
   it should feel like a real place with real relationships
 
 ### The Visual Language
+
 - Cartoon-first rendering (rounded shapes, expressive eyes, exaggerated
   proportions) not pixel-art-first
 - Sunset color palette dominant: warm oranges, golds, purples bleeding into
@@ -162,7 +169,10 @@ a summer thaw — but they all connect back to this world and its characters.
 *Note: Names are working titles. A proper naming/design session with a
 character designer is a planned milestone before public launch.*
 
+---
+
 ### The Penguin (Player Character — Working name: TBD)
+
 **Role:** The heart of the world. Playful, determined, slightly accident-prone.
 Loves fishing above everything else. The player IS this character.
 
@@ -172,33 +182,119 @@ other players' good runs. Has a signature fishing rod that's slightly too big
 for them.
 
 **Emotional states (implemented in game):**
+
 - Happy — default walking state, tail wag
 - Excited — star eyes, during frenzy mode or double jump
 - Scared — X eyes, when lives are low or after getting hit
 - Nervous — sweat drop, when cast window is closing
 
 **Design rules:**
+
 - Always round — no sharp edges on the protagonist
 - Eyes are the primary emotional communicator — make them large and readable
 - The fishing rod is a character prop, always present, always expressive
 
 ---
 
-### The Walrus (Working name: TBD)
-**Role:** The elder/shopkeeper of the world. Grumpy on the surface, secretly
-supportive. Shows up as an obstacle in games but has lore as a community
-pillar — runs the ice trading post, knows everyone's business.
+### The Walrus — Working name: Babs
 
-**In-game behavior:** Breathes (hitbox expands and contracts), giving skilled
-players a window to slip past. The breathing is also a personality trait —
-he sighs heavily and constantly.
+**Role:** The elder shopkeeper of the world. Grumpy on the surface, secretly
+supportive. Runs the ice trading post, knows everyone's business, has strong
+opinions about everything — especially how fish should be stacked.
 
-**Design rules:** Large, round, purple-tinted. Tusks are prominent. The eyes
-convey reluctant wisdom. He should look like he's been here forever.
+**Personality:** Permanently furrowed brows. Heavy sigher. Delivers withering
+one-liners without breaking eye contact. Reluctantly gives credit when it's
+due — but only after a beat, and never warmly. Babs has been at this trading
+post since before anyone can remember and considers that to be everyone else's
+problem.
+
+**The irreverence is the brand asset.** Babs' voice — dry, grumpy, occasionally
+shocked into genuine awe — is what separates this world from generic Arctic
+games. Every line she delivers should feel like it came from a specific
+character with a specific history, not a generic NPC reaction.
+
+**In-game behavior (Game #1 — Pengu Fisher):**
+Breathes (hitbox expands and contracts), giving skilled players a window to
+slip past. The breathing is also a personality trait — she sighs heavily
+and constantly.
+
+**In-game behavior (Game #2 — Fish Stack):**
+Babs is the shopkeeper evaluating your stack in real time. She reacts live
+to every row you clear (or fail to clear), with 5 distinct emotional states:
+
+- **Idle** — slow breathing sigh, flat mouth, permanently furrowed brows,
+  pupils watching the stack. Occasional unprompted commentary.
+- **Happy** — wide eyes, small smile, flippers raise slightly.
+  Triggered by clearing 1–2 rows. Reluctant approval.
+- **Shocked/Elated** — wide eyes, open mouth, gold speech bubble.
+  Triggered by clearing 3–4 rows at once. Genuine awe, which she
+  immediately tries to walk back.
+- **Angry** — squinted eyes, red brows, frown, body shakes.
+  Triggered by sloppy stacking with visible gaps.
+- **Game over** — X eyes, frown, locked expression.
+  Babs has seen enough. The trading post is closed.
+
+**Babs' voice lines (implemented — Game #2):**
+
+*Idle:*
+- "Hmph. Don't waste my shelf space."
+- "Stack it right or don't stack it at all."
+- "I've been here since the last thaw. Hurry up."
+- "*sighs heavily*"
+- "Every fish has a place. Know it."
+- "Gaps mean lost coin. Remember that."
+
+*On clearing 1 row:*
+- "...Not terrible."
+- "I suppose that'll do."
+- "Fine. You can stay."
+- "Keep going. Don't get cocky."
+- "Hmm. Maybe you DO know fish."
+
+*On clearing 2 rows:*
+- "Good stack."
+- "Two rows! Efficient."
+- "Keep it up."
+- "Maybe you DO know fish."
+
+*On clearing 3 rows:*
+- "THREE ROWS?!"
+- "Oh. That's... good."
+- "Impressive haul."
+- "Now THAT'S how you stack!"
+
+*On clearing 4 rows:*
+- "FOUR ROWS! UNBELIEVABLE."
+- "I've never… wow."
+- "THE SHELVES ARE FULL."
+- "My trading post has never looked so good!!"
+
+*On sloppy stacking (gaps detected):*
+- "Ugh. Gaps. I hate gaps."
+- "That gap is going to haunt you."
+- "A sloppy stack is a sloppy profit."
+- "I've seen seals stack better."
+- "Fill the gaps. FILL THEM."
+
+*Game over:*
+- "I KNEW you'd stack it wrong."
+- "Unsurprising. Deeply unsurprising."
+- "Come back when you're serious."
+- "The trading post is closed. Indefinitely."
+- "Not even close to my standards."
+
+**Design rules:**
+Large, round, purple-tinted. Tusks are prominent. The eyes convey reluctant
+wisdom — pupils always tracking slightly downward, watching your stack.
+She should look like she's been here forever and has strong feelings
+about it.
+
+**Voiceover — planned milestone (see Section 13).**
 
 ---
 
 ### The Polar Bear (Working name: TBD)
+
 **Role:** The rival/antagonist — but a charming one. Not evil, just competitive.
 Has a complex relationship with the penguin — respect masked by rivalry.
 
@@ -212,6 +308,7 @@ penguin matters — he should feel like a real threat. Expressive face is key.
 ---
 
 ### The Seal (Working name: TBD)
+
 **Role:** Comic relief and sidekick energy. Doesn't take anything seriously.
 Secretly the most skilled character in the world at everything.
 
@@ -225,26 +322,37 @@ Whiskers are expressive — they spread when lunging, droop when sad.
 ---
 
 ### The Narwhal (Working name: TBD)
+
 **Role:** The mysterious deep-water character. Rarely seen. Appears in bonus
 moments (golden fish events, frenzy mode) as a hint that there's something
 bigger in the world below the ice. May become central to a future game.
 
-**In-game presence:** Not an obstacle — a reward signal. Seeing the narwhal
-means something good is about to happen.
+**In-game presence (Game 01 — Pengu Fisher):** Not an obstacle — a reward
+signal. Seeing the narwhal means something good is about to happen.
 
-**Design rules:** Deep ocean blues and purples. The horn glows. Should feel
-slightly otherworldly compared to the surface characters.
+**In-game presence (Game 03 — Deep Dive):** The Narwhal is the soul of the
+deep world. Appears occasionally below 60m depth, gliding across the screen
+with its glowing horn lighting the darkness briefly. Its passage gifts a small
+breath refill. It does not speak. It does not help. It simply watches —
+and the player feels, briefly, that they are being tolerated in someone
+else's world.
+
+**Design rules:** Deep ocean blues and purples. The horn glows with teal
+bioluminescence. Should feel slightly otherworldly compared to surface
+characters — slower, more deliberate, ancient. Never threatening.
 
 ---
 
 ## 7. THE GAMES
 
 ### Design Philosophy
+
 Every game is a window into the characters' daily lives — not an abstract
 challenge. "The penguin fishes" is a premise, not just a mechanic. The
 mechanical depth serves the character fantasy.
 
 **The six questions every game must answer before building:**
+
 1. What is the core mechanic (the one thing always happening)?
 2. What secondary mechanic runs parallel, creating divided attention?
 3. What is the risk/reward decision separating beginners from experts?
@@ -253,6 +361,7 @@ mechanical depth serves the character fantasy.
 6. What does mastery look like, and can the player see it clearly?
 
 ### Difficulty Curve (Universal Template)
+
 ```
 0–15s    COMFORT ZONE   — Slow, easy, player feels competent
 15–35s   FIRST PRESSURE — New obstacle type introduced, timing matters
@@ -265,6 +374,7 @@ mechanical depth serves the character fantasy.
 Both experiences should feel fair and satisfying at their level.
 
 ### Session Design Rules
+
 - Target run length: 90 seconds to 3 minutes per attempt
 - 5 attempts per day, resets at midnight local time
 - Daily seed: date-based PRNG — everyone plays identical level that day
@@ -283,12 +393,14 @@ Both experiences should feel fair and satisfying at their level.
 player must press cast at the right moment to catch
 
 **Obstacles (in order of introduction):**
+
 - Seal — lunges with telegraph warning
-- Walrus — breathes (hitbox expands/contracts), slip-under window
+- Walrus (Babs) — breathes (hitbox expands/contracts), slip-under window
 - Polar Bear — variable oscillating speed, speed lines when fast
 - Ice Block — standable platform, height advantage if landed on top
 
 **Terrain variations:**
+
 - Normal ice — standard
 - Slow patch — blue tint, drags speed
 - Ramp — upward boost on contact
@@ -302,6 +414,7 @@ player must press cast at the right moment to catch
 Breaking streak resets to 1x. Combo decay timer visible as bar.
 
 **Scoring:**
+
 - Passive: +1 point every 6 frames (+3 in frenzy)
 - Small fish: 50 pts × combo multiplier
 - Medium fish: 150 pts in frenzy × combo multiplier
@@ -312,24 +425,147 @@ submission API, PWA shell, performance pass for mid-range Android.
 
 ---
 
+### Game 02: FISH STACK (Prototype Complete)
+
+**Premise:** Stack fish on the shelves of Babs' Arctic Trading Post.
+Babs watches your every move and has feelings about it.
+
+**Core mechanic:** Falling-piece stacking — guide fish-shaped pieces
+into complete rows to clear them.
+
+**What makes it NOT generic Tetris:**
+Pieces are fish silhouettes (salmon, eel, pufferfish, herring, tuna,
+cod, mackerel) — each with unique shapes, fins, tails, and eyes.
+Babs the Walrus reacts live to your stack with 5 emotional states
+and 30+ voiced lines. The game is mechanically familiar but
+the world makes it entirely proprietary.
+
+**Piece roster (7 fish):**
+
+- Salmon — chunky S-shape, dorsal fin, forked tail
+- Eel — long I-shape (1×4), sinuous wave stripe
+- Pufferfish — plus/T-shape, outward spines
+- Herring — slim L-shape, scale stripe
+- Tuna — reverse-L, powerful build
+- Cod — S/Z-shape, classic fish silhouette
+- Mackerel — Z-shape, racing stripe
+
+**Scoring:**
+
+- 1 row cleared: 100 pts × level
+- 2 rows: 300 pts × level
+- 3 rows: 500 pts × level
+- 4 rows: 800 pts × level
+- Hard drop bonus: +2 pts per cell dropped
+
+**Difficulty ramp:** Speed increases every 8 rows cleared.
+Level 1: 800ms drop interval. Max speed: 80ms (level ~11).
+
+**Babs' role:** Persistent shopkeeper in the UI panel above the board.
+Animated — breathing, blinking, emotionally reactive. She watches
+the board (pupils track downward). Full emotional state system
+documented in Section 6.
+
+**Status:** Prototype complete. Known issues: piece physics feel slightly
+loose (acceptable for now). Needs: daily seed, score submission,
+voiceover integration when audio pipeline is ready (see Section 13).
+---
+
+### Game 03: DEEP DIVE (Prototype Complete)
+
+**Premise:** The penguin dives through the ice into the Narwhal's bioluminescent
+world below. A place no penguin has been. Wondrous, strange, and unforgiving.
+
+**Core mechanic:** Free-swimming exploration — analog joystick moves the penguin
+in all directions through a vertically scrolling deep ocean. Surface before
+your breath runs out.
+
+**The tension:** Go deeper for more pearls and a higher score. But breath drains
+faster at depth. Getting back to the surface takes time. Every extra metre down
+is a calculated risk.
+
+**Hazards:**
+
+- **Jellyfish** — pulsing bioluminescent bells with trailing tentacles. Drift
+  slowly across your path in unpredictable patterns. Contact drains breath fast
+  and knocks you back.
+- **Currents** — invisible water forces that push you sideways and downward,
+  hinted at by subtle flowing lines. Stronger versions appear deeper.
+- **Darkness** — visibility closes in as a radial vignette as you descend and
+  as breath drops. At critical depth+low breath, the world nearly disappears.
+
+**Collectibles:**
+
+- **Pearls** — regular (white glow, 10 pts) and rare gold (50 pts). Collecting
+  any restores a small amount of breath. Scattered throughout the dive.
+- **Air bubbles** — glowing teal orbs marked with a + icon. Collecting one
+  restores roughly a third of your breath. Your main lifeline at depth.
+
+**The Narwhal** — appears occasionally below 60m depth, gliding through with
+its glowing horn briefly lighting the path. Its passage gifts a small breath
+refill. You are a guest in its world.
+
+**Scoring:**
+
+- Pearls: 10 pts each (regular), 50 pts (rare/gold)
+- Hard drop: +2 pts per cell
+- Depth bonus: final score shows both pearls collected and max depth reached
+
+**Ending states:**
+
+- **Surfaced** — you chose to come up in time. Narwhal judges your depth.
+  Under 20m: "The surface called you back too soon."
+  20–40m: "You went deep. Not deep enough."
+  Over 40m: "The narwhal approves."
+- **Out of air** — breath hit zero. "The deep is unforgiving. The narwhal watches."
+
+**Controls:** Circular analog joystick (left thumb) + SURFACE button (right thumb).
+The joystick nub physically tracks thumb position and provides analog speed
+scaling — gentle push = slow drift, full deflection = fast swim. Keyboard
+arrows work on desktop.
+
+**Visual identity:** Near-black bioluminescent ocean. Everything glows from
+within. The penguin wears dive goggles and emits a warm amber light —
+the only warmth in a cold alien world. Darkness closes in from the edges
+as a radial vignette centered on the penguin.
+
+**Status:** Prototype complete. Needs: daily seed, score submission,
+jellyfish pattern variety, narwhal encounter polish.
+
 ### Future Games (Concepts — Not Yet Built)
 
-**Iceberg Surfer** — Ride a shrinking iceberg, jump between floes
-**Snowball Dodge** — Arena survival, incoming snowballs from all sides
-**Penguin Golf** — One-button power/angle, wild Arctic courses
-**Fish Stack** — Tetris-style with fish shapes
-**Blizzard Run** — Screen gradually whiteouts, navigate from memory
-**Hungry Orca** — Don't get eaten, orca gets smarter
-**Arctic Curling** — Flick physics, land closest to center
-**Penguin Slingshot** — Launch between icebergs, collect fish mid-air
-**Freeze! Thaw!** — Move when polar bear looks away (reverse hide and seek)
-**Deep Dive** — Breath meter, pearls, jellyfish, resurface before drowning
+**Arctic Core Series** — characters and setting established, ready to build:
+
+- **Iceberg Surfer** — ride a shrinking iceberg, jump between floes before yours melts
+- **Snowball Dodge** — arena survival, incoming snowballs from all sides, patterns get complex
+- **Penguin Golf** — one-button power/angle golf on wild Arctic courses
+- **Blizzard Run** — screen gradually whiteouts, navigate entirely from memory
+- **Hungry Orca** — don't get eaten, collect fish, orca learns your patterns over time
+- **Arctic Curling** — flick physics, land closest to center, wind and ice friction vary
+- **Penguin Slingshot** — launch yourself between icebergs, collect fish mid-air
+- **Freeze! Thaw!** — move when polar bear looks away, freeze when it turns around
+
+**Extended Concepts** — mechanics-first, world can be applied:
+
+- **Rhythm Waddle** — tap in time to a beat, combo multiplier for streaks, tempo increases
+- **Snowball Launcher** — Angry Birds style trajectory, knock down seal towers
+- **Harpoon Toss** — moving targets at varying distances, wind affects throw arc
+- **Tide Timer** — cross a beach in the gaps between waves, timing windows shrink
+- **Which Way Waddle** — Simon-says directional memory, pattern length grows
+- **Catch the Snowflake** — match the falling pattern, avoid wrong ones, speed increases
+- **Crab Claw** — claw machine timing game, grab prizes from a tank, tension builds
+
+**Total pipeline: 15 games beyond current prototypes.**
+At one new game per week that's 3.5+ months of content without repeating.
+Rotate by mechanic type — never two memory games back to back,
+never two survival games in a row.
 
 ---
 
 ## 8. TECHNICAL ARCHITECTURE
 
 ### Platform Decision
+
 **PWA (Progressive Web App) + HTML5 Canvas. No app store. One URL.**
 
 Rationale: Zero install friction for viral sharing. Universal device support —
@@ -339,23 +575,27 @@ everywhere. Optional "Add to Home Screen" for power users but never required.
 The URL is the product.
 
 ### Performance Budget
+
 - Target: 60fps on a 4-year-old mid-range Android
 - First load: under 3 seconds on 3G
 - Offline: fully playable after first visit (Service Worker)
 - Canvas rendering: lean — no heavy frameworks in the game engine
 
 ### Tech Stack
+
 ```
 Game Engine:    Vanilla JS + HTML5 Canvas (no game framework)
 Frontend:       PWA with Service Worker for offline
 Hosting:        Vercel (edge network, instant deploys)
 Backend/DB:     Supabase (Postgres + Auth + Realtime subscriptions)
 API:            Vercel Edge Functions
-Storage:        Cloudflare R2 (video replays, score card images)
+Storage:        Cloudflare R2 (video replays, score card images, audio assets)
 Social Sharing: Web Share API + Canvas-generated score card images
+Audio:          Web Audio API (sfx) + HTML5 Audio (voiceover — see Section 13)
 ```
 
 ### Daily Seed System
+
 ```javascript
 // Same date = same game for everyone worldwide
 function getDailySeed() {
@@ -373,6 +613,7 @@ All obstacle positions, terrain tiles, fish spawn timing generated from this
 seed. Server validates that submitted scores are possible given the day's seed.
 
 ### Score Submission Payload
+
 ```javascript
 {
   userId: string,           // JWT-verified Supabase user ID
@@ -390,6 +631,7 @@ seed. Server validates that submitted scores are possible given the day's seed.
 ```
 
 ### Anti-Cheat (5 Layers)
+
 1. **Client:** Input logging, frame checkpoints, session tokens, version pinning
 2. **API:** JWT auth, attempt limits server-side, rate limiting, sanity checks
 3. **Replay sim:** Server re-runs input log against seed, validates score ±10
@@ -398,6 +640,7 @@ seed. Server validates that submitted scores are possible given the day's seed.
    reviewed before every Sunday live event. Human eyes on every prize.
 
 ### Database Schema (Key Tables)
+
 ```sql
 users          — id, email, phone (verified), username, country, is_banned
 weeks          — id, week_code, game_id, seed, starts_at, ends_at, prize_title, sponsor_name
@@ -408,6 +651,7 @@ content_events — event_type, metadata (triggers social content pipeline)
 ```
 
 ### Viral Sharing Architecture
+
 ```
 Run ends → Score card generated (Canvas → PNG)
          → Web Share API opens native share sheet
@@ -420,6 +664,7 @@ URL carries state: domain.com/play?week=22&score=8420&challenge=jake
 ```
 
 ### Sign-up Flow (Frictionless)
+
 ```
 1. Land on game page
 2. Play a FREE DEMO — no account, local storage only
@@ -435,13 +680,16 @@ Play first. Verify second. Never block play with account creation.
 ## 9. MONETIZATION
 
 ### Model: Free to Play, Sponsor-Funded
+
 - **Never charge to play** — zero paywalls on gameplay, ever
 - **Never pay-to-win** — money never buys competitive advantage
 - **Cosmetic upgrades** — character skins, name colors (Phase 2)
 - **Corporate challenges** — private weekly challenge for company teams (Phase 2)
 
 ### Sponsorship Structure
+
 **Title Sponsor (1 per week):**
+
 - Logo on game loading screen (3–5 seconds, every attempt)
 - 30-second host read at Sunday live stream open
 - Winner announcement post features sponsor + prize prominently
@@ -449,16 +697,20 @@ Play first. Verify second. Never block play with account creation.
 - Social posts throughout week name and tag sponsor
 
 **Community Sponsor (up to 2 per week):**
+
 - Social mention only, no game placement
 - ~40% of title sponsor rate
 
 ### Prize Rotation
+
 Mixed categories, rotating weekly to serve different audience segments:
+
 - Aspirational: travel, experiences (weekend trips, concert tickets)
 - Practical: subscriptions, gift cards, tools people actually use
 - Character-driven: branded merchandise from the game world (Phase 2)
 
 ### Revenue Targets (Realistic)
+
 ```
 Weeks 1–12:   $0 cash — barter prizes only, building proof
 Weeks 13–24:  $500–$1,000/week average — first paid sponsors
@@ -467,13 +719,16 @@ Year 1 total: $25,000–$60,000 (after costs ~$5,000–$8,000)
 ```
 
 ### Sponsor Acquisition
+
 Phase 1: Direct email to marketing directors of brand-fit companies.
-         Pitch is 3 paragraphs, media kit attached, specific proposal.
+Pitch is 3 paragraphs, media kit attached, specific proposal.
 Phase 2: Gaming creator marketplaces (StreamElements, Powerspike, Grapevine)
 Phase 3: Boutique sponsorship agency (Loaded, Neon) once 5k+ WAU proven
 
 ### Key Metric for Sponsor Conversations
+
 **Weekly retention rate** — percentage of players returning the following week.
+
 - 25% = product needs work
 - 40% = something real is here
 - 50%+ = exceptional, national brand conversations start
@@ -483,6 +738,7 @@ Phase 3: Boutique sponsorship agency (Loaded, Neon) once 5k+ WAU proven
 ## 10. CONTENT & SOCIAL
 
 ### Weekly Content Calendar
+
 ```
 Monday    — "This week's game drops!" reveal + teaser clip
 Tue–Fri   — Daily leaderboard update (top 5 scores, usernames)
@@ -491,6 +747,7 @@ Sunday    — LIVE EVENT → clip highlights → winner announcement post
 ```
 
 ### Content Automation Pipeline
+
 ```
 Score submitted → DB trigger → content_events row
 Nightly job → checks content_events
@@ -501,6 +758,7 @@ Nightly job → checks content_events
 ```
 
 ### Live Sunday Event Format
+
 - Duration: 20–30 minutes maximum
 - Platform: Instagram Live / YouTube Live (simulcast)
 - Format: Host intro → this week's game recap → top 3 replay reveals →
@@ -509,6 +767,7 @@ Nightly job → checks content_events
 - Clips from the live event become the following week's promotional content
 
 ### Influencer Strategy
+
 - Target: micro-influencers 5k–50k in casual gaming, productivity,
   healthy tech habits, brain games niches
 - Avoid: large gaming influencers whose audience plays AAA titles
@@ -523,17 +782,30 @@ Nightly job → checks content_events
 *Update this section at the end of every meaningful work session.*
 
 ### What Exists
-- Single HTML5 canvas game — Pengu Fisher prototype (fully playable)
-- All core mechanics implemented: jump, double-jump, active fishing cast,
-  combo multiplier, frenzy mode, 4 distinct obstacle types
-- Mobile-first layout: overlay controls, HUD floating on canvas
-- Web Audio sound effects (all actions have sound)
-- Haptic feedback (Android Chrome only — iOS blocks Vibration API)
-- Daily seed system (client-side only — not server-validated yet)
-- Sunset visual theme, cartoon character art
+
+- **Game 01 — Pengu Fisher:** Fully playable HTML5 prototype
+  - All core mechanics: jump, double-jump, active fishing cast,
+    combo multiplier, frenzy mode, 4 distinct obstacle types
+  - Mobile-first layout, Web Audio sfx, haptic feedback (Android)
+  - Daily seed system (client-side only)
+
+- **Game 02 — Fish Stack:** Fully playable HTML5 prototype
+  - 7 fish-shaped falling pieces (not tetrominos — actual silhouettes)
+  - Ghost piece, hard drop, wall kicks, level speed scaling
+  - Babs the Walrus: animated shopkeeper with 5 emotional states,
+    30+ reactive voice lines, live reaction to every row cleared
+  - Voiceover architecture ready (single setBabs() call point)
+
+- **Game 03 — Deep Dive:** Fully playable HTML5 prototype
+  - Free-swimming vertical scroller, analog joystick controls
+  - Bioluminescent visual world: jellyfish, pearls, air bubbles, darkness vignette
+  - Narwhal appears as rare deep encounter, gifts breath on passage
+  - Dual collectible system: pearls (score) + air bubbles (survival)
+  - Three jellyfish types with drift patterns
+  - Darkness/visibility system tied to depth and breath level
 
 ### Known Issues / Not Yet Built
-- [ ] Fullscreen button non-functional on mobile — remove it
+
 - [ ] No backend — scores not saved anywhere
 - [ ] No user accounts / authentication
 - [ ] No server-side seed validation (anti-cheat not active)
@@ -543,28 +815,38 @@ Nightly job → checks content_events
 - [ ] Web Share API integration — not built
 - [ ] Leaderboard UI — not built
 - [ ] Weekly attempt tracking — client-side only, not enforced server-side
+- [ ] Fish Stack piece physics feel slightly loose (acceptable for now)
+- [ ] Fullscreen button non-functional on mobile — remove it (Game 01)
+- [ ] Deep Dive jellyfish patterns need more variety
+- [ ] Deep Dive narwhal encounter needs more polish
+- [ ] Deep Dive needs daily seed integration
 
 ### Repository Structure (Target)
+
 ```
 /
-├── GAME_BIBLE.md          ← this document
-├── CURRENT_STATE.md       ← short current sprint status
+├── GAME_BIBLE.md
+├── CURRENT_STATE.md
 ├── README.md
 ├── prototypes/
-│   └── penguin-fisher.html   ← working prototype
+│   ├── penguin-fisher.html
+│   ├── fish-stack.html
+│   └── deep-dive.html
 ├── src/
-│   ├── game/              ← game engine
-│   ├── pwa/               ← manifest, service worker
-│   ├── api/               ← Vercel edge functions
-│   └── ui/                ← leaderboard, profile, sharing
+│   ├── game/
+│   ├── pwa/
+│   ├── api/
+│   ├── ui/
+│   └── audio/           ← voiceover + sfx assets (Phase 2)
 └── supabase/
-    └── schema.sql         ← full database schema
+    └── schema.sql
 ```
 
 ### Next Build Priorities (Phase 1)
+
 1. Proper PWA structure (manifest.json + service worker)
 2. Supabase backend (auth + score submission + leaderboard)
-3. Remove fullscreen button, finalize mobile layout
+3. Remove fullscreen button, finalize mobile layout (Game 01)
 4. Score card image generation + Web Share API
 5. Performance pass for mid-range Android
 
@@ -575,21 +857,97 @@ Nightly job → checks content_events
 *Record every significant decision here with a brief rationale.
 Never delete entries — cross them out if reversed and note why.*
 
-| Date | Decision | Rationale |
-|------|----------|-----------|
-| Mar 2026 | PWA not native app | Zero install friction, viral link sharing, Wordle model |
-| Mar 2026 | Vanilla JS + Canvas, no game framework | Performance budget, no unnecessary dependencies |
-| Mar 2026 | Supabase + Vercel stack | Free at launch scale, grows to 200k MAU without rearchitecting |
-| Mar 2026 | Arctic setting as home base, other settings possible | Ownable visual identity, flexible for game variety |
-| Mar 2026 | Character-first IP approach | Games are temporary, characters are forever |
-| Mar 2026 | 5 attempts per day hard limit | Healthy gaming philosophy — limits create desire |
-| Mar 2026 | Live Sunday event is the product | Differentiates from every other mobile game, creates community |
-| Mar 2026 | Free to play always, sponsor-funded prizes | Removes all friction, clean ethics, viable business model |
-| Mar 2026 | Primary audience: everyone — intentionally broad | No natural excluder, universal entry point, depth reveals over time |
-| Mar 2026 | Core feeling: playful and light, pure fun | Lowest friction emotional hook, works across all four player types |
-| Mar 2026 | World/product name: TBD — placeholder until naming session | Name shapes everything downstream, worth doing properly |
+| Date     | Decision                                              | Rationale                                                           |
+|----------|-------------------------------------------------------|---------------------------------------------------------------------|
+| Mar 2026 | PWA not native app                                    | Zero install friction, viral link sharing, Wordle model             |
+| Mar 2026 | Vanilla JS + Canvas, no game framework                | Performance budget, no unnecessary dependencies                     |
+| Mar 2026 | Supabase + Vercel stack                               | Free at launch scale, grows to 200k MAU without rearchitecting      |
+| Mar 2026 | Arctic setting as home base, other settings possible  | Ownable visual identity, flexible for game variety                  |
+| Mar 2026 | Character-first IP approach                           | Games are temporary, characters are forever                         |
+| Mar 2026 | 5 attempts per day hard limit                         | Healthy gaming philosophy — limits create desire                    |
+| Mar 2026 | Live Sunday event is the product                      | Differentiates from every other mobile game, creates community      |
+| Mar 2026 | Free to play always, sponsor-funded prizes            | Removes all friction, clean ethics, viable business model           |
+| Mar 2026 | Primary audience: everyone — intentionally broad      | No natural excluder, universal entry point, depth reveals over time |
+| Mar 2026 | Core feeling: playful and light, pure fun             | Lowest friction emotional hook, works across all four player types  |
+| Mar 2026 | World/product name: TBD                               | Name shapes everything downstream, worth doing properly             |
+| Mar 2026 | Walrus working name: Babs                             | Strong character voice established in Game 02 prototype             |
+| Mar 2026 | Fish Stack uses fish silhouettes not tetrominos       | Breaks generic Tetris association, proprietary feel                 |
+| Mar 2026 | Babs reacts live to stack with 5 emotional states     | Character presence > passive backdrop; irreverence is brand asset   |
+| Mar 2026 | Voiceover deferred to Phase 2                         | Architecture ready (setBabs() call point); recording needs casting  |
+| Mar 2026 | Narwhal fronts Game 03 as world-reveal moment          | It appears as reward signal in Games 01/02 — starring it pays off   |
+| Mar 2026 | Deep Dive: analog joystick not D-pad                  | Swimming game needs fluid directional input, not discrete buttons   |
+| Mar 2026 | Deep Dive: air bubbles as breath collectible           | Gives player agency over survival, rewards exploration over dive depth |
 
 ---
 
-*End of Game Bible v1.0*
+## 13. VOICEOVER PLAN — BABS (Phase 2 Milestone)
+
+*Added March 2026. Do not build until Phase 1 backend is complete.*
+
+### Why This Matters
+
+Babs' written lines already land. A distinctive voice performance will
+make her one of the most memorable characters in casual mobile gaming.
+The irreverence, the grumpiness, the reluctant awe — these are
+direction-ready. The voice actor should feel like they're playing a
+character who has been at this trading post for 40 years and has
+strong opinions about fish.
+
+### Technical Architecture (Already Ready)
+
+All Babs lines run through a single function: `setBabs(state, eye, mouth, text)`.
+Adding audio requires one change: trigger a sound file from that function.
+
+```javascript
+// Current (text only)
+function setBabs(state, eye, mouth, text, duration) { ... }
+
+// Phase 2 addition — one line inside setBabs():
+playVO(text); // maps text string to audio file, plays via HTML5 Audio
+```
+
+Audio files live in Cloudflare R2 (`/audio/babs/`), referenced by line ID.
+Fallback to text-only if audio fails or user has sound off.
+
+### Recording Scope
+
+**Priority 1 — Game 02 (Fish Stack):** 30 lines across 6 emotional states.
+This is the recording session to do first — Babs has the richest
+reactive dialogue here.
+
+**Priority 2 — Game 01 (Pengu Fisher):** Ambient commentary lines for
+when Babs appears as an obstacle. Optional grunts/sighs as the
+hitbox expands.
+
+**Priority 3 — Global UI lines:** "Welcome back." / "Five attempts.
+Don't waste them." / "Your score has been submitted. Hmph."
+
+### Casting Direction
+
+- Gender: open — the character reads as a weary, weathered elder
+- Age feel: 55–70, not played for laughs, played for real
+- Tone: dry, deliberate, zero warmth in the delivery — but the humor
+  comes from how specific and committed she is, not from winking
+- Reference feel: Maggie Smith in Downton Abbey crossed with
+  a very tired fishmonger who has seen things
+- Key test line for auditions: *"I KNEW you'd stack it wrong."*
+  Should land like a verdict, not a punchline.
+
+### Decisions to Make Before Recording
+
+- Full sentences voiced vs. grunts/reactions only for obstacle appearances?
+- Should Babs ever say the player's username? (Requires dynamic TTS
+  or pre-recorded wildcard handling)
+- Same voice actor across all character VO eventually,
+  or Babs-specific casting?
+
+### Budget Estimate
+
+- 30–40 lines, directed session: $400–$800 (indie VO rate)
+- Self-directed remote auditions via Voices.com or similar: $200–$400
+- Post-processing (light compression, EQ for Arctic warmth): in-house
+
+---
+
+*End of Game Bible v1.2*
 *Next review: after Phase 1 build complete*

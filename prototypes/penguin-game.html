@@ -365,6 +365,29 @@ const dailySeed=getDailySeed();
 let rng=makeRng(dailySeed);
 
 // ═══════════════════════════════════════════════════════════
+//  ASSETS — pengu sprite sheet (optional fast path)
+// ═══════════════════════════════════════════════════════════
+const USE_PENGU_SPRITE = true;
+const penguSheet = new Image();
+penguSheet.decoding = 'async';
+penguSheet.loading = 'eager';
+penguSheet.src = 'assets/pengu-sheet.png';
+
+// Crop rects (x,y,w,h) on 500×500 sheet. Tuned for this specific sheet export.
+// If you swap the sheet, adjust these numbers.
+const PENGU_FRAMES = {
+  // top row
+  happy:   { sx: 175, sy:  15, sw: 155, sh: 166 }, // standing neutral (trimmed bottom bleed)
+  // middle row (expressions)
+  scared:  { sx: 165, sy: 188, sw: 170, sh: 146 }, // X eyes (avoid lower-row overlap)
+  excited: { sx: 325, sy: 184, sw: 170, sh: 146 }, // star/squint expression (avoid lower-row overlap)
+  // bottom row
+  nervous: { sx: 320, sy: 325, sw: 170, sh: 175 }, // sweat/embarrassed-ish
+  // optional: backpack pose (not used for mood, but handy)
+  backpack:{ sx:  20, sy: 315, sw: 190, sh: 185 },
+};
+
+// ═══════════════════════════════════════════════════════════
 //  GAME STATE
 // ═══════════════════════════════════════════════════════════
 let state='title';
@@ -372,6 +395,7 @@ let score=0,hiScore=0,fishCount=0,lives=3;
 let gameSpeed=2.6,frameCount=0,distance=0;
 let combo=1,comboTimer=0;
 let fishMeter=0,frenzyActive=false,frenzyTimer=0,frenzyFlash=0;
+let backpackPulse=0;
 
 const GROUND_Y=208;
 const pengu={
@@ -531,7 +555,7 @@ function updateFishing(){
         if(isGolden){SFX.golden();spawnP(pengu.x+20,pengu.y-30,'#ffee00',18,5);addPop(pengu.x-20,pengu.y-70,`GOLDEN! +${earned}`,'#ffee00',9);}
         else{SFX.catch();spawnP(pengu.x+20,pengu.y-20,'#ffcc33',10,4);addPop(pengu.x-10,pengu.y-60,`+${earned}`,'#ffe600',9);}
         fishing.lastCastResult=isGolden?'golden':'good';fishing.resultTimer=55;
-        fishing.rodSwing=-1.2;updateHUD();
+        fishing.rodSwing=-1.2;backpackPulse=24;updateHUD();
       } else {
         fishing.lastCastResult='miss';fishing.resultTimer=35;SFX.miss();breakCombo();addPop(pengu.x-10,pengu.y-55,'TOO EARLY!','#ff8844',7);
       }
@@ -678,7 +702,7 @@ function hideOverlay(){document.getElementById('overlay').style.display='none';}
 function resetGame(){
   rng=makeRng(dailySeed);
   score=0;fishCount=0;lives=3;gameSpeed=2.6;frameCount=0;distance=0;
-  combo=1;comboTimer=0;fishMeter=0;frenzyActive=false;frenzyTimer=0;
+  combo=1;comboTimer=0;fishMeter=0;frenzyActive=false;frenzyTimer=0;backpackPulse=0;
   obstacles=[];particles=[];textPops=[];obstacleTimer=60;
   Object.assign(pengu,{x:90,y:GROUND_Y,vy:0,jumps:0,walkFrame:0,walkTimer:0,invincible:0,dead:false,squish:1,squishV:0,mood:'happy',moodTimer:0,onPlatform:false});
   Object.assign(fishing,{biteActive:false,biteMeter:0,biteTimer:80,castWindow:false,castPressed:false,lastCastResult:null,resultTimer:0,rodSwing:0});
@@ -797,6 +821,7 @@ function update(){
   if(pengu.invincible>0) pengu.invincible--;
   if(!pengu.dead&&pengu.y>=GROUND_Y-2){pengu.walkTimer++;if(pengu.walkTimer>7){pengu.walkTimer=0;pengu.walkFrame=(pengu.walkFrame+1)%4;}}
   if(comboTimer>0){comboTimer--;if(comboTimer===0)breakCombo();}
+  if(backpackPulse>0) backpackPulse--;
 
   obstacleTimer--;if(obstacleTimer<=0){spawnObstacle();obstacleTimer=Math.floor(c.obstacleGap);}
   updateObstacles();updateTerrain();updateFishing();updateFrenzy();updateMood();
@@ -942,6 +967,67 @@ function drawFrenzyOverlay(){
 }
 
 // ═══════════════════════════════════════════════════════════
+//  DRAW — FISH BACKPACK (bag behind body; strap in front of torso)
+// ═══════════════════════════════════════════════════════════
+function drawTinyFishInBackpack(x,y,idx){
+  const ang=Math.sin(frameCount*0.12+idx*0.9)*0.28;
+  ctx.save();
+  ctx.translate(pr(x),pr(y));ctx.rotate(ang);
+  const golden=idx>0&&idx%4===0;
+  ctx.fillStyle=golden?'#ffdd77':'#a7dbff';
+  ctx.beginPath();ctx.ellipse(0,0,3.6,2.1,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=golden?'#eebb55':'#5da7e6';
+  ctx.beginPath();ctx.moveTo(-3.2,0);ctx.lineTo(-7,-1.6);ctx.lineTo(-7,1.6);ctx.closePath();ctx.fill();
+  // tiny fish eye (keeps bag items readable at small size)
+  ctx.fillStyle=golden?'#2b2f4a':'#17314f';
+  ctx.beginPath();ctx.arc(1.2,-0.3,0.5,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+
+function drawFishBackpackBack(cx,bY){
+  const bx=cx-28,by=bY-20,bw=20,bh=22;
+  ctx.save();
+  if(backpackPulse>0){
+    ctx.shadowColor='#ffdd88';
+    ctx.shadowBlur=5+backpackPulse*0.4;
+  }
+  // blue fish backpack (matches Midjourney reference look)
+  ctx.fillStyle='#2e4460';
+  ctx.beginPath();ctx.roundRect(pr(bx-1),pr(by+1),bw+2,bh+2,7);ctx.fill();
+  ctx.fillStyle='#bfe3ff';
+  ctx.beginPath();ctx.roundRect(pr(bx),pr(by),bw,bh,6);ctx.fill();
+  ctx.strokeStyle='#5d84a8';
+  ctx.lineWidth=2.2;
+  ctx.stroke();
+  ctx.fillStyle='#2e4460';
+  ctx.beginPath();ctx.ellipse(pr(cx-19),pr(by+7),6.2,5,0,0,Math.PI*2);ctx.fill();
+  const show=Math.min(fishCount,6);
+  for(let i=0;i<show;i++){
+    const wob=Math.sin(frameCount*0.15+i*0.85)*0.45;
+    drawTinyFishInBackpack(cx-24+wob+(i%3)*3.8,by+4.5+Math.floor(i/3)*3.2,i);
+  }
+  ctx.restore();
+}
+
+function drawFishBackpackStrap(cx,bY){
+  ctx.save();
+  ctx.strokeStyle='#4f6f93';
+  ctx.lineWidth=3.5;
+  ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(pr(cx-6),pr(bY-34));
+  ctx.quadraticCurveTo(pr(cx-22),pr(bY-28),pr(cx-26),pr(bY-19));
+  ctx.stroke();
+  ctx.strokeStyle='#86b4d8';
+  ctx.lineWidth=1.2;
+  ctx.beginPath();
+  ctx.moveTo(pr(cx-6),pr(bY-34));
+  ctx.quadraticCurveTo(pr(cx-20),pr(bY-28),pr(cx-25),pr(bY-19));
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
 //  DRAW — PENGU
 // ═══════════════════════════════════════════════════════════
 function drawPengu(){
@@ -960,19 +1046,91 @@ function drawPengu(){
 
   ctx.translate(cx,pr(bY));ctx.scale(sx,sy);ctx.translate(-cx,-pr(bY));
 
-  ctx.fillStyle='#1c1c35';ctx.beginPath();ctx.ellipse(cx,pr(bY-16),17,22,0,0,Math.PI*2);ctx.fill();
-  ctx.save();ctx.globalAlpha=0.12;ctx.fillStyle='#aaaaff';ctx.beginPath();ctx.ellipse(cx-5,pr(bY-22),8,10,-0.3,0,Math.PI*2);ctx.fill();ctx.restore();
-  ctx.fillStyle='#fff8e8';ctx.beginPath();ctx.ellipse(cx+1,pr(bY-12),10,14,0.1,0,Math.PI*2);ctx.fill();
-  ctx.save();ctx.globalAlpha=0.3;circ(cx+13,pr(bY-22),5,'#ff9988');ctx.restore();
-  ctx.fillStyle='#1c1c35';ctx.beginPath();ctx.ellipse(cx+2,pr(bY-36),15,14,0,0,Math.PI*2);ctx.fill();
+  drawFishBackpackBack(cx,bY);
+
+  // Sprite-based pengu (fast single texture). Falls back to procedural if not loaded.
+  if(USE_PENGU_SPRITE && penguSheet.complete && penguSheet.naturalWidth){
+    const pose = p.mood==='excited' ? 'excited'
+      : p.mood==='scared' ? 'scared'
+      : p.mood==='nervous' ? 'nervous'
+      : 'happy';
+    const fr = PENGU_FRAMES[pose] || PENGU_FRAMES.happy;
+
+    // Destination bounds roughly matching prior procedural pengu scale.
+    const dw = 56;
+    const dh = 64;
+    const dx = pr(cx - dw/2);
+    // Lower sprite so feet contact the ground line similarly to procedural pengu.
+    const dy = pr(bY - 50);
+    ctx.drawImage(penguSheet, fr.sx, fr.sy, fr.sw, fr.sh, dx, dy, dw, dh);
+
+    // Draw strap over sprite (keeps backpack readable)
+    drawFishBackpackStrap(cx,bY);
+    ctx.restore();
+
+    // Keep fishing rod as before
+    if(!p.dead){
+      ctx.save();
+      const ra=fishing.rodSwing||-0.45+Math.sin(frameCount*0.038)*0.22;
+      fishing.rodSwing*=0.85;
+      ctx.translate(pr(p.x+14),pr(bY-12));ctx.rotate(ra);
+      ctx.strokeStyle='#7a4f1e';ctx.lineWidth=3.5;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(26,-22);ctx.stroke();
+      ctx.strokeStyle='rgba(255,255,255,0.75)';ctx.lineWidth=1.2;
+      const dyLine=44+Math.sin(frameCount*0.05)*5;
+      ctx.beginPath();ctx.moveTo(26,-22);ctx.quadraticCurveTo(30,10,32,dyLine);ctx.stroke();
+      const bobR=fishing.biteActive?4.5+Math.sin(frameCount*0.4)*1.5:4;
+      circ(32,dyLine,bobR,'#ff3344');circ(32,dyLine,bobR-1.5,'#ff7777');
+      if(fishing.castWindow){ctx.save();ctx.globalAlpha=0.5+0.5*Math.sin(frameCount*0.4);circ(32,dyLine,bobR+5,'rgba(0,255,136,0.4)');ctx.restore();}
+      ctx.restore();
+    }
+    return;
+  }
+
+  // Penguin body palette (Midjourney reference-inspired)
+  const outline='#2b2f4a';
+  const body='#5f74ad';
+  const wing='#4e6399';
+  const belly='#f7f0d6';
+
+  // flippers/wing blobs (behind head/body a bit)
+  ctx.fillStyle=wing;
+  ctx.beginPath();ctx.ellipse(cx-18,pr(bY-14),10,16,-0.25,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(cx+18,pr(bY-14),10,16,0.25,0,Math.PI*2);ctx.fill();
+
+  // main body with a soft outline
+  ctx.fillStyle=body;
+  ctx.strokeStyle=outline;
+  ctx.lineWidth=3.1;
+  ctx.beginPath();ctx.ellipse(cx,pr(bY-16),17,22,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+
+  // belly
+  ctx.fillStyle=belly;
+  ctx.strokeStyle=outline;
+  ctx.lineWidth=2.2;
+  ctx.beginPath();ctx.ellipse(cx+1,pr(bY-12),10,14,0.1,0,Math.PI*2);ctx.fill();ctx.stroke();
+
+  // subtle cheek blush
+  ctx.save();ctx.globalAlpha=0.55;circ(cx+12,pr(bY-22),4.7,'#ff9bb1');ctx.restore();
+
+  // top head cap
+  ctx.fillStyle=wing;
+  ctx.strokeStyle=outline;
+  ctx.lineWidth=2.2;
+  ctx.beginPath();ctx.ellipse(cx+2,pr(bY-36),15,14,0,0,Math.PI*2);ctx.fill();ctx.stroke();
 
   drawPenguEyes(cx,bY,p.mood);
 
-  ctx.fillStyle='#ffaa00';ctx.beginPath();ctx.moveTo(cx+16,pr(bY-35));ctx.lineTo(cx+24,pr(bY-31));ctx.lineTo(cx+16,pr(bY-27));ctx.closePath();ctx.fill();
-  rect(cx+16,pr(bY-32),8,2,'#cc7700');
+  // beak (orange with darker underside)
+  ctx.fillStyle='#f2a24a';ctx.beginPath();ctx.moveTo(cx+16,pr(bY-35));ctx.lineTo(cx+24,pr(bY-31));ctx.lineTo(cx+16,pr(bY-27));ctx.closePath();ctx.fill();
+  ctx.fillStyle='#cc7a2f';rect(cx+16,pr(bY-32),8,2,'#cc7a2f');
+  drawFishBackpackStrap(cx,bY);
   ctx.fillStyle='#1c1c35';ctx.beginPath();ctx.ellipse(cx-15,pr(bY-14),7,13,-0.25,0,Math.PI*2);ctx.fill();
   ctx.beginPath();ctx.ellipse(cx+15,pr(bY-14),7,13,0.25,0,Math.PI*2);ctx.fill();
-  rrect(cx-14,pr(bY-1+legOff),14,6,3,'#ff8800');rrect(cx+1,pr(bY-1-legOff),14,6,3,'#ff8800');
+  // feet (orange)
+  ctx.fillStyle='#ff8f2a';ctx.strokeStyle=outline;ctx.lineWidth=1.8;
+  rrect(cx-14,pr(bY-1+legOff),14,6,3,'#ff8f2a');
+  rrect(cx+1,pr(bY-1-legOff),14,6,3,'#ff8f2a');
   ctx.restore();
 
   if(!p.dead){
@@ -993,25 +1151,67 @@ function drawPengu(){
 }
 
 function drawPenguEyes(cx,bY,mood){
+  const outline='#2b2f4a';
+  const ey=pr(bY-37);
+  const exL=cx+4, exR=cx+12;
+
   if(mood==='scared'){
     ctx.strokeStyle='#ffffff';ctx.lineWidth=2.5;ctx.lineCap='round';
-    [[-1,1],[1,-1]].forEach(([dx,dy])=>{ctx.beginPath();ctx.moveTo(cx+5+dx*3,pr(bY-40+dy*3));ctx.lineTo(cx+11-dx*3,pr(bY-34-dy*3));ctx.stroke();});
-    [[-1,-1],[1,1]].forEach(([dx,dy])=>{ctx.beginPath();ctx.moveTo(cx+5+dx*3,pr(bY-40+dy*3));ctx.lineTo(cx+11-dx*3,pr(bY-34-dy*3));ctx.stroke();});
+    [exL,exR].forEach(ex=>{
+      ctx.beginPath();ctx.moveTo(ex-3,ey-3);ctx.lineTo(ex+3,ey+3);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(ex+3,ey-3);ctx.lineTo(ex-3,ey+3);ctx.stroke();
+    });
     return;
   }
-  if(mood==='excited'){ctx.fillStyle='#ffff00';drawStar(cx+8,pr(bY-37),6,5);return;}
-  circ(cx+8,pr(bY-37),6.5,'#ffffff');circ(cx+8,pr(bY-37),4,'#0d0d22');
-  ctx.strokeStyle='#2244cc';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx+8,pr(bY-37),3.5,0,Math.PI*2);ctx.stroke();
-  circ(cx+9,pr(bY-38.5),1.8,'#ffffff');
-  if(mood==='nervous'){ctx.fillStyle='#88ccff';ctx.beginPath();ctx.moveTo(cx+17,pr(bY-44));ctx.quadraticCurveTo(cx+19,pr(bY-40),cx+15,pr(bY-38));ctx.quadraticCurveTo(cx+13,pr(bY-42),cx+17,pr(bY-44));ctx.fill();}
-  ctx.strokeStyle='#1c1c35';ctx.lineWidth=2.5;ctx.lineCap='round';
-  ctx.beginPath();ctx.moveTo(cx+3,pr(bY-46));ctx.quadraticCurveTo(cx+8,pr(bY-49),cx+13,pr(bY-46));ctx.stroke();
+
+  if(mood==='excited'){
+    ctx.fillStyle='#ffe56b';
+    ctx.strokeStyle=outline;
+    ctx.lineWidth=1.3;
+    drawStar(exL,ey,5.4,5);
+    drawStar(exR,ey,5.4,5);
+    return;
+  }
+
+  // eye whites with dark outline (readable at small size)
+  ctx.lineWidth=2.2;
+  ctx.strokeStyle=outline;
+  ctx.fillStyle='#ffffff';
+  [exL,exR].forEach(ex=>{
+    ctx.beginPath();ctx.arc(ex,ey,6.1,0,Math.PI*2);ctx.fill();ctx.stroke();
+    // dark pupils / inner iris
+    ctx.fillStyle='#1b2146';
+    ctx.beginPath();ctx.arc(ex,ey,3.8,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#0b1638';
+    ctx.beginPath();ctx.arc(ex+0.2,ey-0.3,2.1,0,Math.PI*2);ctx.fill();
+    // highlight
+    ctx.fillStyle='#ffffff';
+    ctx.beginPath();ctx.arc(ex+1.2,ey-1.4,1.0,0,Math.PI*2);ctx.fill();
+  });
+
+  // nervous sweat drop
+  if(mood==='nervous'){
+    ctx.fillStyle='#88ccff';
+    ctx.beginPath();
+    ctx.moveTo(cx+17,pr(bY-44));
+    ctx.quadraticCurveTo(cx+19,pr(bY-40),cx+15,pr(bY-38));
+    ctx.quadraticCurveTo(cx+13,pr(bY-42),cx+17,pr(bY-44));
+    ctx.fill();
+  }
+
+  // mouth / beak-base line
+  ctx.strokeStyle=outline;ctx.lineWidth=2.5;ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(cx+3,pr(bY-46));
+  ctx.quadraticCurveTo(cx+8,pr(bY-49),cx+13,pr(bY-46));
+  ctx.stroke();
 }
 
 function drawStar(cx,cy,r,pts){
   ctx.beginPath();
   for(let i=0;i<pts*2;i++){const a=i/pts*Math.PI-Math.PI/2,rad=i%2===0?r:r*0.4;i===0?ctx.moveTo(cx+Math.cos(a)*rad,cy+Math.sin(a)*rad):ctx.lineTo(cx+Math.cos(a)*rad,cy+Math.sin(a)*rad);}
   ctx.closePath();ctx.fill();
+  if(ctx.strokeStyle) ctx.stroke();
 }
 
 // ═══════════════════════════════════════════════════════════

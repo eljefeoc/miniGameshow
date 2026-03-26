@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Deep Dive — Arctic Game #3</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Nunito:wght@400;700;800&display=swap');
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  :root {
+    --deep:    #020814;
+    --abyss:   #040f1f;
+    --glow1:   #00f5d4;   /* teal bioluminescent */
+    --glow2:   #7b2fff;   /* deep violet */
+    --glow3:   #00b4d8;   /* narwhal blue */
+    --pearl:   #e8f4f8;
+    --danger:  #ff4d6d;
+    --gold:    #ffd166;
+    --mid:     #0a1628;
+  }
+
+  html, body {
+    width:100%; height:100%;
+    background: var(--deep);
+    display:flex; justify-content:center; align-items:center;
+    overflow:hidden; touch-action:none;
+    font-family:'Nunito', sans-serif;
+  }
+
+  /* animated deep water background */
+  body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 30%, rgba(0,180,216,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 80% 60%, rgba(123,47,255,0.09) 0%, transparent 55%),
+      radial-gradient(ellipse 80% 30% at 50% 90%, rgba(0,245,212,0.05) 0%, transparent 50%),
+      linear-gradient(180deg, #020814 0%, #040f1f 40%, #060818 100%);
+    animation: waterShift 12s ease-in-out infinite alternate;
+  }
+
+  @keyframes waterShift {
+    0%   { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(20deg); }
+  }
+
+  #wrap {
+    position:relative; z-index:1;
+    width:100%; max-width:400px;
+    height:100dvh; max-height:780px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+
+  /* ── HEADER ── */
+  #hdr {
+    width:100%; display:flex; justify-content:space-between; align-items:center;
+    padding:10px 16px 6px; flex-shrink:0;
+  }
+
+  #hdr h1 {
+    font-family:'Cinzel', serif; font-size:20px; font-weight:600;
+    color:var(--glow1);
+    text-shadow: 0 0 20px rgba(0,245,212,0.6), 0 0 40px rgba(0,245,212,0.2);
+    letter-spacing:2px; line-height:1;
+  }
+  #hdr p { font-size:10px; color:var(--glow3); opacity:.5; margin-top:2px; letter-spacing:1px; }
+
+  #score-wrap { text-align:right; }
+  #score-wrap .lbl { font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--glow3); opacity:.5; }
+  #score-num {
+    font-family:'Cinzel', serif; font-size:26px; font-weight:600;
+    color:var(--pearl); line-height:1; display:inline-block;
+    text-shadow: 0 0 12px rgba(232,244,248,0.4);
+    transition: transform .12s;
+  }
+  #score-num.pop { transform:scale(1.3); }
+
+  /* ── METERS ── */
+  #meters {
+    width:calc(100% - 28px); margin: 0 14px 5px;
+    display:flex; gap:10px; flex-shrink:0;
+  }
+
+  .meter-block { flex:1; }
+  .meter-block .lbl {
+    font-size:9px; text-transform:uppercase; letter-spacing:1px;
+    margin-bottom:4px; display:flex; justify-content:space-between;
+  }
+  .meter-track {
+    height:8px; border-radius:4px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.08);
+    overflow:hidden;
+  }
+  .meter-fill {
+    height:100%; border-radius:4px;
+    transition: width .15s, background .3s;
+  }
+
+  #breath-lbl  { color:var(--glow1); }
+  #breath-fill { background: linear-gradient(90deg, var(--glow2), var(--glow1)); }
+  #depth-lbl   { color:var(--glow3); }
+  #depth-fill  { background: linear-gradient(90deg, var(--glow3), var(--glow2)); }
+
+  /* ── GAME CANVAS ── */
+  #game-area {
+    position:relative; flex:1; width:100%;
+    display:flex; justify-content:center; align-items:flex-start;
+    overflow:hidden;
+  }
+
+  #game-cv {
+    display:block;
+    border-left:1px solid rgba(0,245,212,0.08);
+    border-right:1px solid rgba(0,245,212,0.08);
+  }
+
+  /* depth indicator on right */
+  #depth-marker {
+    position:absolute; right:12px; top:0; bottom:0;
+    width:3px; display:flex; flex-direction:column; justify-content:flex-end;
+  }
+  #depth-pip {
+    width:3px; height:12px; border-radius:2px;
+    background:var(--glow1);
+    box-shadow:0 0 8px var(--glow1);
+    position:absolute; right:0;
+    transition:top .1s;
+  }
+
+  /* narwhal encounter flash */
+  #narwhal-flash {
+    position:absolute; inset:0; pointer-events:none; z-index:5;
+    background:radial-gradient(ellipse 60% 40% at 50% 50%, rgba(0,180,216,0.35) 0%, transparent 70%);
+    opacity:0; transition:opacity .5s;
+  }
+  #narwhal-flash.show { opacity:1; }
+
+  /* ── OVERLAYS ── */
+  .ov {
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    background:rgba(2,8,20,0.92);
+    z-index:20; backdrop-filter:blur(6px);
+  }
+
+  .ov h2 {
+    font-family:'Cinzel', serif; font-size:28px; font-weight:600;
+    color:var(--glow1); letter-spacing:3px;
+    text-shadow:0 0 30px rgba(0,245,212,0.7), 0 0 60px rgba(0,245,212,0.3);
+    text-align:center;
+  }
+  .ov .sub {
+    font-size:12px; color:var(--glow3); opacity:.7;
+    text-align:center; max-width:220px; line-height:1.6; letter-spacing:.5px;
+  }
+  .ov .big {
+    font-family:'Cinzel', serif; font-size:44px; font-weight:600;
+    color:var(--pearl); text-shadow:0 0 20px rgba(232,244,248,0.5);
+  }
+  .ov .big span { font-size:14px; color:var(--glow3); display:block; margin-top:2px; letter-spacing:2px; }
+
+  .dive-btn {
+    background:transparent;
+    border:1.5px solid var(--glow1);
+    border-radius:30px; color:var(--glow1);
+    font-family:'Cinzel', serif; font-size:15px; font-weight:600;
+    padding:12px 36px; cursor:pointer; letter-spacing:2px;
+    text-shadow:0 0 10px rgba(0,245,212,0.5);
+    box-shadow:0 0 20px rgba(0,245,212,0.15), inset 0 0 20px rgba(0,245,212,0.05);
+    transition:all .2s;
+  }
+  .dive-btn:hover {
+    background:rgba(0,245,212,0.1);
+    box-shadow:0 0 30px rgba(0,245,212,0.3), inset 0 0 20px rgba(0,245,212,0.1);
+  }
+  .dive-btn:active { transform:scale(.96); }
+
+  /* pearl collect flash */
+  .pearl-flash {
+    position:absolute; border-radius:50%;
+    background:radial-gradient(circle, rgba(232,244,248,0.8) 0%, transparent 70%);
+    pointer-events:none; animation:pearlPop .4s ease-out forwards;
+    z-index:8;
+  }
+  @keyframes pearlPop {
+    0%   { transform:scale(0); opacity:1; }
+    100% { transform:scale(2.5); opacity:0; }
+  }
+
+  /* ── CONTROLS ── */
+  #ctrls {
+    width:100%; display:flex; justify-content:space-between; align-items:center;
+    padding:8px 20px 12px;
+    background:rgba(4,15,31,0.9);
+    border-top:1px solid rgba(0,245,212,0.07);
+    flex-shrink:0; height:90px;
+  }
+
+  /* Circular joystick */
+  #joystick-wrap {
+    position:relative; width:90px; height:90px; flex-shrink:0;
+    touch-action:none; user-select:none;
+  }
+  #joy-base {
+    position:absolute; inset:0; border-radius:50%;
+    background:rgba(0,245,212,0.05);
+    border:1.5px solid rgba(0,245,212,0.2);
+    box-shadow:0 0 16px rgba(0,245,212,0.08), inset 0 0 20px rgba(0,245,212,0.04);
+  }
+  /* crosshair guide lines */
+  #joy-base::before, #joy-base::after {
+    content:''; position:absolute; background:rgba(0,245,212,0.1);
+  }
+  #joy-base::before { left:50%; top:15%; bottom:15%; width:1px; transform:translateX(-50%); }
+  #joy-base::after  { top:50%; left:15%; right:15%; height:1px; transform:translateY(-50%); }
+  #joy-nub {
+    position:absolute; width:34px; height:34px; border-radius:50%;
+    background:radial-gradient(circle at 35% 35%, rgba(0,245,212,0.5), rgba(0,180,180,0.25));
+    border:1.5px solid rgba(0,245,212,0.6);
+    box-shadow:0 0 12px rgba(0,245,212,0.4);
+    top:50%; left:50%; transform:translate(-50%,-50%);
+    pointer-events:none; transition:box-shadow .1s;
+  }
+
+  /* Surface button */
+  #surf-btn {
+    background:rgba(255,209,102,0.07);
+    border:1.5px solid rgba(255,209,102,0.4);
+    border-radius:14px; color:var(--gold);
+    font-family:'Cinzel',serif; font-size:13px; font-weight:600;
+    letter-spacing:1.5px; width:80px; height:60px;
+    cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:3px;
+    user-select:none; -webkit-tap-highlight-color:transparent; touch-action:none;
+    transition:background .1s, box-shadow .1s;
+    text-shadow:0 0 8px rgba(255,209,102,0.5);
+  }
+  #surf-btn .surf-icon { font-size:18px; }
+  #surf-btn:active {
+    background:rgba(255,209,102,0.18);
+    box-shadow:0 0 18px rgba(255,209,102,0.35);
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+
+  <div id="hdr">
+    <div>
+      <h1>DEEP DIVE</h1>
+      <p>The Narwhal's World</p>
+    </div>
+    <div id="score-wrap">
+      <div class="lbl">Pearls</div>
+      <div id="score-num">0</div>
+    </div>
+  </div>
+
+  <div id="meters">
+    <div class="meter-block">
+      <div class="meter-block lbl" style="display:flex;justify-content:space-between">
+        <span id="breath-lbl" style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--glow1)">Breath</span>
+        <span id="breath-pct" style="font-size:9px;color:var(--glow1);opacity:.6">100%</span>
+      </div>
+      <div class="meter-track"><div class="meter-fill" id="breath-fill" style="width:100%"></div></div>
+    </div>
+    <div class="meter-block">
+      <div class="meter-block lbl" style="display:flex;justify-content:space-between">
+        <span id="depth-lbl" style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--glow3)">Depth</span>
+        <span id="depth-val" style="font-size:9px;color:var(--glow3);opacity:.6">0m</span>
+      </div>
+      <div class="meter-track"><div class="meter-fill" id="depth-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div id="game-area">
+    <canvas id="game-cv"></canvas>
+    <div id="narwhal-flash"></div>
+    <div id="depth-marker"><div id="depth-pip" style="top:0"></div></div>
+
+    <div class="ov" id="ov-start">
+      <h2>DEEP DIVE</h2>
+      <p class="sub">The ice breaks open. Below — a world you've never seen.<br>Collect pearls. Dodge the jellyfish. Don't forget to breathe.</p>
+      <button class="dive-btn" id="btn-start">Dive In</button>
+    </div>
+
+    <div class="ov" id="ov-end" style="display:none">
+      <h2 id="end-title">SURFACED</h2>
+      <div class="big" id="v-final">0 <span>PEARLS COLLECTED</span></div>
+      <p class="sub" id="end-msg">The narwhal watches from below.</p>
+      <button class="dive-btn" id="btn-restart">Dive Again</button>
+    </div>
+  </div>
+
+  <div id="ctrls">
+    <div id="joystick-wrap" id="joystick-wrap">
+      <div id="joy-base"></div>
+      <div id="joy-nub"></div>
+    </div>
+    <button id="surf-btn">
+      <span class="surf-icon">&#9650;</span>
+      <span>SURFACE</span>
+    </button>
+  </div>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ═══════════════════════════════════════════
+   CONSTANTS & CANVAS
+═══════════════════════════════════════════ */
+var W = 360, H = 480; // logical canvas size
+var canvas = document.getElementById('game-cv');
+var ctx    = canvas.getContext('2d');
+
+function sizeCanvas(){
+  var area = document.getElementById('game-area');
+  var aw = area.clientWidth, ah = area.clientHeight;
+  var scale = Math.min(aw/W, ah/H);
+  canvas.width  = W;
+  canvas.height = H;
+  canvas.style.width  = Math.floor(W*scale)+'px';
+  canvas.style.height = Math.floor(H*scale)+'px';
+}
+sizeCanvas();
+
+/* ═══════════════════════════════════════════
+   GAME STATE
+═══════════════════════════════════════════ */
+var penguin = { x:W/2, y:80, vx:0, vy:0, w:28, h:32, bubbles:[] };
+var breath, maxBreath, depthReached, score;
+var pearls, jellyfish, airBubbles, particles, currentFlash, darkZones;
+var running = false, raf = null, lastT = 0;
+var camY = 0; // camera scroll — world scrolls down as penguin dives
+var worldDepth = 0; // total depth of world (px)
+var narwhalY = 0, narwhalVisible = false, narwhalTimer = 0;
+var narwhalX = 0, narwhalDir = 1;
+var currentLevel = 0, lastBreathWarning = false;
+var visibility = 1.0; // 1 = full, shrinks with depth+time
+
+// Tuning
+var BREATH_MAX     = 3600;  // frames at 60fps = 60s
+var DEPTH_DRAIN    = 0.00008; // extra drain per px of depth
+var PEARL_SCORE    = 10;
+var RARE_PEARL     = 50;
+var CURRENT_FORCE  = 0.07;
+var PENGUIN_SPEED  = 2.8;
+var DRAG           = 0.76;
+var DARK_START     = 220;   // world-y where darkness begins
+var NARWHAL_DEPTH  = 300;   // world-y where narwhal can appear
+
+/* ═══════════════════════════════════════════
+   WORLD GENERATION
+═══════════════════════════════════════════ */
+function initWorld(){
+  breath       = BREATH_MAX;
+  maxBreath    = BREATH_MAX;
+  depthReached = 0;
+  score        = 0;
+  camY         = 0;
+  worldDepth   = 0;
+  visibility   = 1.0;
+  narwhalVisible = false;
+  narwhalTimer   = 0;
+  lastBreathWarning = false;
+  currentLevel = 0;
+
+  penguin.x  = W/2;
+  penguin.y  = 60;
+  penguin.vx = 0;
+  penguin.vy = 0;
+  penguin.bubbles = [];
+
+  pearls     = [];
+  jellyfish  = [];
+  airBubbles = [];
+  particles  = [];
+  darkZones  = [];
+
+  // Seed initial pearls and jellyfish
+  for(var i=0;i<6;i++) spawnPearl(80 + i*120);
+  for(var i=0;i<4;i++) spawnAirBubble(60 + i*140);
+  for(var i=0;i<3;i++) spawnJelly(150 + i*180);
+  spawnDarkZone(DARK_START);
+}
+
+function spawnPearl(worldY){
+  var rare = Math.random() < 0.12;
+  pearls.push({
+    x: 30 + Math.random()*(W-60),
+    worldY: worldY || (worldDepth + camY + H + Math.random()*200),
+    r: rare ? 9 : 6,
+    rare: rare,
+    pulse: Math.random()*Math.PI*2,
+    collected: false,
+    glow: 0
+  });
+}
+
+function spawnJelly(worldY){
+  var type = Math.floor(Math.random()*3); // 0=drifter, 1=pulsing, 2=current-rider
+  jellyfish.push({
+    x: 20 + Math.random()*(W-40),
+    worldY: worldY || (worldDepth + camY + H + 50 + Math.random()*150),
+    type: type,
+    phase: Math.random()*Math.PI*2,
+    driftX: (Math.random()-0.5)*0.6,
+    driftY: (Math.random()-0.5)*0.2,
+    r: 18 + Math.random()*10,
+    tentaclePhase: Math.random()*Math.PI*2,
+    danger: true
+  });
+}
+function spawnAirBubble(worldY){
+  airBubbles.push({
+    x: 35 + Math.random()*(W-70),
+    worldY: worldY || (camY + H + 80 + Math.random()*180),
+    r: 10,
+    pulse: Math.random()*Math.PI*2,
+    collected: false
+  });
+}
+
+function spawnDarkZone(worldY){
+  darkZones.push({
+    worldY: worldY,
+    height: 60 + Math.random()*80,
+    strength: 0.3 + Math.random()*0.4
+  });
+}
+
+/* ═══════════════════════════════════════════
+   CURRENT SYSTEM
+   Invisible water flows that push penguin
+═══════════════════════════════════════════ */
+function getCurrentAt(worldY){
+  // Sinusoidal currents that shift with depth
+  var cx = Math.sin(worldY * 0.008 + 1.2) * CURRENT_FORCE;
+  var cy = Math.sin(worldY * 0.012) * CURRENT_FORCE * 0.4;
+  return { x: cx, y: cy };
+}
+
+/* ═══════════════════════════════════════════
+   UPDATE
+═══════════════════════════════════════════ */
+function update(dt){
+  var penguinWorldY = camY + penguin.y;
+
+  // ── Breath drain ──
+  var depthDrain = penguinWorldY * DEPTH_DRAIN;
+  breath -= (1 + depthDrain) * dt * 60;
+  if(breath <= 0){ breath=0; endGame(false); return; }
+
+  // ── Depth tracking ──
+  if(penguinWorldY > depthReached) depthReached = penguinWorldY;
+  worldDepth = Math.max(worldDepth, penguinWorldY);
+
+  // ── Visibility (darkness with depth and low breath) ──
+  var breathRatio  = breath/maxBreath;
+  var darkDepth    = Math.max(0, penguinWorldY - DARK_START) / 600;
+  visibility = Math.max(0.08, 1 - darkDepth*0.6 - (1-breathRatio)*0.25);
+
+  // ── Currents ──
+  var cur = getCurrentAt(penguinWorldY);
+  penguin.vx += cur.x * dt * 60;
+  penguin.vy += cur.y * dt * 60;
+
+  // ── Drag ──
+  penguin.vx *= Math.pow(DRAG, dt*60);
+  penguin.vy *= Math.pow(DRAG, dt*60);
+
+  // ── Clamp speed ──
+  var spd = Math.sqrt(penguin.vx*penguin.vx + penguin.vy*penguin.vy);
+  var maxSpd = PENGUIN_SPEED * 1.8;
+  if(spd > maxSpd){ penguin.vx = penguin.vx/spd*maxSpd; penguin.vy = penguin.vy/spd*maxSpd; }
+
+  // ── Move ──
+  penguin.x += penguin.vx * dt * 60;
+  penguin.y += penguin.vy * dt * 60;
+
+  // ── Wall bounds ──
+  var hw = penguin.w/2;
+  if(penguin.x < hw)   { penguin.x=hw;   penguin.vx=Math.abs(penguin.vx)*0.4; }
+  if(penguin.x > W-hw) { penguin.x=W-hw; penguin.vx=-Math.abs(penguin.vx)*0.4; }
+
+  // ── Camera: follow penguin in both directions, floor at 0 ──
+  var targetCamY = penguin.y - H*0.35;
+  camY += (targetCamY - camY) * 0.08 * dt * 60;
+  if(camY < 0) camY = 0;
+
+  // ── Surface check ──
+  var penguinWorldYNow = camY + penguin.y;
+  if(penguinWorldYNow < 30){
+    endGame(true); return;
+  }
+
+  // ── Pearl collection ──
+  for(var i=0;i<pearls.length;i++){
+    var p=pearls[i];
+    if(p.collected) continue;
+    var screenY = p.worldY - camY;
+    var dx=penguin.x-p.x, dy=penguin.y-screenY;
+    if(Math.sqrt(dx*dx+dy*dy) < penguin.w/2+p.r){
+      p.collected=true;
+      score += p.rare ? RARE_PEARL : PEARL_SCORE;
+      // refill a tiny bit of breath on pearl
+      breath = Math.min(maxBreath, breath + (p.rare?80:30));
+      spawnParticle(p.x, screenY, p.rare?'#ffd166':'#e8f4f8');
+      updateHUD();
+      popScore();
+      showPearlFlash(p.x, screenY, p.r);
+    }
+    p.pulse += 0.05 * dt * 60;
+  }
+
+
+  // ── Air bubble collection ──
+  for(var i=0;i<airBubbles.length;i++){
+    var ab=airBubbles[i];
+    if(ab.collected) continue;
+    var abSY=ab.worldY-camY;
+    var adx=penguin.x-ab.x, ady=penguin.y-abSY;
+    if(Math.sqrt(adx*adx+ady*ady) < penguin.w/2+ab.r){
+      ab.collected=true;
+      breath=Math.min(maxBreath, breath+600);
+      spawnParticle(ab.x, abSY, '#00f5d4');
+      updateHUD();
+    }
+    ab.pulse += 0.04*dt*60;
+  }
+
+  // ── Jellyfish update ──
+  for(var i=0;i<jellyfish.length;i++){
+    var j=jellyfish[i];
+    j.phase         += 0.025 * dt * 60;
+    j.tentaclePhase += 0.04  * dt * 60;
+    j.x             += j.driftX * dt * 60;
+    j.worldY        += j.driftY * dt * 60;
+    if(j.x < j.r)   { j.x=j.r;   j.driftX=Math.abs(j.driftX); }
+    if(j.x > W-j.r) { j.x=W-j.r; j.driftX=-Math.abs(j.driftX); }
+
+    // collision
+    var jScreenY = j.worldY - camY;
+    var dx=penguin.x-j.x, dy=penguin.y-jScreenY;
+    var dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist < penguin.w/2+j.r*0.55){
+      // sting — drain breath fast
+      breath -= 120 * dt * 60;
+      penguin.vx += (dx/dist)*4;
+      penguin.vy += (dy/dist)*4;
+      spawnParticle(penguin.x, penguin.y, '#ff4d6d');
+    }
+  }
+
+  // ── Spawn more world content as player descends ──
+  var spawnAhead = camY + H + 300;
+  if(pearls.filter(function(p){return !p.collected && p.worldY > camY;}).length < 5){
+    spawnPearl(spawnAhead + Math.random()*200);
+  }
+  if(jellyfish.filter(function(j){return j.worldY > camY - 100;}).length < 4){
+    spawnJelly(spawnAhead + Math.random()*150);
+  }
+  if(darkZones.length < 3 || darkZones[darkZones.length-1].worldY < spawnAhead){
+    if(Math.random()<0.006*dt*60) spawnDarkZone(spawnAhead + Math.random()*300);
+  if(airBubbles.filter(function(a){return !a.collected && a.worldY > camY;}).length < 3){
+    spawnAirBubble();
+  }
+  }
+
+  // ── Narwhal appearance ──
+  narwhalTimer += dt * 60;
+  if(!narwhalVisible && narwhalTimer > 400 && penguinWorldY > NARWHAL_DEPTH && Math.random()<0.002*dt*60){
+    narwhalVisible = true;
+    narwhalTimer = 0;
+    narwhalX = Math.random() < 0.5 ? -80 : W+80;
+    narwhalDir = narwhalX < 0 ? 1 : -1;
+    narwhalY = camY + H*0.5 + (Math.random()-0.5)*H*0.3;
+    document.getElementById('narwhal-flash').classList.add('show');
+    setTimeout(function(){ document.getElementById('narwhal-flash').classList.remove('show'); }, 800);
+    // tiny breath gift
+    breath = Math.min(maxBreath, breath + 150);
+  }
+  if(narwhalVisible){
+    narwhalX += narwhalDir * 2.5 * dt * 60;
+    if(narwhalX < -120 || narwhalX > W+120){ narwhalVisible=false; narwhalTimer=0; }
+  }
+
+  // ── Bubble trail ──
+  if(Math.random()<0.15*dt*60){
+    penguin.bubbles.push({
+      x:penguin.x + (Math.random()-0.5)*8,
+      y:penguin.y - penguin.h/2,
+      r:1+Math.random()*2,
+      vy:-0.8-Math.random()*0.5,
+      life:1
+    });
+  }
+  for(var i=penguin.bubbles.length-1;i>=0;i--){
+    var b=penguin.bubbles[i];
+    b.y  += b.vy * dt * 60;
+    b.x  += Math.sin(b.y*0.1)*0.3 * dt * 60;
+    b.life -= 0.015 * dt * 60;
+    if(b.life<=0) penguin.bubbles.splice(i,1);
+  }
+
+  // ── Particles ──
+  for(var i=particles.length-1;i>=0;i--){
+    var p=particles[i];
+    p.x += p.vx * dt * 60; p.y += p.vy * dt * 60;
+    p.life -= 0.03 * dt * 60;
+    if(p.life<=0) particles.splice(i,1);
+  }
+
+  // ── Breath warning ──
+  if(breath/maxBreath < 0.2 && !lastBreathWarning){ lastBreathWarning=true; }
+  if(breath/maxBreath >= 0.2)  lastBreathWarning=false;
+
+  updateHUD();
+}
+
+/* ═══════════════════════════════════════════
+   DRAW
+═══════════════════════════════════════════ */
+function draw(){
+  // Deep ocean gradient background
+  var bgGrad = ctx.createLinearGradient(0,0,0,H);
+  bgGrad.addColorStop(0,   '#020e1f');
+  bgGrad.addColorStop(0.4, '#030c1a');
+  bgGrad.addColorStop(1,   '#020814');
+  ctx.fillStyle=bgGrad;
+  ctx.fillRect(0,0,W,H);
+
+  // Ambient bioluminescent particles (background)
+  drawAmbientGlow();
+
+  // Dark zones
+  drawDarkZones();
+
+  // Current visualisation (subtle)
+  drawCurrentHints();
+
+  // Air bubbles
+  drawAirBubbles();
+
+  // Pearls
+  drawPearls();
+
+  // Jellyfish
+  drawJellyfish();
+
+  // Narwhal
+  if(narwhalVisible) drawNarwhal();
+
+  // Penguin
+  drawPenguin();
+
+  // Bubbles
+  drawBubbles();
+
+  // Particles
+  drawParticles();
+
+  // Visibility vignette (darkness)
+  drawDarkVignette();
+
+  // Surface shimmer at top
+  drawSurface();
+
+  // Low breath pulse
+  if(breath/maxBreath < 0.25){
+    var pulse = (Math.sin(Date.now()*0.008)*0.5+0.5) * 0.18 * (1-breath/maxBreath/0.25);
+    ctx.fillStyle = 'rgba(255,77,109,'+pulse.toFixed(3)+')';
+    ctx.fillRect(0,0,W,H);
+  }
+}
+
+function drawAmbientGlow(){
+  // Tiny floating bioluminescent dots
+  var t = Date.now()*0.001;
+  for(var i=0;i<12;i++){
+    var ax = (Math.sin(i*2.3+t*0.3)*0.5+0.5)*W;
+    var ay = (Math.sin(i*1.7+t*0.2)*0.5+0.5)*H;
+    var ar = 1+Math.sin(i+t)*0.5;
+    var colors = ['rgba(0,245,212,', 'rgba(0,180,216,', 'rgba(123,47,255,'];
+    var col = colors[i%3];
+    var alpha = (0.15+Math.sin(i+t*0.5)*0.08)*visibility;
+    ctx.fillStyle = col+alpha+')';
+    ctx.beginPath(); ctx.arc(ax,ay,ar,0,Math.PI*2); ctx.fill();
+  }
+}
+
+function drawDarkZones(){
+  for(var i=0;i<darkZones.length;i++){
+    var dz=darkZones[i];
+    var sy = dz.worldY - camY;
+    if(sy > H+20 || sy+dz.height < -20) continue;
+    var grad=ctx.createLinearGradient(0,sy,0,sy+dz.height);
+    grad.addColorStop(0,'rgba(2,8,20,0)');
+    grad.addColorStop(0.4,'rgba(2,8,20,'+dz.strength+')');
+    grad.addColorStop(0.6,'rgba(2,8,20,'+dz.strength+')');
+    grad.addColorStop(1,'rgba(2,8,20,0)');
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,sy,W,dz.height);
+  }
+}
+
+function drawCurrentHints(){
+  // Subtle flowing lines hinting at current direction
+  var penguinWorldY = camY + penguin.y;
+  var cur = getCurrentAt(penguinWorldY);
+  var t = Date.now()*0.0008;
+  ctx.strokeStyle='rgba(0,180,216,0.04)';
+  ctx.lineWidth=1;
+  for(var i=0;i<6;i++){
+    var lx = ((i/6)+t*0.05)%1 * W;
+    var ly = 20+i*70;
+    ctx.beginPath();
+    ctx.moveTo(lx,ly);
+    ctx.bezierCurveTo(
+      lx+cur.x*30, ly+10,
+      lx+cur.x*60, ly+20,
+      lx+cur.x*90, ly+30
+    );
+    ctx.stroke();
+  }
+}
+
+function drawPearls(){
+  var t=Date.now()*0.001;
+  for(var i=0;i<pearls.length;i++){
+    var p=pearls[i];
+    if(p.collected) continue;
+    var sy=p.worldY-camY;
+    if(sy < -20 || sy > H+20) continue;
+
+    var pulse=Math.sin(p.pulse+t)*0.3+0.7;
+    var glowR=p.r*(1.5+pulse*0.5);
+
+    // outer glow
+    var g=ctx.createRadialGradient(p.x,sy,0,p.x,sy,glowR*2.5);
+    if(p.rare){
+      g.addColorStop(0,'rgba(255,209,102,'+(0.5*pulse)+')');
+      g.addColorStop(0.5,'rgba(255,209,102,'+(0.15*pulse)+')');
+    } else {
+      g.addColorStop(0,'rgba(232,244,248,'+(0.4*pulse)+')');
+      g.addColorStop(0.5,'rgba(0,180,216,'+(0.1*pulse)+')');
+    }
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(p.x,sy,glowR*2.5,0,Math.PI*2); ctx.fill();
+
+    // pearl body
+    var pg=ctx.createRadialGradient(p.x-p.r*0.3,sy-p.r*0.3,0,p.x,sy,p.r);
+    if(p.rare){
+      pg.addColorStop(0,'#fff8dc');
+      pg.addColorStop(0.5,'#ffd166');
+      pg.addColorStop(1,'#cc9900');
+    } else {
+      pg.addColorStop(0,'#ffffff');
+      pg.addColorStop(0.5,'#c8e8f8');
+      pg.addColorStop(1,'#80c8e8');
+    }
+    ctx.fillStyle=pg;
+    ctx.beginPath(); ctx.arc(p.x,sy,p.r,0,Math.PI*2); ctx.fill();
+
+    // shimmer
+    ctx.fillStyle='rgba(255,255,255,0.6)';
+    ctx.beginPath(); ctx.arc(p.x-p.r*0.3,sy-p.r*0.35,p.r*0.28,0,Math.PI*2); ctx.fill();
+  }
+}
+
+function drawAirBubbles(){
+  var t=Date.now()*0.001;
+  for(var i=0;i<airBubbles.length;i++){
+    var ab=airBubbles[i];
+    if(ab.collected) continue;
+    var sy=ab.worldY-camY;
+    if(sy < -30 || sy > H+30) continue;
+    var pulse=Math.sin(ab.pulse+t)*0.2+0.8;
+    var r=ab.r*pulse;
+    // outer glow
+    var og=ctx.createRadialGradient(ab.x,sy,0,ab.x,sy,r*3);
+    og.addColorStop(0,'rgba(0,245,212,0.35)');
+    og.addColorStop(0.5,'rgba(0,245,212,0.1)');
+    og.addColorStop(1,'rgba(0,245,212,0)');
+    ctx.fillStyle=og; ctx.beginPath(); ctx.arc(ab.x,sy,r*3,0,Math.PI*2); ctx.fill();
+    // bubble outline
+    ctx.strokeStyle='rgba(0,245,212,0.8)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(ab.x,sy,r,0,Math.PI*2); ctx.stroke();
+    // inner fill
+    var ig=ctx.createRadialGradient(ab.x-r*0.3,sy-r*0.3,0,ab.x,sy,r);
+    ig.addColorStop(0,'rgba(0,245,212,0.35)');
+    ig.addColorStop(1,'rgba(0,100,180,0.1)');
+    ctx.fillStyle=ig; ctx.beginPath(); ctx.arc(ab.x,sy,r,0,Math.PI*2); ctx.fill();
+    // highlight
+    ctx.fillStyle='rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.arc(ab.x-r*0.3,sy-r*0.35,r*0.25,0,Math.PI*2); ctx.fill();
+    // small plus icon inside to signal "air"
+    ctx.strokeStyle='rgba(0,245,212,0.9)'; ctx.lineWidth=1.2; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(ab.x-3,sy); ctx.lineTo(ab.x+3,sy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ab.x,sy-3); ctx.lineTo(ab.x,sy+3); ctx.stroke();
+  }
+}
+
+function drawJellyfish(){
+  var t=Date.now()*0.001;
+  for(var i=0;i<jellyfish.length;i++){
+    var j=jellyfish[i];
+    var sy=j.worldY-camY;
+    if(sy < -j.r*3 || sy > H+j.r*3) continue;
+
+    var pulse=Math.sin(j.phase)*0.15;
+    var bodyH=j.r*(0.7+pulse);
+    var bodyW=j.r*(1.1-pulse*0.3);
+
+    // outer danger glow
+    var dg=ctx.createRadialGradient(j.x,sy,0,j.x,sy,j.r*2.2);
+    dg.addColorStop(0,'rgba(100,220,255,0.12)');
+    dg.addColorStop(0.5,'rgba(60,180,220,0.05)');
+    dg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=dg;
+    ctx.beginPath(); ctx.arc(j.x,sy,j.r*2.2,0,Math.PI*2); ctx.fill();
+
+    // bell body
+    ctx.save();
+    ctx.translate(j.x,sy);
+    var bg=ctx.createRadialGradient(0,-bodyH*0.2,0,0,0,bodyW);
+    bg.addColorStop(0,'rgba(160,240,255,0.55)');
+    bg.addColorStop(0.5,'rgba(80,180,220,0.3)');
+    bg.addColorStop(1,'rgba(40,100,160,0.1)');
+    ctx.fillStyle=bg;
+    ctx.beginPath();
+    ctx.ellipse(0,-bodyH*0.2, bodyW, bodyH, 0, Math.PI, Math.PI*2);
+    ctx.fill();
+
+    // inner pattern
+    ctx.strokeStyle='rgba(180,240,255,0.3)';
+    ctx.lineWidth=0.8;
+    for(var k=0;k<4;k++){
+      ctx.beginPath();
+      ctx.moveTo(0,-bodyH*0.05);
+      ctx.quadraticCurveTo((k-1.5)*bodyW*0.35,-bodyH*0.5,(k-1.5)*bodyW*0.25,-bodyH*0.85);
+      ctx.stroke();
+    }
+
+    // tentacles
+    ctx.lineWidth=1.2;
+    var numT=6;
+    for(var k=0;k<numT;k++){
+      var tx=(k/(numT-1)-0.5)*bodyW*1.6;
+      var tLen=j.r*(1.2+Math.sin(j.tentaclePhase+k*0.8)*0.3);
+      var tcol='rgba(100,210,255,'+(0.25+Math.sin(j.tentaclePhase+k)*0.1)+')';
+      ctx.strokeStyle=tcol;
+      ctx.beginPath();
+      ctx.moveTo(tx,0);
+      ctx.quadraticCurveTo(
+        tx+Math.sin(j.tentaclePhase+k)*6, tLen*0.5,
+        tx+Math.sin(j.tentaclePhase+k*1.3)*4, tLen
+      );
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+}
+
+function drawNarwhal(){
+  var ny = narwhalY - camY;
+  var t  = Date.now()*0.001;
+
+  ctx.save();
+  ctx.translate(narwhalX, ny);
+  if(narwhalDir < 0) ctx.scale(-1,1);
+
+  // glow aura
+  var ng=ctx.createRadialGradient(0,0,0,0,0,90);
+  ng.addColorStop(0,'rgba(0,180,216,0.18)');
+  ng.addColorStop(0.5,'rgba(0,180,216,0.06)');
+  ng.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=ng; ctx.beginPath(); ctx.arc(0,0,90,0,Math.PI*2); ctx.fill();
+
+  // body
+  ctx.fillStyle='rgba(0,180,216,0.7)';
+  ctx.beginPath(); ctx.ellipse(0,0,55,16,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(200,240,255,0.4)';
+  ctx.beginPath(); ctx.ellipse(-10,-4,30,8,0,0,Math.PI*2); ctx.fill();
+
+  // tail
+  ctx.fillStyle='rgba(0,150,196,0.7)';
+  ctx.beginPath();
+  ctx.moveTo(-48,0);
+  ctx.quadraticCurveTo(-60,-5,-65,-14);
+  ctx.quadraticCurveTo(-60,0,-65,14);
+  ctx.quadraticCurveTo(-60,5,-48,0);
+  ctx.fill();
+
+  // horn — the signature, glowing
+  var hornGrad=ctx.createLinearGradient(55,0,110,0);
+  hornGrad.addColorStop(0,'rgba(0,245,212,0.9)');
+  hornGrad.addColorStop(1,'rgba(0,245,212,0.1)');
+  ctx.strokeStyle=hornGrad; ctx.lineWidth=3; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(52,-3); ctx.lineTo(108,-18); ctx.stroke();
+  // horn glow
+  var hg=ctx.createLinearGradient(55,-5,108,-18);
+  hg.addColorStop(0,'rgba(0,245,212,0.3)');
+  hg.addColorStop(1,'rgba(0,245,212,0)');
+  ctx.strokeStyle=hg; ctx.lineWidth=10;
+  ctx.beginPath(); ctx.moveTo(52,-3); ctx.lineTo(108,-18); ctx.stroke();
+
+  // eye
+  ctx.fillStyle='rgba(200,240,255,0.9)';
+  ctx.beginPath(); ctx.arc(36,-3,4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(0,40,80,0.9)';
+  ctx.beginPath(); ctx.arc(37,-3,2.2,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.7)';
+  ctx.beginPath(); ctx.arc(36.5,-4,0.8,0,Math.PI*2); ctx.fill();
+
+  // undulate body gently
+  ctx.restore();
+}
+
+function drawPenguin(){
+  var x=penguin.x, y=penguin.y;
+  var t=Date.now()*0.001;
+  var swim=Math.sin(t*4)*3; // flipper waggle
+
+  ctx.save();
+  ctx.translate(x,y);
+
+  // penguin glow (being warm in cold water)
+  var pg=ctx.createRadialGradient(0,0,0,0,0,28);
+  pg.addColorStop(0,'rgba(255,220,150,0.12)');
+  pg.addColorStop(1,'rgba(255,220,150,0)');
+  ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(0,0,28,0,Math.PI*2); ctx.fill();
+
+  // flippers
+  ctx.fillStyle='#1a2840';
+  ctx.save(); ctx.rotate(swim*0.06);
+  ctx.beginPath(); ctx.ellipse(-14,4,7,4,-0.4,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.rotate(-swim*0.06);
+  ctx.beginPath(); ctx.ellipse(14,4,7,4,0.4,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // body
+  ctx.fillStyle='#1a2840';
+  ctx.beginPath(); ctx.ellipse(0,2,11,15,0,0,Math.PI*2); ctx.fill();
+
+  // belly
+  ctx.fillStyle='#e8f4f8';
+  ctx.beginPath(); ctx.ellipse(0,4,6,10,0,0,Math.PI*2); ctx.fill();
+
+  // head
+  ctx.fillStyle='#1a2840';
+  ctx.beginPath(); ctx.arc(0,-11,9,0,Math.PI*2); ctx.fill();
+
+  // goggles — penguin is PREPARED for this dive
+  ctx.fillStyle='rgba(0,245,212,0.25)';
+  ctx.beginPath(); ctx.ellipse(-4,-11,4,3.5,0.2,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(4,-11,4,3.5,-0.2,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(0,245,212,0.6)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.ellipse(-4,-11,4,3.5,0.2,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(4,-11,4,3.5,-0.2,0,Math.PI*2); ctx.stroke();
+  // goggle bridge
+  ctx.beginPath(); ctx.moveTo(0,-10.5); ctx.lineTo(0,-11.5); ctx.stroke();
+
+  // eyes through goggles
+  ctx.fillStyle='#1a2840';
+  ctx.beginPath(); ctx.arc(-4,-11,2,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4,-11,2,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.7)';
+  ctx.beginPath(); ctx.arc(-4.5,-11.5,0.7,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(3.5,-11.5,0.7,0,Math.PI*2); ctx.fill();
+
+  // beak
+  ctx.fillStyle='#ffd166';
+  ctx.beginPath(); ctx.moveTo(-2,-4); ctx.lineTo(2,-4); ctx.lineTo(0,-1); ctx.closePath(); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawBubbles(){
+  for(var i=0;i<penguin.bubbles.length;i++){
+    var b=penguin.bubbles[i];
+    ctx.globalAlpha=b.life*0.5;
+    ctx.strokeStyle='rgba(200,240,255,0.6)';
+    ctx.lineWidth=0.8;
+    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawParticles(){
+  for(var i=0;i<particles.length;i++){
+    var p=particles[i];
+    ctx.globalAlpha=p.life;
+    ctx.fillStyle=p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawDarkVignette(){
+  if(visibility >= 0.98) return;
+  var alpha = Math.min(0.92, 1-visibility);
+
+  // radial — darkness closes in from edges
+  var vr = Math.max(60, (W*0.5) * visibility);
+  var vg = ctx.createRadialGradient(penguin.x, penguin.y, vr*0.3, penguin.x, penguin.y, vr*2.5);
+  vg.addColorStop(0,'rgba(2,8,20,0)');
+  vg.addColorStop(0.5,'rgba(2,8,20,'+Math.min(0.4,alpha*0.6)+')');
+  vg.addColorStop(1,'rgba(2,8,20,'+alpha+')');
+  ctx.fillStyle=vg;
+  ctx.fillRect(0,0,W,H);
+}
+
+function drawSurface(){
+  if(camY > 60) return;
+  var sy = -camY;
+  // ice edge above
+  var sg=ctx.createLinearGradient(0,sy-10,0,sy+20);
+  sg.addColorStop(0,'rgba(168,216,234,0.6)');
+  sg.addColorStop(0.5,'rgba(168,216,234,0.15)');
+  sg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=sg; ctx.fillRect(0,sy-10,W,30);
+
+  // shimmer
+  ctx.strokeStyle='rgba(168,216,234,0.4)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(0,sy); ctx.lineTo(W,sy); ctx.stroke();
+
+  // "SURFACE" text hint if close
+  if(penguin.y - camY < 120 && camY < 30){
+    ctx.globalAlpha=Math.max(0,1-(penguin.y-40)/80)*0.7;
+    ctx.fillStyle='rgba(168,216,234,1)';
+    ctx.font='bold 11px Nunito,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('▲  SURFACE  ▲', W/2, sy+18);
+    ctx.globalAlpha=1;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════ */
+function spawnParticle(x,y,color){
+  for(var i=0;i<6;i++){
+    var a=Math.random()*Math.PI*2;
+    var spd=1+Math.random()*2;
+    particles.push({ x:x, y:y, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd,
+      r:1.5+Math.random()*2, life:1, color:color });
+  }
+}
+
+function showPearlFlash(x,y,r){
+  var el=document.createElement('div');
+  el.className='pearl-flash';
+  el.style.cssText='left:'+(x-r)+'px;top:'+(y-r)+'px;width:'+(r*2)+'px;height:'+(r*2)+'px';
+  document.getElementById('game-area').appendChild(el);
+  setTimeout(function(){ el.remove(); },400);
+}
+
+function updateHUD(){
+  var bp=Math.max(0,breath/maxBreath*100);
+  document.getElementById('breath-fill').style.width=bp+'%';
+  document.getElementById('breath-fill').style.background =
+    bp>50 ? 'linear-gradient(90deg,#7b2fff,#00f5d4)' :
+    bp>25 ? 'linear-gradient(90deg,#ff4d6d,#ffd166)' :
+            'linear-gradient(90deg,#ff1a1a,#ff4d6d)';
+  document.getElementById('breath-pct').textContent=Math.round(bp)+'%';
+
+  var depthM=Math.round(depthReached/5);
+  var depthPct=Math.min(100,depthM/50*100);
+  document.getElementById('depth-fill').style.width=depthPct+'%';
+  document.getElementById('depth-val').textContent=depthM+'m';
+
+  document.getElementById('score-num').textContent=score;
+
+  // depth pip
+  var pip=document.getElementById('depth-pip');
+  var area=document.getElementById('game-area');
+  pip.style.top=Math.min(area.clientHeight-16, depthPct/100*(area.clientHeight-16))+'px';
+}
+
+function popScore(){
+  var el=document.getElementById('score-num');
+  el.classList.add('pop');
+  setTimeout(function(){el.classList.remove('pop');},150);
+}
+
+/* ═══════════════════════════════════════════
+   GAME LOOP
+═══════════════════════════════════════════ */
+function loop(ts){
+  if(!running) return;
+  var dt=Math.min((ts-lastT)/1000, 0.05);
+  lastT=ts;
+  update(dt);
+  draw();
+  raf=requestAnimationFrame(loop);
+}
+
+function startGame(){
+  if(raf) cancelAnimationFrame(raf);
+  initWorld();
+  running=true;
+  document.getElementById('ov-start').style.display='none';
+  document.getElementById('ov-end').style.display='none';
+  updateHUD();
+  lastT=performance.now();
+  raf=requestAnimationFrame(loop);
+}
+
+function endGame(surfaced){
+  running=false;
+  if(raf) cancelAnimationFrame(raf);
+  var depthM=Math.round(depthReached/5);
+  document.getElementById('v-final').innerHTML=score+'<span>PEARLS &nbsp;·&nbsp; '+depthM+'m DEPTH</span>';
+  if(surfaced){
+    document.getElementById('end-title').textContent='SURFACED';
+    document.getElementById('end-msg').textContent=
+      depthM>40 ? 'The narwhal approves.' :
+      depthM>20 ? 'You went deep. Not deep enough.' :
+                  'The surface called you back too soon.';
+  } else {
+    document.getElementById('end-title').textContent='OUT OF AIR';
+    document.getElementById('end-msg').textContent='The deep is unforgiving. The narwhal watches.';
+  }
+  document.getElementById('ov-end').style.display='flex';
+  draw(); // final frame
+}
+
+/* ═══════════════════════════════════════════
+   INPUT
+═══════════════════════════════════════════ */
+var keys={};
+document.addEventListener('keydown',function(e){
+  keys[e.code]=true;
+  if(!running) return;
+  if(e.code==='Space'){ endGame(true); e.preventDefault(); }
+});
+document.addEventListener('keyup',function(e){ keys[e.code]=false; });
+
+// Process held keys each frame — inject into update via velocity
+
+function processKeys(){
+  if(!running) return;
+  // Keyboard
+  if(keys['ArrowLeft']||keys['KeyA'])  penguin.vx -= PENGUIN_SPEED*0.18;
+  if(keys['ArrowRight']||keys['KeyD']) penguin.vx += PENGUIN_SPEED*0.18;
+  if(keys['ArrowUp']||keys['KeyW'])    penguin.vy -= PENGUIN_SPEED*0.18;
+  if(keys['ArrowDown']||keys['KeyS'])  penguin.vy += PENGUIN_SPEED*0.18;
+  // Joystick — analog input, scales with deflection
+  var jx=window._joyX?window._joyX():0;
+  var jy=window._joyY?window._joyY():0;
+  if(Math.abs(jx)>0.08) penguin.vx += jx * PENGUIN_SPEED * 0.22;
+  if(Math.abs(jy)>0.08) penguin.vy += jy * PENGUIN_SPEED * 0.22;
+}
+
+// Tap target: process input before physics each frame by hooking into RAF
+var _origLoop = loop;
+function loop(ts){
+  processKeys();
+  if(!running) return;
+  var dt=Math.min((ts-lastT)/1000, 0.05);
+  lastT=ts;
+  update(dt);
+  draw();
+  raf=requestAnimationFrame(loop);
+}
+
+function addBtn(id, onStart, onEnd){
+  var el=document.getElementById(id);
+  el.addEventListener('touchstart', function(e){ e.preventDefault(); if(onStart) onStart(); },{passive:false});
+  el.addEventListener('touchend',   function(){ if(onEnd) onEnd(); },{passive:true});
+  el.addEventListener('touchcancel',function(){ if(onEnd) onEnd(); },{passive:true});
+  el.addEventListener('mousedown',  function(){ if(onStart) onStart(); });
+  el.addEventListener('mouseup',    function(){ if(onEnd) onEnd(); });
+  el.addEventListener('mouseleave', function(){ if(onEnd) onEnd(); });
+}
+
+// ── Circular joystick ──
+(function(){
+  var wrap = document.getElementById('joystick-wrap');
+  var nub  = document.getElementById('joy-nub');
+  var RADIUS = 28; // max nub travel from center
+  var cx=0, cy=0, active=false;
+  var jx=0, jy=0; // -1..1 normalised
+
+  function getCenter(){
+    var r=wrap.getBoundingClientRect();
+    cx=r.left+r.width/2; cy=r.top+r.height/2;
+  }
+
+  function onMove(px,py){
+    var dx=px-cx, dy=py-cy;
+    var dist=Math.sqrt(dx*dx+dy*dy);
+    var clamped=Math.min(dist,RADIUS);
+    var angle=Math.atan2(dy,dx);
+    var nx=Math.cos(angle)*clamped;
+    var ny=Math.sin(angle)*clamped;
+    nub.style.transform='translate(calc(-50% + '+nx+'px), calc(-50% + '+ny+'px))';
+    nub.style.boxShadow='0 0 18px rgba(0,245,212,0.65)';
+    jx=nx/RADIUS; jy=ny/RADIUS;
+  }
+
+  function onRelease(){
+    active=false; jx=0; jy=0;
+    nub.style.transform='translate(-50%,-50%)';
+    nub.style.boxShadow='0 0 12px rgba(0,245,212,0.4)';
+  }
+
+  wrap.addEventListener('touchstart',function(e){
+    e.preventDefault(); active=true; getCenter();
+    onMove(e.touches[0].clientX, e.touches[0].clientY);
+  },{passive:false});
+  wrap.addEventListener('touchmove',function(e){
+    e.preventDefault(); if(!active) return;
+    onMove(e.touches[0].clientX, e.touches[0].clientY);
+  },{passive:false});
+  wrap.addEventListener('touchend',  function(){ onRelease(); },{passive:true});
+  wrap.addEventListener('touchcancel',function(){ onRelease(); },{passive:true});
+
+  // Mouse support for desktop testing
+  wrap.addEventListener('mousedown',function(e){
+    active=true; getCenter(); onMove(e.clientX,e.clientY);
+    function mm(e2){ if(active) onMove(e2.clientX,e2.clientY); }
+    function mu(){ onRelease(); document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu); }
+    document.addEventListener('mousemove',mm);
+    document.addEventListener('mouseup',mu);
+  });
+
+  // Expose jx/jy to processKeys
+  window._joyX = function(){ return jx; };
+  window._joyY = function(){ return jy; };
+})();
+
+addBtn('surf-btn', function(){ if(running) endGame(true); }, null);
+
+// Touch drag on canvas
+var touchStart={x:0,y:0};
+canvas.addEventListener('touchstart',function(e){
+  touchStart.x=e.touches[0].clientX; touchStart.y=e.touches[0].clientY;
+},{passive:true});
+canvas.addEventListener('touchmove',function(e){
+  if(!running) return;
+  var dx=e.touches[0].clientX-touchStart.x;
+  var dy=e.touches[0].clientY-touchStart.y;
+  penguin.vx += dx * 0.04;
+  penguin.vy += dy * 0.04;
+  touchStart.x=e.touches[0].clientX; touchStart.y=e.touches[0].clientY;
+},{passive:true});
+
+document.getElementById('btn-start').addEventListener('click',startGame);
+document.getElementById('btn-restart').addEventListener('click',startGame);
+
+/* ── boot ── */
+sizeCanvas();
+// draw still ocean on load
+var bg=ctx.createLinearGradient(0,0,0,H);
+bg.addColorStop(0,'#020e1f'); bg.addColorStop(1,'#020814');
+ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+})();
+</script>
+</body>
+</html>
