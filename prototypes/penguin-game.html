@@ -128,24 +128,6 @@ html, body {
   box-shadow:0 0 32px #ffee0077;
 }
 
-/* fullscreen btn — floats bottom-center */
-#fs-btn {
-  pointer-events:all;
-  width:clamp(34px,7vw,46px);
-  height:clamp(34px,7vw,46px);
-  border-radius:10px;
-  border:2px solid #ff884488;
-  background:rgba(26,10,46,0.7);
-  color:#ffcc44;
-  font-size:clamp(14px,3.5vw,20px);
-  cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  flex-shrink:0;
-  align-self:flex-end;
-  margin-bottom:2px;
-}
-#fs-btn:active { background:#ff8844; }
-
 /* ── OVERLAY (title / gameover) — covers canvas ── */
 #overlay {
   position:absolute;
@@ -537,7 +519,6 @@ html, body {
         <span class="btn-icon">🐧</span>
         <span class="btn-lbl">JUMP</span>
       </button>
-      <button id="fs-btn" aria-label="Fullscreen">⛶</button>
       <button class="thumb-btn" id="btn-cast" aria-label="Cast">
         <div id="cast-ring"></div>
         <span class="btn-icon">🎣</span>
@@ -1172,7 +1153,16 @@ function resetGame(){
 //  INPUT — keyboard
 // ═══════════════════════════════════════════════════════════
 const keys={};
+function gameKeyboardBlocked(){
+  const t=document.activeElement;
+  if(!t) return false;
+  const tag=(t.tagName||'').toUpperCase();
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return true;
+  if(t.isContentEditable) return true;
+  return false;
+}
 document.addEventListener('keydown',e=>{
+  if(gameKeyboardBlocked()) return;
   if(keys[e.code]) return; keys[e.code]=true;
   if(['Space','ArrowUp','KeyW'].includes(e.code)){
     e.preventDefault();
@@ -1180,7 +1170,6 @@ document.addEventListener('keydown',e=>{
     else if(state==='playing') jump();
   }
   if(['ArrowDown','KeyS'].includes(e.code)){e.preventDefault();if(state==='playing')cast();}
-  if(e.code==='KeyF') toggleFS();
 });
 document.addEventListener('keyup',e=>{keys[e.code]=false;});
 
@@ -1229,30 +1218,6 @@ canvas.addEventListener('touchstart',e=>{
 document.getElementById('rotate-nudge').addEventListener('touchstart',e=>{
   e.currentTarget.style.display='none';
 },{passive:true});
-
-// ═══════════════════════════════════════════════════════════
-//  FULLSCREEN
-// ═══════════════════════════════════════════════════════════
-const fsBtn=document.getElementById('fs-btn');
-function toggleFS(){
-  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
-    const el=document.documentElement;
-    if(el.requestFullscreen) el.requestFullscreen();
-    else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    // Lock orientation to landscape on mobile
-    try{ screen.orientation && screen.orientation.lock('landscape').catch(()=>{}); }catch(e){}
-    fsBtn.textContent='✕';
-  } else {
-    if(document.exitFullscreen) document.exitFullscreen();
-    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
-    fsBtn.textContent='⛶';
-  }
-}
-fsBtn.addEventListener('click',toggleFS);
-document.addEventListener('fullscreenchange',()=>{
-  fsBtn.textContent=document.fullscreenElement?'✕':'⛶';
-  setTimeout(resizeCanvas,100);
-});
 
 // ═══════════════════════════════════════════════════════════
 //  UPDATE
