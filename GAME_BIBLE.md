@@ -2,7 +2,7 @@
 
 ### [WORLD NAME — TBD] — Working Title
 
-*Last updated: March 29, 2026 | Version 1.4*
+*Last updated: March 29, 2026 | Version 1.5*
 
 ---
 
@@ -36,17 +36,32 @@ algorithm trapped them.
 ## 2. THE CORE PRODUCT LOOP
 
 ```
-Monday — New game drops. Link goes live. Social posts go out.
-Tuesday–Saturday — Players get 5 attempts per day. Leaderboard updates live.
-Saturday night — Last chance posts. Urgency window.
-Sunday — Leaderboard locks. Top scores reviewed. LIVE EVENT crowns champion.
-Monday — New week. New game. New prize. Loop repeats.
+Monday       — New game drops (after Sunday show). Link live. Social posts go out.
+Tue–Saturday — Players get 5 attempts per day. Leaderboard updates live.
+Saturday     — HUD countdown turns red. Scoring closes at 23:59:59 player's LOCAL time.
+Sunday       — Scoring closed. Top scores reviewed. LIVE EVENT crowns champion.
+               New game goes live immediately after show ends.
+               Fallback: new game auto-publishes at 20:00 Pacific if not manually triggered.
 ```
 
 **The live Sunday event is the product.**
 The game is the vehicle. The weekly live stream — host, replay of winning run,
 champion on camera, prize handoff — is the moment that makes this a show,
 not just an app. Every technical and design decision should serve this loop.
+
+**Weekly schedule (all times US Pacific):**
+
+- Scoring deadline: Saturday 23:59:59 player's local time (enforced server-side)
+- Live show: Sunday, time TBD (shown in HUD as e.g. "Live show Sun 7pm PT")
+- New week publish: manual trigger by host immediately post-show
+- Fallback auto-publish: Sunday 20:00 Pacific if manual trigger not fired
+
+**HUD time display states:**
+
+- Mon–Fri: `Scoring closes Sat midnight · Live show Sun 7pm PT`
+- Saturday: live red countdown `3h 42m left · Live show tomorrow 7pm PT`
+- Sunday pre-show: `Scoring closed · Live show today at 7pm PT`
+- Sunday post-show / new week live: resets to new week's game and prize
 
 ---
 
@@ -849,7 +864,7 @@ Nightly job → checks content_events
 - [ ] Deep Dive narwhal encounter needs more polish
 - [ ] Deep Dive needs daily seed integration
 
-### Repository Structure (Actual, as of v1.4)
+### Repository Structure (Actual, as of v1.5)
 
 ```
 /
@@ -917,6 +932,13 @@ Never delete entries — cross them out if reversed and note why.*
 | Mar 2026 | Pengu Fisher graphics pass: palette + eyes + backpack + sprite crops | Midjourney sheet + tuned `drawImage` rects + on-ice alignment; procedural fallback stays in sync |
 | Mar 2026 | Three play modes: guest / competing / free play | Guest & free play = random seed every run; competing = daily seed + saves; stops pass-the-phone practice of the official seed |
 | Mar 2026 | Attempt UI from DB after each successful `runs` insert | `daily_attempts` is source of truth; overlay shows name + x/5 and PLAY AGAIN vs FREE PLAY |
+| Mar 2026 | Scoring closes Saturday 23:59:59 player's local time | Hard local deadline players can reason about; cleaner than a single global cutoff |
+| Mar 2026 | Sunday is celebration only — no scoring | Removes Sunday pressure; live show is pure drama not a last-chance scramble |
+| Mar 2026 | New week: manual trigger post-show, fallback 20:00 PT | Host controls the moment; fallback prevents game going stale if show runs long |
+| Mar 2026 | Live show timezone: US Pacific, shown as PT in HUD | Single source of truth for show time; players in other zones see PT and convert |
+| Mar 2026 | Unified game shell: dark HUD bar (Zone 1), dark post-run (Zone 3), light overlay (Zone 2) | Consistent broadcast identity across all games; overlay flips light as "calm data" contrast |
+| Mar 2026 | HUD prize section: "Prize:" label + name always prominent | Prize is the main hook — largest element in HUD, always visible |
+| Mar 2026 | HUD time line: three states (normal / Saturday urgency / Sunday closed) | Each state has distinct copy and color (amber → red → muted) to signal urgency naturally |
 
 ---
 
@@ -989,5 +1011,5 @@ Don't waste them." / "Your score has been submitted. Hmph."
 
 ---
 
-*End of Game Bible v1.4*
-*Next review: after leaderboard UI or Edge Function score path (whichever ships first)*
+*End of Game Bible v1.5*
+*Next review: after shell HUD + post-run screen implementation in Pengu Fisher*
