@@ -70,6 +70,9 @@ web_modules/
 .env.*
 !.env.example
 
+# Local Supabase keys for static HTML prototypes (copy from supabase-config.example.js)
+prototypes/supabase-config.js
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache

@@ -204,9 +204,46 @@ html, body {
 }
 #cast-ring.visible { opacity:1; }
 @keyframes ringPulse { from{transform:scale(0.9)} to{transform:scale(1.06)} }
+
+/* ── Supabase auth (step 2) — fixed bar, does not block game controls ── */
+#auth-bar {
+  position:fixed; top:0; right:0; z-index:300;
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end;
+  gap:6px; padding:8px 10px; max-width:min(100%,420px);
+  background:rgba(8,4,24,0.88); border-bottom-left-radius:12px;
+  border:1px solid rgba(255,170,100,0.25);
+  pointer-events:auto;
+  font-size:clamp(5px,1.1vw,8px);
+}
+#auth-bar input {
+  width:min(140px,28vw); padding:4px 6px; border-radius:6px;
+  border:1px solid #4488ff; background:#1a1030; color:#ddeeff;
+  font-family:'Press Start 2P', monospace; font-size:clamp(5px,1vw,7px);
+}
+#auth-bar button {
+  padding:5px 8px; border-radius:8px; cursor:pointer;
+  font-family:'Press Start 2P', monospace; font-size:clamp(5px,1vw,7px);
+  border:2px solid #88ccff; background:#1a2a55; color:#aaddff;
+}
+#auth-bar button:active { filter:brightness(1.2); }
+#auth-bar #auth-signout { border-color:#ff8888; color:#ffcccc; }
+#auth-status { color:#88ffaa; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
+<script src="supabase-config.js"></script>
+<script>
+window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'', anonKey:'' };
+</script>
 </head>
 <body>
+
+<div id="auth-bar" aria-label="Account">
+  <input id="auth-email" type="email" autocomplete="email" placeholder="email" />
+  <input id="auth-pass" type="password" autocomplete="current-password" placeholder="password" />
+  <button type="button" id="auth-signin">Sign in</button>
+  <button type="button" id="auth-signup">Sign up</button>
+  <button type="button" id="auth-signout" style="display:none">Out</button>
+  <span id="auth-status" title=""></span>
+</div>
 
 <!-- GAME SHELL — canvas fills screen, HUD + controls float on top -->
 <div id="shell">
@@ -1297,11 +1334,67 @@ function draw(){
 }
 
 // ═══════════════════════════════════════════════════════════
+//  SUPABASE AUTH (email) — step 2; keys in prototypes/supabase-config.js
+// ═══════════════════════════════════════════════════════════
+function updateAuthUI(session){
+  const msgEl=document.getElementById('auth-status');
+  const out=document.getElementById('auth-signout');
+  if(session?.user){
+    const em=session.user.email||'Signed in';
+    if(msgEl){ msgEl.textContent=em; msgEl.title=em; }
+    if(out) out.style.display='inline-block';
+  } else {
+    if(msgEl){ msgEl.textContent='Signed out'; msgEl.title=''; }
+    if(out) out.style.display='none';
+  }
+}
+
+async function bootSupabaseAuth(){
+  const cfg=window.__MINIGAMESHOW_SUPABASE__||{};
+  const url=(cfg.url||'').trim(), key=(cfg.anonKey||'').trim();
+  const msgEl=document.getElementById('auth-status');
+  if(!url||!key){
+    if(msgEl) msgEl.textContent='Copy supabase-config.example.js → supabase-config.js';
+    return;
+  }
+  try{
+    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    const sb=createClient(url,key,{ auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
+    window._miniGameshowSb=sb;
+    const { data:{ session } } = await sb.auth.getSession();
+    updateAuthUI(session);
+    sb.auth.onAuthStateChange((_e,session)=>{ updateAuthUI(session); });
+
+    document.getElementById('auth-signin').addEventListener('click', async ()=>{
+      const email=document.getElementById('auth-email').value.trim();
+      const password=document.getElementById('auth-pass').value;
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if(error) alert(error.message);
+    });
+    document.getElementById('auth-signup').addEventListener('click', async ()=>{
+      const email=document.getElementById('auth-email').value.trim();
+      const password=document.getElementById('auth-pass').value;
+      if(password.length<6){ alert('Password: at least 6 characters'); return; }
+      const { error } = await sb.auth.signUp({ email, password });
+      if(error) alert(error.message);
+      else alert('Account created. If email confirmation is on, check your inbox; otherwise sign in.');
+    });
+    document.getElementById('auth-signout').addEventListener('click', async ()=>{
+      await sb.auth.signOut();
+    });
+  }catch(e){
+    console.error(e);
+    if(msgEl) msgEl.textContent='Auth failed (see console)';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
 //  LOOP + INIT
 // ═══════════════════════════════════════════════════════════
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
 updateHUD();
 showOverlay('PENGU FISHER','','TAP TO START','🐧 LEFT = Jump  ·  🎣 RIGHT = Cast when it glows\nBuild combos · Fill FRENZY meter · Read the ice!\n' + (isIOS ? '(Haptics: iPhone not supported by browser)' : '📳 Haptics on!'));
+bootSupabaseAuth();
 loop();
 </script>
 </body>

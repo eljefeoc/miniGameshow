@@ -788,6 +788,8 @@ Nightly job → checks content_events
     combo multiplier, frenzy mode, 4 distinct obstacle types
   - Mobile-first layout, Web Audio sfx, haptic feedback (Android)
   - Daily seed system (client-side only)
+  - **Supabase email auth UI** (sign in / sign up / sign out) in `penguin-game.html`
+    when `prototypes/supabase-config.js` is present — see `README.md` step 2
 
 - **Game 02 — Fish Stack:** Fully playable HTML5 prototype
   - 7 fish-shaped falling pieces (not tetrominos — actual silhouettes)
@@ -846,8 +848,8 @@ Nightly job → checks content_events
 
 ### Next Build Priorities (Phase 1)
 
-1. Create Supabase project + apply `schema.sql` (step-by-step: `README.md` → **Supabase**)
-2. Wire Supabase Auth (email) into prototype — sign-up / sign-in flow
+1. Create Supabase project + apply `schema.sql` (step-by-step: `README.md` → **Step 1**)
+2. Wire Supabase Auth (email) — **`README.md` → Step 2** (Dashboard URL settings + `supabase-config.js` + serve over HTTP)
 3. Build score submission Edge Function (Vercel) using schema payload spec
 4. Remove fullscreen button, finalize mobile layout (Game 01)
 5. Proper PWA structure (manifest.json + service worker)
