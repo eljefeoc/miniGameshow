@@ -205,6 +205,25 @@ html, body {
 #cast-ring.visible { opacity:1; }
 @keyframes ringPulse { from{transform:scale(0.9)} to{transform:scale(1.06)} }
 
+/* play-again / free-play button inside overlay */
+#play-again-btn {
+  display:none;
+  pointer-events:all;
+  padding:clamp(7px,1.8vh,14px) clamp(14px,3.5vw,28px);
+  border-radius:14px;
+  border:3px solid #ffee44;
+  background:rgba(20,10,50,0.92);
+  color:#ffee44;
+  font-family:'Press Start 2P', monospace;
+  font-size:clamp(8px,1.8vw,13px);
+  cursor:pointer;
+  letter-spacing:1px;
+  text-shadow:2px 2px 0 #884400;
+  box-shadow:0 0 22px #ffee4455;
+  animation:pulse 1s infinite;
+}
+#play-again-btn:active { filter:brightness(1.4); transform:scale(0.94); }
+
 /* ── Supabase auth (step 2) — fixed bar, does not block game controls ── */
 #auth-bar {
   position:fixed; top:0; right:0; z-index:300;
@@ -265,6 +284,7 @@ window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'',
       <div class="ov-title" id="ovTitle">PENGU FISHER</div>
       <div class="ov-score" id="ovScore"></div>
       <div class="ov-sub"   id="ovSub">TAP TO START</div>
+      <button type="button" id="play-again-btn">PLAY AGAIN</button>
       <div class="ov-tip"   id="ovTip">
         🐧 JUMP = Left button  ·  🎣 CAST = Right button when it glows<br>
         Build combos · Fill FRENZY meter · Read the ice!
@@ -431,6 +451,17 @@ let state='title';
 let score=0,hiScore=0,fishCount=0,lives=3;
 let runStartTime=0,inputCount=0;
 const GAME_VERSION='0.1.0-proto';
+
+// ── Play mode ──────────────────────────────────────────────
+// 'guest'      : not signed in; random seed every game; no saves
+// 'competing'  : signed in, attempts < 5; daily seed; scores saved
+// 'freeplay'   : signed in, all 5 attempts used; random seed; no saves
+let playMode='guest';
+let attemptsUsed=0;        // fetched from DB + tracked locally
+let playerName='';         // profiles.username or email prefix
+let currentSeed=dailySeed; // active seed for this run (guest/freeplay = random)
+
+function randomSeed(){ return Math.floor(Math.random()*2147483647)+1; }
 let gameSpeed=2.6,frameCount=0,distance=0;
 let combo=1,comboTimer=0;
 let fishMeter=0,frenzyActive=false,frenzyTimer=0,frenzyFlash=0;
@@ -683,8 +714,13 @@ function hitOb(){
   if(lives<=0){
     pengu.dead=true;state='dead';SFX.gameover();
     setTimeout(()=>{state='gameover';if(score>hiScore)hiScore=score;
-      showOverlay('GAME OVER',`SCORE: ${pad(score)}`,'TAP TO RETRY',`Fish caught: ${fishCount}`);
-      submitRunToSupabase().catch(e=>console.error('submitRun',e));
+      // For competing players the overlay is updated again inside
+      // submitRunToSupabase once we know the authoritative attempt count
+      if(playMode==='competing'){
+        submitRunToSupabase().catch(e=>console.error('submitRun',e));
+      } else {
+        showModeOverlay('gameover');
+      }
     },1400);
   }
 }
@@ -722,6 +758,76 @@ function updateMood(){
 //  HUD
 // ═══════════════════════════════════════════════════════════
 const pad=n=>String(n).padStart(5,'0');
+
+// ── Mode-aware overlay ──────────────────────────────────────
+const CONTROLS_TIP='🐧 LEFT = Jump  ·  🎣 RIGHT = Cast when it glows\nBuild combos · Fill FRENZY meter · Read the ice!';
+
+function showModeOverlay(screen){
+  const btn=document.getElementById('play-again-btn');
+  if(btn) btn.style.display='none';
+
+  if(screen==='title'){
+    if(playMode==='competing'){
+      const next=attemptsUsed+1;
+      const name=playerName?`Hey ${playerName} —`:'';
+      showOverlay('PENGU FISHER','',
+        `${name} Attempt ${next}/5 · TAP TO START`,
+        CONTROLS_TIP);
+    } else if(playMode==='freeplay'){
+      showOverlay('PENGU FISHER','','FREE PLAY · TAP TO START',
+        CONTROLS_TIP+'\n\n(All 5 daily attempts used — scores not saved)');
+    } else {
+      showOverlay('PENGU FISHER','','TAP TO START',
+        CONTROLS_TIP+'\n\nSign in (top right) to compete for real prizes!');
+    }
+    return;
+  }
+
+  // screen === 'gameover'
+  const s=`SCORE: ${pad(score)}`;
+  if(playMode==='competing'){
+    const used=attemptsUsed; // already incremented by submit callback
+    if(used>=5){
+      showOverlay('GAME OVER',s,'All 5 attempts used for today!',
+        `Fish caught: ${fishCount}\n\nWant to keep playing for fun?`);
+      if(btn){ btn.textContent='FREE PLAY'; btn.style.display='inline-block'; }
+    } else {
+      const name=playerName?`${playerName} — `:'';
+      showOverlay('GAME OVER',s,'Score saved!',
+        `${name}Attempt ${used}/5 · Fish caught: ${fishCount}`);
+      if(btn){ btn.textContent='PLAY AGAIN'; btn.style.display='inline-block'; }
+    }
+  } else if(playMode==='freeplay'){
+    showOverlay('GAME OVER',s,'FREE PLAY',
+      `Fish caught: ${fishCount}\n\nNew seed every run — scores not saved`);
+    if(btn){ btn.textContent='FREE PLAY'; btn.style.display='inline-block'; }
+  } else {
+    // guest
+    showOverlay('GAME OVER',s,'TAP TO RETRY',
+      `Fish caught: ${fishCount}\n\nSign in to compete for real prizes!`);
+  }
+}
+
+// Fetch attempts_used from DB and set playMode accordingly
+async function fetchAttemptsAndSetMode(userId){
+  const sb=window._miniGameshowSb;
+  if(!sb||!userId) return;
+  try{
+    const { data } = await sb.from('daily_attempts')
+      .select('attempts_used')
+      .eq('user_id',userId)
+      .eq('day_seed',dailySeed)
+      .maybeSingle();
+    attemptsUsed=data?.attempts_used??0;
+    playMode=attemptsUsed>=5?'freeplay':'competing';
+    if(playMode==='freeplay') currentSeed=randomSeed();
+    else currentSeed=dailySeed;
+  }catch(e){
+    console.error('fetchAttempts',e);
+    playMode='competing'; currentSeed=dailySeed;
+  }
+}
+
 function updateHUD(){
   document.getElementById('scoreDisplay').textContent=pad(score);
   document.getElementById('fishDisplay').textContent=`🐟×${fishCount}`;
@@ -741,7 +847,10 @@ function hideOverlay(){document.getElementById('overlay').style.display='none';}
 //  RESET
 // ═══════════════════════════════════════════════════════════
 function resetGame(){
-  rng=makeRng(dailySeed);
+  // Guest and freeplay get a fresh random seed every run so no one
+  // can "practice" the competition seed by staying on the title screen
+  if(playMode==='guest'||playMode==='freeplay') currentSeed=randomSeed();
+  rng=makeRng(currentSeed);
   runStartTime=Date.now();
   inputCount=0;
   score=0;fishCount=0;lives=3;gameSpeed=2.6;frameCount=0;distance=0;
@@ -764,7 +873,7 @@ document.addEventListener('keydown',e=>{
   if(keys[e.code]) return; keys[e.code]=true;
   if(['Space','ArrowUp','KeyW'].includes(e.code)){
     e.preventDefault();
-    if(state==='title'||state==='gameover'){resetGame();hideOverlay();state='playing';}
+    if(state==='title'||state==='gameover'){startFromOverlay();}
     else if(state==='playing') jump();
   }
   if(['ArrowDown','KeyS'].includes(e.code)){e.preventDefault();if(state==='playing')cast();}
@@ -782,7 +891,7 @@ function bindBtn(id, action){
     e.preventDefault();
     btn.classList.add('pressed');
     if(state==='title' || state==='gameover'){
-      resetGame(); hideOverlay(); state='playing';
+      startFromOverlay();
     } else if(state==='playing'){
       action();
     }
@@ -810,7 +919,7 @@ canvas.addEventListener('touchstart',e=>{
   e.preventDefault();
   const rect2=canvas.getBoundingClientRect();
   const tx=(e.touches[0].clientX-rect2.left)/canvasScale;
-  if(state==='title'||state==='gameover'){resetGame();hideOverlay();state='playing';return;}
+  if(state==='title'||state==='gameover'){startFromOverlay();return;}
   if(state==='playing'){ tx<W*0.55 ? jump() : cast(); }
 },{passive:false});
 // dismiss rotate nudge
@@ -1355,6 +1464,32 @@ function updateAuthUI(session){
   }
 }
 
+// Called whenever auth state changes; updates mode + overlay
+async function onSignedIn(session){
+  updateAuthUI(session);
+  const sb=window._miniGameshowSb;
+  if(!sb||!session?.user) return;
+  // Fetch username from profiles
+  try{
+    const { data: prof } = await sb.from('profiles')
+      .select('username')
+      .eq('id',session.user.id)
+      .maybeSingle();
+    playerName = prof?.username || session.user.email?.split('@')[0] || '';
+  }catch{ playerName=session.user.email?.split('@')[0]||''; }
+  // Fetch attempts and set mode
+  await fetchAttemptsAndSetMode(session.user.id);
+  // Refresh overlay if on title or gameover screen
+  if(state==='title'||state==='gameover') showModeOverlay(state);
+}
+
+function onSignedOut(){
+  updateAuthUI(null);
+  playMode='guest'; attemptsUsed=0; playerName='';
+  currentSeed=randomSeed(); // clear any daily seed knowledge
+  if(state==='title'||state==='gameover') showModeOverlay(state);
+}
+
 async function bootSupabaseAuth(){
   const cfg=window.__MINIGAMESHOW_SUPABASE__||{};
   const url=(cfg.url||'').trim(), key=(cfg.anonKey||'').trim();
@@ -1368,8 +1503,13 @@ async function bootSupabaseAuth(){
     const sb=createClient(url,key,{ auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
     window._miniGameshowSb=sb;
     const { data:{ session } } = await sb.auth.getSession();
-    updateAuthUI(session);
-    sb.auth.onAuthStateChange((_e,session)=>{ updateAuthUI(session); });
+    if(session?.user) await onSignedIn(session);
+    else updateAuthUI(null);
+
+    sb.auth.onAuthStateChange(async (_e,session)=>{
+      if(session?.user) await onSignedIn(session);
+      else onSignedOut();
+    });
 
     document.getElementById('auth-signin').addEventListener('click', async ()=>{
       const email=document.getElementById('auth-email').value.trim();
@@ -1390,6 +1530,7 @@ async function bootSupabaseAuth(){
     });
   }catch(e){
     console.error(e);
+    const msgEl=document.getElementById('auth-status');
     if(msgEl) msgEl.textContent='Auth failed (see console)';
   }
 }
@@ -1399,18 +1540,16 @@ async function bootSupabaseAuth(){
 // ═══════════════════════════════════════════════════════════
 async function submitRunToSupabase(){
   const sb=window._miniGameshowSb;
-  if(!sb) return;
+  if(!sb){ showModeOverlay('gameover'); return; }
   const { data:{ session } } = await sb.auth.getSession();
-  const tipEl=document.getElementById('ovTip');
-  const baseTip=tipEl?tipEl.textContent:'';
-  if(!session?.user){
-    if(tipEl) tipEl.textContent=baseTip+'\n\nSign in (top right) to save scores.';
-    return;
-  }
+  if(!session?.user){ showModeOverlay('gameover'); return; }
+
   const durationMs=Math.max(0,Math.round(Date.now()-runStartTime));
   const { data: game, error: gErr } = await sb.from('games').select('id').eq('slug','pengu-fisher').maybeSingle();
   if(gErr||!game?.id){
-    if(tipEl) tipEl.textContent=baseTip+'\n\nCould not load game id.';
+    showModeOverlay('gameover');
+    const tipEl=document.getElementById('ovTip');
+    if(tipEl) tipEl.textContent+= '\n\nCould not load game id.';
     return;
   }
   const nowIso=new Date().toISOString();
@@ -1421,14 +1560,16 @@ async function submitRunToSupabase(){
     .gte('ends_at',nowIso)
     .maybeSingle();
   if(wErr||!week?.id){
-    if(tipEl) tipEl.textContent=baseTip+'\n\nNo active competition week in DB (run seed_week.sql).';
+    showModeOverlay('gameover');
+    const tipEl=document.getElementById('ovTip');
+    if(tipEl) tipEl.textContent+='\n\nNo active competition week (run seed_week.sql).';
     return;
   }
   const row={
     user_id: session.user.id,
     week_id: week.id,
     score: Math.max(0,Math.floor(score)),
-    attempt_num: 1,
+    attempt_num: attemptsUsed+1,
     duration_ms: durationMs,
     day_seed: dailySeed,
     input_count: inputCount,
@@ -1437,19 +1578,37 @@ async function submitRunToSupabase(){
   };
   const { error: insErr } = await sb.from('runs').insert(row);
   if(insErr){
-    const msg=insErr.message||String(insErr);
-    if(tipEl) tipEl.textContent=baseTip+'\n\nSave failed: '+msg;
+    // Show overlay first so feedback is visible
+    showModeOverlay('gameover');
+    const tipEl=document.getElementById('ovTip');
+    if(tipEl) tipEl.textContent+='\n\nSave failed: '+(insErr.message||String(insErr));
     return;
   }
-  if(tipEl) tipEl.textContent=baseTip+'\n\nScore saved.';
+  // Re-fetch authoritative count from DB, then redraw overlay
+  await fetchAttemptsAndSetMode(session.user.id);
+  showModeOverlay('gameover');
 }
+
+// ═══════════════════════════════════════════════════════════
+//  OVERLAY → START transition
+// ═══════════════════════════════════════════════════════════
+function startFromOverlay(){
+  if(state!=='title'&&state!=='gameover') return;
+  resetGame(); hideOverlay(); state='playing';
+}
+
+// "Play Again" / "Free Play" dedicated button
+document.getElementById('play-again-btn').addEventListener('click',e=>{
+  e.stopPropagation();
+  if(state==='gameover'){ resetGame(); hideOverlay(); state='playing'; }
+});
 
 // ═══════════════════════════════════════════════════════════
 //  LOOP + INIT
 // ═══════════════════════════════════════════════════════════
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
 updateHUD();
-showOverlay('PENGU FISHER','','TAP TO START','🐧 LEFT = Jump  ·  🎣 RIGHT = Cast when it glows\nBuild combos · Fill FRENZY meter · Read the ice!\n' + (isIOS ? '(Haptics: iPhone not supported by browser)' : '📳 Haptics on!'));
+showModeOverlay('title');
 bootSupabaseAuth();
 loop();
 </script>
