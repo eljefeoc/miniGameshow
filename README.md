@@ -81,6 +81,18 @@ If keys are missing, the panel shows a short reminder to add `supabase-config.js
 
 ---
 
+## Step 3 — Save score to `public.runs` (Pengu Fisher prototype)
+
+Implemented in **`prototypes/penguin-game.html`** (after **game over**):
+
+1. **Sign in** (Step 2) so the client has a JWT; RLS requires `runs.user_id = auth.uid()`.
+2. **Active week** — run **`supabase/seed_week.sql`** (Step 1) so a `weeks` row exists for the current window.
+3. Play until **GAME OVER**. The game inserts one row into **`runs`** with score, duration, `day_seed`, `input_count`, and `game_version`. Triggers update **`daily_attempts`**, **`leaderboard`**, and **`content_events`** (max **5** runs per day per `day_seed` — a 6th fails with an error message on the overlay).
+
+Verify in **Table Editor**: **`runs`**, **`leaderboard`**, **`daily_attempts`**.
+
+---
+
 ## Repo layout (Supabase)
 
 | Path | Purpose |

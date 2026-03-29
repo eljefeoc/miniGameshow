@@ -429,6 +429,8 @@ const PENGU_FRAMES = {
 // ═══════════════════════════════════════════════════════════
 let state='title';
 let score=0,hiScore=0,fishCount=0,lives=3;
+let runStartTime=0,inputCount=0;
+const GAME_VERSION='0.1.0-proto';
 let gameSpeed=2.6,frameCount=0,distance=0;
 let combo=1,comboTimer=0;
 let fishMeter=0,frenzyActive=false,frenzyTimer=0,frenzyFlash=0;
@@ -682,6 +684,7 @@ function hitOb(){
     pengu.dead=true;state='dead';SFX.gameover();
     setTimeout(()=>{state='gameover';if(score>hiScore)hiScore=score;
       showOverlay('GAME OVER',`SCORE: ${pad(score)}`,'TAP TO RETRY',`Fish caught: ${fishCount}`);
+      submitRunToSupabase().catch(e=>console.error('submitRun',e));
     },1400);
   }
 }
@@ -690,6 +693,7 @@ function hitOb(){
 //  JUMP
 // ═══════════════════════════════════════════════════════════
 function jump(){
+  if(state==='playing') inputCount++;
   if(pengu.jumps<pengu.maxJumps&&!pengu.dead){
     const dbl=pengu.jumps===1;
     pengu.vy=-12;pengu.jumps++;pengu.squish=0.55;pengu.squishV=0.1;
@@ -700,7 +704,7 @@ function jump(){
   }
 }
 
-function cast(){ fishing.castPressed=true; }
+function cast(){ if(state==='playing') inputCount++; fishing.castPressed=true; }
 
 // ═══════════════════════════════════════════════════════════
 //  MOOD
@@ -738,6 +742,8 @@ function hideOverlay(){document.getElementById('overlay').style.display='none';}
 // ═══════════════════════════════════════════════════════════
 function resetGame(){
   rng=makeRng(dailySeed);
+  runStartTime=Date.now();
+  inputCount=0;
   score=0;fishCount=0;lives=3;gameSpeed=2.6;frameCount=0;distance=0;
   combo=1;comboTimer=0;fishMeter=0;frenzyActive=false;frenzyTimer=0;backpackPulse=0;
   obstacles=[];particles=[];textPops=[];obstacleTimer=60;
@@ -1386,6 +1392,56 @@ async function bootSupabaseAuth(){
     console.error(e);
     if(msgEl) msgEl.textContent='Auth failed (see console)';
   }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SCORE SUBMIT (Step B) — insert into public.runs; requires auth + active week
+// ═══════════════════════════════════════════════════════════
+async function submitRunToSupabase(){
+  const sb=window._miniGameshowSb;
+  if(!sb) return;
+  const { data:{ session } } = await sb.auth.getSession();
+  const tipEl=document.getElementById('ovTip');
+  const baseTip=tipEl?tipEl.textContent:'';
+  if(!session?.user){
+    if(tipEl) tipEl.textContent=baseTip+'\n\nSign in (top right) to save scores.';
+    return;
+  }
+  const durationMs=Math.max(0,Math.round(Date.now()-runStartTime));
+  const { data: game, error: gErr } = await sb.from('games').select('id').eq('slug','pengu-fisher').maybeSingle();
+  if(gErr||!game?.id){
+    if(tipEl) tipEl.textContent=baseTip+'\n\nCould not load game id.';
+    return;
+  }
+  const nowIso=new Date().toISOString();
+  const { data: week, error: wErr } = await sb.from('weeks')
+    .select('id')
+    .eq('game_id',game.id)
+    .lte('starts_at',nowIso)
+    .gte('ends_at',nowIso)
+    .maybeSingle();
+  if(wErr||!week?.id){
+    if(tipEl) tipEl.textContent=baseTip+'\n\nNo active competition week in DB (run seed_week.sql).';
+    return;
+  }
+  const row={
+    user_id: session.user.id,
+    week_id: week.id,
+    score: Math.max(0,Math.floor(score)),
+    attempt_num: 1,
+    duration_ms: durationMs,
+    day_seed: dailySeed,
+    input_count: inputCount,
+    game_version: GAME_VERSION,
+    replay_payload: { fishCount, prototype: true },
+  };
+  const { error: insErr } = await sb.from('runs').insert(row);
+  if(insErr){
+    const msg=insErr.message||String(insErr);
+    if(tipEl) tipEl.textContent=baseTip+'\n\nSave failed: '+msg;
+    return;
+  }
+  if(tipEl) tipEl.textContent=baseTip+'\n\nScore saved.';
 }
 
 // ═══════════════════════════════════════════════════════════
