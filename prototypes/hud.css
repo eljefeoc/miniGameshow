@@ -1,0 +1,184 @@
+/* ============================================================
+   MiniGameshow — Gameshow HUD bar
+   Shared across all game prototypes.
+   Import in any game HTML:  <link rel="stylesheet" href="hud.css">
+   ============================================================ */
+
+/* ── container ────────────────────────────────────────────── */
+#gameshow-hud {
+  --ghud-h: 56px;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--ghud-h);
+  background: #0a0a0f;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 0;
+  z-index: 200;
+  /* subtle bottom edge so it reads as a separate layer */
+  box-shadow: 0 1px 0 rgba(255,255,255,0.07);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── prize section (left, flex 1) ─────────────────────────── */
+.ghud-prize {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  padding-right: 14px;
+  margin-right: 14px;
+  border-right: 0.5px solid rgba(255,255,255,0.12);
+}
+
+.ghud-prize-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.ghud-prize-eyebrow {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ghud-prize-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.ghud-prize-time {
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── schedule state colours ───────────────────────────────── */
+.ghud-accent  { color: #EF9F27; font-weight: 500; }
+.ghud-urgent  { color: #E24B4A; font-weight: 500; }
+.ghud-muted   { color: rgba(255,255,255,0.30); }
+
+/* ── stat cells ───────────────────────────────────────────── */
+.ghud-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border-right: 0.5px solid rgba(255,255,255,0.12);
+  flex-shrink: 0;
+}
+
+.ghud-stat-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+}
+
+.ghud-stat-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+  line-height: 1.3;
+}
+
+/* ── attempts dots ────────────────────────────────────────── */
+.ghud-stat-last {
+  border-right: none;
+}
+
+.ghud-attempts {
+  display: flex;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.ghud-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.ghud-dot-used  { background: rgba(255,255,255,0.18); }
+.ghud-dot-avail { background: #EF9F27; }
+
+/* ── avatar circle ────────────────────────────────────────── */
+.ghud-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #534AB7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #CECBF6;
+  margin-left: 10px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  cursor: default;
+  user-select: none;
+}
+
+.ghud-avatar.guest {
+  background: rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.35);
+}
+
+/* ── menu / hamburger ─────────────────────────────────────── */
+.ghud-menu {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 0.5px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ghud-menu:hover { background: rgba(255,255,255,0.07); }
+.ghud-menu:active { background: rgba(255,255,255,0.12); }
+
+.ghud-menu-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ghud-menu-bar {
+  width: 14px;
+  height: 1.5px;
+  background: rgba(255,255,255,0.60);
+  border-radius: 2px;
+}
+
+/* ── responsive: hide rank on narrow screens ──────────────── */
+@media (max-width: 480px) {
+  .ghud-stat-rank { display: none; }
+  .ghud-prize-name { font-size: 12px; }
+  .ghud-stat-value { font-size: 13px; }
+}

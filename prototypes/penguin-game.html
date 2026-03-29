@@ -6,8 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>PENGU FISHER</title>
+<link rel="stylesheet" href="hud.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
 
@@ -25,10 +27,10 @@ html, body {
   -webkit-user-select:none;
 }
 
-/* ── FULL-SCREEN GAME SHELL ── */
+/* ── FULL-SCREEN GAME SHELL — sits below gameshow HUD ── */
 #shell {
   position:fixed;
-  inset:0;
+  top:56px; left:0; right:0; bottom:0;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -46,21 +48,17 @@ html, body {
   touch-action:none;
 }
 
-/* ── HUD — floats across the top of the canvas ── */
+/* ── In-game metrics HUD — floats over canvas top ── */
 #top-bar {
   position:absolute;
   top:0; left:0; right:0;
   display:flex;
-  flex-direction:column;
+  align-items:center;
+  justify-content:space-around;
+  padding:6px 10px 6px;
   background:linear-gradient(to bottom, rgba(10,4,30,0.90) 0%, rgba(10,4,30,0.75) 70%, rgba(10,4,30,0) 100%);
   z-index:10;
   pointer-events:none;
-}
-#hud-metrics {
-  display:flex;
-  align-items:center;
-  justify-content:space-around;
-  padding:6px 10px 3px;
 }
 .hud-cell {
   display:flex; flex-direction:column; align-items:center;
@@ -70,38 +68,6 @@ html, body {
 .hud-val  { color:#ffe600; font-size:clamp(8px,1.8vw,13px); text-shadow:2px 2px 0 #884400; white-space:nowrap; }
 #hud-combo-val { color:#ff4488; }
 #hud-frenzy-val { color:#00ffaa; }
-
-/* ── HUD show strip (Zone 1 — row 2) ── */
-#hud-show-strip {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:2px 10px 5px;
-  gap:8px;
-  border-top:1px solid rgba(255,170,100,0.18);
-}
-#hud-prize {
-  display:flex; align-items:baseline; gap:5px;
-  flex:1; min-width:0;
-}
-.hud-prize-lbl {
-  color:#ffaa55; font-size:clamp(5px,0.9vw,7px);
-  white-space:nowrap; flex-shrink:0;
-}
-#hud-prize-val {
-  color:#ffe600;
-  font-size:clamp(7px,1.5vw,11px);
-  text-shadow:1px 1px 0 #884400;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
-#hud-schedule {
-  font-size:clamp(5px,0.85vw,7px);
-  white-space:nowrap; flex-shrink:0;
-  text-align:right; line-height:1.6;
-}
-.hud-sched-normal { color:#ffbb66; }
-.hud-sched-urgent { color:#ff3333; animation:blink 1s infinite; }
-.hud-sched-closed { color:#778899; }
 
 /* ── CONTROLS — float on bottom of canvas ── */
 #controls {
@@ -288,9 +254,9 @@ html, body {
 }
 #play-again-btn:active { filter:brightness(1.4); transform:scale(0.94); }
 
-/* ── Supabase auth (step 2) — fixed bar, does not block game controls ── */
+/* ── Supabase auth — fixed bar below gameshow HUD ── */
 #auth-bar {
-  position:fixed; top:0; right:0; z-index:300;
+  position:fixed; top:56px; right:0; z-index:300;
   display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end;
   gap:6px; padding:8px 10px; max-width:min(100%,420px);
   background:rgba(8,4,24,0.88); border-bottom-left-radius:12px;
@@ -313,11 +279,13 @@ html, body {
 #auth-status { color:#88ffaa; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
 <script src="supabase-config.js"></script>
-<script>
-window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'', anonKey:'' };
-</script>
+<script>window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'', anonKey:'' };</script>
+<script src="hud.js"></script>
 </head>
 <body>
+
+<!-- Gameshow HUD — rendered by hud.js -->
+<div id="gameshow-hud-mount"></div>
 
 <div id="auth-bar" aria-label="Account">
   <input id="auth-email" type="email" autocomplete="email" placeholder="email" />
@@ -333,25 +301,14 @@ window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'',
   <div id="canvas-wrap">
     <canvas id="gameCanvas"></canvas>
 
-    <!-- HUD floats top — Zone 1 -->
+    <!-- In-game metrics HUD — floats over canvas top -->
     <div id="top-bar">
-      <!-- Row 1: game metrics -->
-      <div id="hud-metrics">
-        <div class="hud-cell"><span class="hud-lbl">SCORE</span><span class="hud-val" id="scoreDisplay">00000</span></div>
-        <div class="hud-cell"><span class="hud-lbl">COMBO</span><span class="hud-val" id="hud-combo-val">×1</span></div>
-        <div class="hud-cell"><span class="hud-lbl">FISH</span><span class="hud-val" id="fishDisplay">🐟×0</span></div>
-        <div class="hud-cell"><span class="hud-lbl">LIVES</span><span class="hud-val" id="livesDisplay">♥♥♥</span></div>
-        <div class="hud-cell"><span class="hud-lbl">BEST</span><span class="hud-val" id="hiScoreDisplay">00000</span></div>
-        <div class="hud-cell"><span class="hud-lbl">FRENZY</span><span class="hud-val" id="hud-frenzy-val">0%</span></div>
-      </div>
-      <!-- Row 2: show strip — prize + schedule -->
-      <div id="hud-show-strip">
-        <div id="hud-prize">
-          <span class="hud-prize-lbl">PRIZE</span>
-          <span id="hud-prize-val">···</span>
-        </div>
-        <span id="hud-schedule" class="hud-sched-normal">Scoring closes Sat midnight · Live show Sun 7pm PT</span>
-      </div>
+      <div class="hud-cell"><span class="hud-lbl">SCORE</span><span class="hud-val" id="scoreDisplay">00000</span></div>
+      <div class="hud-cell"><span class="hud-lbl">COMBO</span><span class="hud-val" id="hud-combo-val">×1</span></div>
+      <div class="hud-cell"><span class="hud-lbl">FISH</span><span class="hud-val" id="fishDisplay">🐟×0</span></div>
+      <div class="hud-cell"><span class="hud-lbl">LIVES</span><span class="hud-val" id="livesDisplay">♥♥♥</span></div>
+      <div class="hud-cell"><span class="hud-lbl">BEST</span><span class="hud-val" id="hiScoreDisplay">00000</span></div>
+      <div class="hud-cell"><span class="hud-lbl">FRENZY</span><span class="hud-val" id="hud-frenzy-val">0%</span></div>
     </div>
 
     <!-- Game overlay (title / gameover) — Zone 2 or Zone 3 -->
@@ -408,10 +365,11 @@ const W = NATIVE_W, H = NATIVE_H;
 let canvasScale = 1;
 
 function resizeCanvas(){
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  const vw    = window.innerWidth;
+  const hudH  = (typeof GameshowHud !== 'undefined') ? GameshowHud.height() : 56;
+  const vh    = window.innerHeight - hudH;
 
-  // Scale canvas to fill the full screen maintaining 2:1 aspect ratio
+  // Scale canvas to fill available area maintaining 2:1 aspect ratio
   const scaleW = vw / NATIVE_W;
   const scaleH = vh / NATIVE_H;
   canvasScale  = Math.min(scaleW, scaleH);
@@ -419,7 +377,7 @@ function resizeCanvas(){
   const displayW = Math.floor(NATIVE_W * canvasScale);
   const displayH = Math.floor(NATIVE_H * canvasScale);
 
-  // Size the wrap to the full viewport
+  // Size the wrap to the area below the HUD
   const wrap = document.getElementById('canvas-wrap');
   wrap.style.width  = vw + 'px';
   wrap.style.height = vh + 'px';
@@ -540,62 +498,10 @@ let currentSeed=dailySeed; // active seed for this run (guest/freeplay = random)
 
 function randomSeed(){ return Math.floor(Math.random()*2147483647)+1; }
 
-// ── Show-strip state ────────────────────────────────────────
-let weekPrize    = '';    // set by fetchActiveWeek()
-let weekSponsor  = '';
-let weekShowAt   = null;  // Date object for live show — from weeks.show_at
-let schedCountdownId = null;
-
-// Format a Date to a short local time string like "7pm PT" or "8pm ET"
-function fmtShowTime(d){
-  if(!d) return '7pm PT';
-  try{
-    // Show user's local time with short timezone name
-    return d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit',timeZoneName:'short'})
-             .replace(':00','').toLowerCase();
-  }catch{ return '7pm PT'; }
-}
-
-function updateShowStrip(){
-  const prizeEl = document.getElementById('hud-prize-val');
-  const schedEl = document.getElementById('hud-schedule');
-  if(!prizeEl || !schedEl) return;
-
-  prizeEl.textContent = weekPrize || '···';
-
-  const now = new Date();
-  const day = now.getDay(); // 0=Sun 1=Mon…6=Sat
-  const showTime = fmtShowTime(weekShowAt);
-
-  if(day === 0){
-    // Sunday — scoring closed, show is today
-    schedEl.textContent = `Scoring closed · Live show today ${showTime}`;
-    schedEl.className   = 'hud-sched-closed';
-    if(schedCountdownId){ clearInterval(schedCountdownId); schedCountdownId=null; }
-  } else if(day === 6){
-    // Saturday — live countdown to midnight local
-    const updateSat = ()=>{
-      const n   = new Date();
-      const end = new Date(n.getFullYear(), n.getMonth(), n.getDate(), 23, 59, 59);
-      const sec = Math.max(0, Math.floor((end - n) / 1000));
-      const h   = Math.floor(sec / 3600);
-      const m   = Math.floor((sec % 3600) / 60);
-      const s   = sec % 60;
-      const t   = h > 0 ? `${h}h ${m}m left`
-                : m > 0 ? `${m}m ${s}s left`
-                : `${s}s left`;
-      schedEl.textContent = `${t} · Live show tomorrow ${showTime}`;
-      schedEl.className   = 'hud-sched-urgent';
-    };
-    updateSat();
-    if(!schedCountdownId) schedCountdownId = setInterval(updateSat, 1000);
-  } else {
-    // Mon–Fri — normal state
-    schedEl.textContent = `Scoring closes Sat midnight · Live show Sun ${showTime}`;
-    schedEl.className   = 'hud-sched-normal';
-    if(schedCountdownId){ clearInterval(schedCountdownId); schedCountdownId=null; }
-  }
-}
+// ── Show-strip state — handled by GameshowHud (hud.js) ─────
+let weekPrize   = '';
+let weekSponsor = '';
+let weekId      = null;   // stored after fetchActiveWeek for rank lookups
 let gameSpeed=2.6,frameCount=0,distance=0;
 let combo=1,comboTimer=0;
 let fishMeter=0,frenzyActive=false,frenzyTimer=0,frenzyFlash=0;
@@ -976,7 +882,7 @@ async function fetchActiveWeek(){
     const { data: game } = await sb.from('games').select('id').eq('slug','pengu-fisher').maybeSingle();
     if(!game?.id) return;
     const { data: week } = await sb.from('weeks')
-      .select('prize_title,sponsor_name,show_at')
+      .select('id,prize_title,sponsor_name,show_at')
       .eq('game_id',game.id)
       .lte('starts_at',nowIso)
       .gte('ends_at',nowIso)
@@ -984,10 +890,25 @@ async function fetchActiveWeek(){
     if(week){
       weekPrize   = week.prize_title  || '';
       weekSponsor = week.sponsor_name || '';
-      weekShowAt  = week.show_at ? new Date(week.show_at) : null;
-      updateShowStrip();
+      weekId      = week.id           || null;
+      GameshowHud.setPrize(weekPrize);
+      GameshowHud.setShowAt(week.show_at ? new Date(week.show_at) : null);
     }
   }catch(e){ console.error('fetchActiveWeek',e); }
+}
+
+// Fetch the player's rank on the leaderboard for the active week
+async function fetchUserRank(userId){
+  const sb=window._miniGameshowSb;
+  if(!sb||!userId||!weekId) return null;
+  try{
+    const { data } = await sb.from('leaderboard')
+      .select('rank,best_score')
+      .eq('user_id',userId)
+      .eq('week_id',weekId)
+      .maybeSingle();
+    return data || null;
+  }catch(e){ console.error('fetchUserRank',e); return null; }
 }
 
 function updateHUD(){
@@ -1639,10 +1560,21 @@ async function onSignedIn(session){
       .maybeSingle();
     playerName = prof?.username || session.user.email?.split('@')[0] || '';
   }catch{ playerName=session.user.email?.split('@')[0]||''; }
+  // Update gameshow HUD avatar
+  GameshowHud.setPlayer({
+    initials: (playerName||session.user.email||'?').slice(0,2),
+    name: playerName || session.user.email || ''
+  });
   // Fetch attempts and set mode
   await fetchAttemptsAndSetMode(session.user.id);
-  // Fetch active week prize (re-fetch in case it changed)
-  fetchActiveWeek().catch(()=>{});
+  // Fetch active week prize + rank
+  await fetchActiveWeek().catch(()=>{});
+  const lb = await fetchUserRank(session.user.id);
+  GameshowHud.setStats({
+    rank: lb?.rank ?? null,
+    best: lb?.best_score ?? (hiScore||null),
+    attemptsUsed
+  });
   // Refresh overlay if on title or gameover screen
   if(state==='title'||state==='gameover') showModeOverlay(state);
 }
@@ -1650,7 +1582,9 @@ async function onSignedIn(session){
 function onSignedOut(){
   updateAuthUI(null);
   playMode='guest'; attemptsUsed=0; playerName='';
-  currentSeed=randomSeed(); // clear any daily seed knowledge
+  currentSeed=randomSeed();
+  GameshowHud.setPlayer(null);
+  GameshowHud.setStats({ rank:null, best:null, attemptsUsed:0 });
   if(state==='title'||state==='gameover') showModeOverlay(state);
 }
 
@@ -1748,8 +1682,14 @@ async function submitRunToSupabase(){
     if(tipEl) tipEl.textContent+='\n\nSave failed: '+(insErr.message||String(insErr));
     return;
   }
-  // Re-fetch authoritative count from DB, then redraw overlay
+  // Re-fetch authoritative count + rank, then redraw overlay + HUD
   await fetchAttemptsAndSetMode(session.user.id);
+  const lb2 = await fetchUserRank(session.user.id);
+  GameshowHud.setStats({
+    rank: lb2?.rank ?? null,
+    best: lb2?.best_score ?? (hiScore||null),
+    attemptsUsed
+  });
   showModeOverlay('gameover');
 }
 
@@ -1771,11 +1711,17 @@ document.getElementById('play-again-btn').addEventListener('click',e=>{
 //  LOOP + INIT
 // ═══════════════════════════════════════════════════════════
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
+// Init gameshow HUD (renders HTML into mount, starts schedule loop)
+GameshowHud.init('#gameshow-hud-mount');
+// Wire menu button to toggle the auth bar
+GameshowHud.onMenuClick(()=>{
+  const bar=document.getElementById('auth-bar');
+  if(bar) bar.style.display = bar.style.display==='none' ? 'flex' : 'none';
+});
+
 updateHUD();
-updateShowStrip();          // run immediately with client-side day logic
 showModeOverlay('title');
 bootSupabaseAuth().then(()=>{
-  // After auth boots and client is ready, fetch prize from DB
   fetchActiveWeek().catch(()=>{});
 });
 loop();
