@@ -34,7 +34,7 @@ const GameshowHud = (() => {
 <div id="gameshow-hud">
   <div class="ghud-prize">
     <div class="ghud-prize-row">
-      <span class="ghud-prize-eyebrow">Prize</span>
+      <span class="ghud-prize-eyebrow">Week / prize</span>
       <span class="ghud-prize-name" id="ghud-prize-name">···</span>
     </div>
     <div class="ghud-prize-time" id="ghud-schedule">
@@ -48,7 +48,7 @@ const GameshowHud = (() => {
     <span class="ghud-stat-value" id="ghud-rank">—</span>
   </div>
   <div class="ghud-stat">
-    <span class="ghud-stat-label">Best</span>
+    <span class="ghud-stat-label">Score</span>
     <span class="ghud-stat-value" id="ghud-best">—</span>
   </div>
   <div class="ghud-stat ghud-stat-last">
@@ -218,3 +218,5 @@ const GameshowHud = (() => {
 
   return { init, setPrize, setShowAt, setStats, setPlayer, onMenuClick, height };
 })();
+// Always on window — inline game scripts and file:// loads rely on this
+window.GameshowHud = GameshowHud;

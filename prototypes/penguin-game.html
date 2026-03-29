@@ -299,6 +299,146 @@ html, body {
   pointer-events:auto;
 }
 #auth-signout:active { filter:brightness(1.2); }
+
+/* ═══ Zone 2 — Menu overlay (z-order: panel > HUD > canvas) ═══ */
+#gsp-root {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease, visibility 0.2s;
+}
+#gsp-root.gsp-open {
+  pointer-events: auto;
+  visibility: visible;
+  opacity: 1;
+}
+#gsp-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 2, 12, 0.72);
+  backdrop-filter: blur(4px);
+}
+#gsp-panel {
+  position: absolute;
+  left: 50%;
+  top: max(56px, env(safe-area-inset-top));
+  transform: translateX(-50%);
+  width: min(520px, calc(100vw - 20px));
+  max-height: calc(100vh - 56px - env(safe-area-inset-top) - 16px);
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(165deg, rgba(28, 18, 48, 0.98) 0%, rgba(10, 6, 28, 0.99) 100%);
+  border: 1px solid rgba(255, 180, 100, 0.22);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+#gsp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+#gsp-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 220, 160, 0.95);
+}
+#gsp-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+#gsp-close:hover { background: rgba(255, 255, 255, 0.14); }
+#gsp-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.2);
+}
+#gsp-tabs button {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 200, 120, 0.2);
+  background: rgba(20, 12, 40, 0.6);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+#gsp-tabs button:hover { background: rgba(40, 28, 70, 0.85); color: #fff; }
+#gsp-tabs button.gsp-tab-active {
+  border-color: rgba(255, 200, 80, 0.45);
+  background: rgba(90, 60, 140, 0.5);
+  color: #ffe8aa;
+}
+#gsp-body {
+  flex: 1;
+  overflow: auto;
+  padding: 14px 16px 18px;
+  min-height: 160px;
+  -webkit-overflow-scrolling: touch;
+}
+.gsp-pane { display: none; }
+.gsp-pane.gsp-pane-visible { display: block; }
+.gsp-pane p {
+  font-size: 12px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 10px;
+}
+.gsp-lb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.gsp-lb-table th,
+.gsp-lb-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+}
+.gsp-lb-table th {
+  color: rgba(255, 200, 140, 0.7);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+.gsp-muted { color: rgba(255, 255, 255, 0.4); font-size: 11px; }
+#gsp-share-btn {
+  margin-top: 12px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 2px solid #88ccff;
+  background: rgba(26, 42, 85, 0.9);
+  color: #cceeff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  cursor: pointer;
+}
+#gsp-share-btn:active { filter: brightness(1.15); }
 </style>
 <script src="supabase-config.js"></script>
 <script>window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'', anonKey:'' };</script>
@@ -309,6 +449,40 @@ html, body {
 <!-- Gameshow HUD — rendered by hud.js -->
 <div id="gameshow-hud-mount"></div>
 
+<!-- Zone 2 — menu overlay (Leaderboard / My scores / Account / Share) -->
+<div id="gsp-root" aria-hidden="true">
+  <div id="gsp-backdrop" aria-hidden="true"></div>
+  <div id="gsp-panel" role="dialog" aria-modal="true" aria-labelledby="gsp-title">
+    <div id="gsp-header">
+      <span id="gsp-title">Menu</span>
+      <button type="button" id="gsp-close" aria-label="Close menu">×</button>
+    </div>
+    <div id="gsp-tabs" role="tablist">
+      <button type="button" role="tab" class="gsp-tab-active" data-tab="leaderboard" aria-selected="true">Leaderboard</button>
+      <button type="button" role="tab" data-tab="myscores">My scores</button>
+      <button type="button" role="tab" data-tab="account">Account</button>
+      <button type="button" role="tab" data-tab="share">Share</button>
+    </div>
+    <div id="gsp-body">
+      <div class="gsp-pane gsp-pane-visible" data-pane="leaderboard" role="tabpanel">
+        <p class="gsp-muted" id="gsp-lb-hint">Top scores for this competition week.</p>
+        <div id="gsp-lb-body"></div>
+      </div>
+      <div class="gsp-pane" data-pane="myscores" role="tabpanel">
+        <p class="gsp-muted">Your saved runs for the active week.</p>
+        <div id="gsp-runs-body"></div>
+      </div>
+      <div class="gsp-pane" data-pane="account" role="tabpanel">
+        <div id="gsp-account-body"></div>
+      </div>
+      <div class="gsp-pane" data-pane="share" role="tabpanel">
+        <p>Tell friends about this week’s game.</p>
+        <button type="button" id="gsp-share-btn">Share link</button>
+        <p class="gsp-muted" id="gsp-share-fallback" style="display:none;margin-top:8px">Copy blocked — copy the URL from your browser bar.</p>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- GAME SHELL — canvas fills screen, HUD + controls float on top -->
 <div id="shell">
@@ -383,8 +557,8 @@ html, body {
 
 <script>
 'use strict';
-// Safety stub — keeps all GameshowHud calls alive even if hud.js fails to load
-if (typeof GameshowHud === 'undefined') {
+// Safety stub — always use window.GameshowHud (hud.js assigns this too)
+if (!window.GameshowHud || typeof window.GameshowHud.init !== 'function') {
   window.GameshowHud = {
     init:()=>{}, height:()=>56, setPrize:()=>{},
     setShowAt:()=>{}, setStats:()=>{}, setPlayer:()=>{}, onMenuClick:()=>{}
@@ -405,7 +579,7 @@ let canvasScale = 1;
 
 function resizeCanvas(){
   const vw    = window.innerWidth;
-  const hudH  = (typeof GameshowHud !== 'undefined') ? GameshowHud.height() : 56;
+  const hudH  = window.GameshowHud.height ? window.GameshowHud.height() : 56;
   const vh    = window.innerHeight - hudH;
 
   // Scale canvas to fill available area maintaining 2:1 aspect ratio
@@ -937,8 +1111,8 @@ async function fetchActiveWeek(){
       weekPrize   = week.prize_title  || '';
       weekSponsor = week.sponsor_name || '';
       weekId      = week.id           || null;
-      GameshowHud.setPrize(weekPrize);
-      GameshowHud.setShowAt(week.show_at ? new Date(week.show_at) : null);
+      window.GameshowHud.setPrize(weekPrize);
+      window.GameshowHud.setShowAt(week.show_at ? new Date(week.show_at) : null);
     }
   }catch(e){ console.error('fetchActiveWeek',e); }
 }
@@ -1610,7 +1784,7 @@ async function onSignedIn(session){
     playerName = prof?.username || session.user.email?.split('@')[0] || '';
   }catch{ playerName=session.user.email?.split('@')[0]||''; }
   // Update gameshow HUD avatar
-  GameshowHud.setPlayer({
+  window.GameshowHud.setPlayer({
     initials: (playerName||session.user.email||'?').slice(0,2),
     name: playerName || session.user.email || ''
   });
@@ -1619,7 +1793,7 @@ async function onSignedIn(session){
   // Fetch active week prize + rank
   await fetchActiveWeek().catch(()=>{});
   const lb = await fetchUserRank(session.user.id);
-  GameshowHud.setStats({
+  window.GameshowHud.setStats({
     rank: lb?.rank ?? null,
     best: lb?.best_score ?? (hiScore||null),
     attemptsUsed
@@ -1632,8 +1806,8 @@ function onSignedOut(){
   updateAuthUI(null);
   playMode='guest'; attemptsUsed=0; playerName='';
   currentSeed=randomSeed();
-  GameshowHud.setPlayer(null);
-  GameshowHud.setStats({ rank:null, best:null, attemptsUsed:0 });
+  window.GameshowHud.setPlayer(null);
+  window.GameshowHud.setStats({ rank:null, best:null, attemptsUsed:0 });
   if(state==='title'||state==='gameover') showModeOverlay(state);
 }
 
@@ -1734,7 +1908,7 @@ async function submitRunToSupabase(){
   // Re-fetch authoritative count + rank, then redraw overlay + HUD
   await fetchAttemptsAndSetMode(session.user.id);
   const lb2 = await fetchUserRank(session.user.id);
-  GameshowHud.setStats({
+  window.GameshowHud.setStats({
     rank: lb2?.rank ?? null,
     best: lb2?.best_score ?? (hiScore||null),
     attemptsUsed
@@ -1757,21 +1931,200 @@ document.getElementById('play-again-btn').addEventListener('click',e=>{
 });
 
 // ═══════════════════════════════════════════════════════════
+//  ZONE 2 — Menu overlay (Leaderboard / My scores / Account / Share)
+// ═══════════════════════════════════════════════════════════
+function gspEscapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let _gspOpen = false;
+
+function setGspTab(tab){
+  document.querySelectorAll('#gsp-tabs [data-tab]').forEach(b=>{
+    const on = b.dataset.tab === tab;
+    b.classList.toggle('gsp-tab-active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  document.querySelectorAll('.gsp-pane').forEach(p=>{
+    p.classList.toggle('gsp-pane-visible', p.dataset.pane === tab);
+  });
+}
+
+function closeGsp(){
+  if(!_gspOpen) return;
+  _gspOpen = false;
+  const root = document.getElementById('gsp-root');
+  if(root){
+    root.classList.remove('gsp-open');
+    root.setAttribute('aria-hidden','true');
+  }
+}
+
+function openGsp(){
+  if(_gspOpen) return;
+  _gspOpen = true;
+  const root = document.getElementById('gsp-root');
+  if(root){
+    root.classList.add('gsp-open');
+    root.setAttribute('aria-hidden','false');
+  }
+  refreshGspLeaderboard();
+  refreshGspMyScores();
+  refreshGspAccount();
+}
+
+function toggleGsp(){ _gspOpen ? closeGsp() : openGsp(); }
+
+async function refreshGspLeaderboard(){
+  const body = document.getElementById('gsp-lb-body');
+  if(!body) return;
+  const sb = window._miniGameshowSb;
+  if(!sb || !weekId){
+    body.innerHTML = '<p class="gsp-muted">Load the game with Supabase configured and an active week to see rankings.</p>';
+    return;
+  }
+  body.innerHTML = '<p class="gsp-muted">Loading…</p>';
+  try{
+    let { data, error } = await sb.from('leaderboard')
+      .select('rank,best_score,user_id,profiles(username)')
+      .eq('week_id', weekId)
+      .order('rank', { ascending: true })
+      .limit(30);
+    if(error){
+      const r2 = await sb.from('leaderboard')
+        .select('rank,best_score,user_id')
+        .eq('week_id', weekId)
+        .order('rank', { ascending: true })
+        .limit(30);
+      data = r2.data; error = r2.error;
+    }
+    if(error) throw error;
+    if(!data?.length){
+      body.innerHTML = '<p class="gsp-muted">No scores yet this week — be the first!</p>';
+      return;
+    }
+    let html = '<table class="gsp-lb-table"><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead><tbody>';
+    for(const row of data){
+      const name = row.profiles?.username || ('…' + String(row.user_id||'').slice(0,4));
+      html += `<tr><td>${row.rank ?? '—'}</td><td>${gspEscapeHtml(name)}</td><td>${Number(row.best_score).toLocaleString()}</td></tr>`;
+    }
+    html += '</tbody></table>';
+    body.innerHTML = html;
+  }catch(e){
+    console.error(e);
+    body.innerHTML = '<p class="gsp-muted">Could not load leaderboard.</p>';
+  }
+}
+
+async function refreshGspMyScores(){
+  const body = document.getElementById('gsp-runs-body');
+  if(!body) return;
+  const sb = window._miniGameshowSb;
+  if(!sb){
+    body.innerHTML = '<p class="gsp-muted">Add supabase-config.js to load your runs.</p>';
+    return;
+  }
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session?.user){
+    body.innerHTML = '<p class="gsp-muted">Sign in from the title screen to see your runs here.</p>';
+    return;
+  }
+  if(!weekId){
+    body.innerHTML = '<p class="gsp-muted">No active competition week loaded.</p>';
+    return;
+  }
+  body.innerHTML = '<p class="gsp-muted">Loading…</p>';
+  try{
+    const { data, error } = await sb.from('runs')
+      .select('score,attempt_num,created_at')
+      .eq('user_id', session.user.id)
+      .eq('week_id', weekId)
+      .order('created_at', { ascending: false });
+    if(error) throw error;
+    if(!data?.length){
+      body.innerHTML = '<p class="gsp-muted">No runs saved this week yet.</p>';
+      return;
+    }
+    let html = '<table class="gsp-lb-table"><thead><tr><th>Attempt</th><th>Score</th><th>When</th></tr></thead><tbody>';
+    for(const row of data){
+      const when = row.created_at ? new Date(row.created_at).toLocaleString() : '—';
+      html += `<tr><td>${row.attempt_num}</td><td>${Number(row.score).toLocaleString()}</td><td>${gspEscapeHtml(when)}</td></tr>`;
+    }
+    html += '</tbody></table>';
+    body.innerHTML = html;
+  }catch(e){
+    console.error(e);
+    body.innerHTML = '<p class="gsp-muted">Could not load your scores.</p>';
+  }
+}
+
+function refreshGspAccount(){
+  const body = document.getElementById('gsp-account-body');
+  if(!body) return;
+  const sb = window._miniGameshowSb;
+  if(!sb){
+    body.innerHTML = '<p>Copy <code>supabase-config.example.js</code> to <code>supabase-config.js</code> with your project URL and anon key.</p><p class="gsp-muted">Sign in uses the title screen.</p>';
+    return;
+  }
+  sb.auth.getSession().then(({ data:{ session } })=>{
+    if(!session?.user){
+      body.innerHTML = '<p>You’re playing as a guest.</p><p class="gsp-muted">Use <strong>Sign In</strong> on the title screen to compete. Sessions persist in this browser.</p>';
+      return;
+    }
+    const em = session.user.email || 'Signed in';
+    body.innerHTML = `<p><strong>Signed in</strong></p><p class="gsp-muted">${gspEscapeHtml(em)}</p><p class="gsp-muted">Sign out from the title or game over screen when those panels are visible.</p>`;
+  });
+}
+
+function initShellPanel(){
+  document.querySelectorAll('#gsp-tabs [data-tab]').forEach(btn=>{
+    btn.addEventListener('click', ()=> setGspTab(btn.dataset.tab));
+  });
+  const bd = document.getElementById('gsp-backdrop');
+  const cl = document.getElementById('gsp-close');
+  if(bd) bd.addEventListener('click', closeGsp);
+  if(cl) cl.addEventListener('click', closeGsp);
+  document.addEventListener('keydown', e=>{
+    if(e.key === 'Escape' && _gspOpen){ e.preventDefault(); closeGsp(); }
+  });
+  const shareBtn = document.getElementById('gsp-share-btn');
+  const shareFb = document.getElementById('gsp-share-fallback');
+  if(shareBtn){
+    shareBtn.addEventListener('click', async ()=>{
+      const url = window.location.href;
+      if(shareFb) shareFb.style.display = 'none';
+      try{
+        if(navigator.share){
+          await navigator.share({ title:'Pengu Fisher', text:'Play on the Mini Gameshow!', url });
+          return;
+        }
+        await navigator.clipboard.writeText(url);
+        shareBtn.textContent = 'Copied!';
+        setTimeout(()=>{ shareBtn.textContent = 'Share link'; }, 2000);
+      }catch(_){
+        if(shareFb) shareFb.style.display = 'block';
+      }
+    });
+  }
+  window.GameshowHud.onMenuClick(()=> toggleGsp());
+}
+
+// ═══════════════════════════════════════════════════════════
 //  LOOP + INIT
 // ═══════════════════════════════════════════════════════════
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
 
-// Start the game immediately — nothing below should block this
+// HUD + menu panel first (wireframe z-order), then game loop
+window.GameshowHud.init('#gameshow-hud-mount');
+initShellPanel();
+if(document.getElementById('gameshow-hud')){
+  resizeCanvas();
+}
+
 updateHUD();
 showModeOverlay('title');
 bootSupabaseAuth().then(()=>{ fetchActiveWeek().catch(()=>{}); });
 loop();
-
-// Init HUD after game starts so any failure here never blocks the game loop
-GameshowHud.init('#gameshow-hud-mount');
-if (document.getElementById('gameshow-hud')) {
-  resizeCanvas(); // remeasure now that HUD has real offsetHeight
-}
 </script>
 </body>
 </html>
