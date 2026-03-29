@@ -39,7 +39,7 @@ Our schema creates **tables** (`games`, `profiles`, `weeks`, …), **functions**
 
 You should see tables including `games`, `profiles`, `weeks`, `runs`, `leaderboard`, `daily_attempts`, `content_events`, and a seed row for `pengu-fisher` in `games`.
 
-4. **Insert your first week** (required before real score runs): use the commented example `INSERT` at the bottom of `schema.sql`, or add a row in **Table Editor → `weeks`** with a valid `game_id` from **`games`**.
+4. **Insert your first week** (required before real score runs): in **SQL Editor**, run **`supabase/seed_week.sql`** (current ISO week for `pengu-fisher`, idempotent). Or use the example at the bottom of `schema.sql` / **Table Editor → `weeks`**.
 
 ---
 
