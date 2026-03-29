@@ -287,7 +287,7 @@ html, body {
 <!-- Gameshow HUD — rendered by hud.js -->
 <div id="gameshow-hud-mount"></div>
 
-<div id="auth-bar" aria-label="Account">
+<div id="auth-bar" aria-label="Account" style="display:none">
   <input id="auth-email" type="email" autocomplete="email" placeholder="email" />
   <input id="auth-pass" type="password" autocomplete="current-password" placeholder="password" />
   <button type="button" id="auth-signin">Sign in</button>
@@ -351,6 +351,13 @@ html, body {
 
 <script>
 'use strict';
+// Safety stub — keeps all GameshowHud calls alive even if hud.js fails to load
+if (typeof GameshowHud === 'undefined') {
+  window.GameshowHud = {
+    init:()=>{}, height:()=>56, setPrize:()=>{},
+    setShowAt:()=>{}, setStats:()=>{}, setPlayer:()=>{}, onMenuClick:()=>{}
+  };
+}
 // ═══════════════════════════════════════════════════════════
 //  CANVAS SIZING — fills available space, maintains 2:1 ratio
 // ═══════════════════════════════════════════════════════════
@@ -1711,20 +1718,27 @@ document.getElementById('play-again-btn').addEventListener('click',e=>{
 //  LOOP + INIT
 // ═══════════════════════════════════════════════════════════
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
-// Init gameshow HUD (renders HTML into mount, starts schedule loop)
-GameshowHud.init('#gameshow-hud-mount');
-// Wire menu button to toggle the auth bar
-GameshowHud.onMenuClick(()=>{
-  const bar=document.getElementById('auth-bar');
-  if(bar) bar.style.display = bar.style.display==='none' ? 'flex' : 'none';
-});
 
+// Start the game immediately — nothing below should block this
 updateHUD();
 showModeOverlay('title');
-bootSupabaseAuth().then(()=>{
-  fetchActiveWeek().catch(()=>{});
-});
+bootSupabaseAuth().then(()=>{ fetchActiveWeek().catch(()=>{}); });
 loop();
+
+// Init HUD after game starts so any failure here never blocks the game loop
+GameshowHud.init('#gameshow-hud-mount');
+if (document.getElementById('gameshow-hud')) {
+  // HUD rendered — wire menu button to toggle auth bar
+  GameshowHud.onMenuClick(()=>{
+    const bar = document.getElementById('auth-bar');
+    if (bar) bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
+  });
+  resizeCanvas(); // remeasure now that HUD has real offsetHeight
+} else {
+  // HUD failed — show auth bar directly so sign-in is still reachable
+  const bar = document.getElementById('auth-bar');
+  if (bar) bar.style.display = 'flex';
+}
 </script>
 </body>
 </html>
