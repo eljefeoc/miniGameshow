@@ -155,12 +155,143 @@ html, body {
   border:1px solid rgba(255,200,80,0.30);
   box-shadow:0 0 48px rgba(255,160,40,0.18), inset 0 1px 0 rgba(255,220,120,0.10);
 }
-/* Zone 3 — post-run: dark, calm data readout */
+/* Zone 3 — post-run: dark card (mockup) */
 #ov-card[data-zone="gameover"] {
-  background:rgba(8,3,24,0.94);
-  border:1px solid rgba(120,90,200,0.28);
-  box-shadow:0 0 32px rgba(80,40,160,0.18), inset 0 1px 0 rgba(180,140,255,0.08);
+  background:transparent;
+  border:none;
+  box-shadow:none;
+  padding:0;
+  max-width:min(400px,92vw);
 }
+#ov-postrun-block.postrun-bg {
+  background:#0a0a0f;
+  border-radius:10px;
+  padding:20px 20px 16px;
+  text-align:left;
+  width:100%;
+  box-sizing:border-box;
+}
+.postrun-top {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  margin-bottom:16px;
+}
+.postrun-label {
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.08em;
+  color:rgba(255,255,255,0.35);
+  text-transform:uppercase;
+  margin-bottom:2px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.postrun-score {
+  font-size:clamp(28px,10vw,48px);
+  font-weight:500;
+  color:#fff;
+  line-height:1;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.postrun-delta {
+  font-size:13px;
+  color:#1D9E75;
+  font-weight:500;
+  margin-top:4px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.postrun-delta.postrun-delta-hide { display:none; }
+.postrun-rank-block { text-align:right; }
+.postrun-rank-num {
+  font-size:clamp(22px,7vw,32px);
+  font-weight:500;
+  color:#EF9F27;
+  line-height:1;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.postrun-rank-label {
+  font-size:10px;
+  color:rgba(255,255,255,0.35);
+  text-transform:uppercase;
+  letter-spacing:0.07em;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.postrun-stats {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:16px;
+}
+.postrun-stat {
+  background:rgba(255,255,255,0.05);
+  border-radius:7px;
+  padding:8px 10px;
+}
+.postrun-stat-val {
+  font-size:16px;
+  font-weight:500;
+  color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.postrun-stat-key {
+  font-size:10px;
+  color:rgba(255,255,255,0.35);
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  margin-top:1px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.postrun-attempts {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:16px;
+  flex-wrap:wrap;
+}
+.postrun-dots { display:flex; gap:5px; }
+.postrun-dots .dot {
+  width:7px;
+  height:7px;
+  border-radius:50%;
+}
+.postrun-dots .dot-used { background:rgba(255,255,255,0.2); }
+.postrun-dots .dot-avail { background:#EF9F27; }
+.postrun-attempt-label {
+  font-size:12px;
+  color:rgba(255,255,255,0.4);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.postrun-actions {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.postrun-actions .btn-primary,
+.postrun-actions .btn-secondary {
+  flex:1;
+  min-width:min(100px,28vw);
+  border-radius:8px;
+  padding:11px;
+  font-size:clamp(11px,3vw,14px);
+  font-weight:500;
+  cursor:pointer;
+  text-align:center;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  border:none;
+  box-sizing:border-box;
+}
+.postrun-actions .btn-primary {
+  background:#EF9F27;
+  color:#412402;
+}
+.postrun-actions .btn-primary:active { filter:brightness(1.05); }
+.postrun-actions .btn-secondary {
+  background:rgba(255,255,255,0.07);
+  border:0.5px solid rgba(255,255,255,0.15);
+  color:rgba(255,255,255,0.7);
+}
+.postrun-actions .btn-secondary:active { filter:brightness(1.1); }
+.postrun-bg .gsp-muted { color: rgba(255,255,255,0.5); }
 
 .ov-title {
   font-size:clamp(16px,4.5vw,32px);
@@ -282,7 +413,7 @@ html, body {
 }
 #auth-signout:active { filter:brightness(1.2); }
 
-/* ═══ Zone 2 — Menu overlay (z-order: panel > HUD > canvas) ═══ */
+/* ═══ Zone 2 — shell menu (light panel, mockup) ═══ */
 #gsp-root {
   position: fixed;
   inset: 0;
@@ -300,7 +431,7 @@ html, body {
 #gsp-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(4, 2, 12, 0.72);
+  background: rgba(4, 2, 12, 0.45);
   backdrop-filter: blur(4px);
 }
 #gsp-panel {
@@ -312,72 +443,57 @@ html, body {
   max-height: calc(100vh - 56px - env(safe-area-inset-top) - 16px);
   display: flex;
   flex-direction: column;
-  background: linear-gradient(165deg, rgba(28, 18, 48, 0.98) 0%, rgba(10, 6, 28, 0.99) 100%);
-  border: 1px solid rgba(255, 180, 100, 0.22);
-  border-radius: 16px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  background: #fff;
+  border: 0.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
-#gsp-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-#gsp-title {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgba(255, 220, 160, 0.95);
-}
 #gsp-close {
-  width: 36px;
-  height: 36px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
   border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  font-size: 22px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #444;
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
 }
-#gsp-close:hover { background: rgba(255, 255, 255, 0.14); }
+#gsp-close:hover { background: rgba(0, 0, 0, 0.1); }
 #gsp-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+  padding-right: 40px;
 }
 #gsp-tabs button {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 8px 6px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 200, 120, 0.2);
-  background: rgba(20, 12, 40, 0.6);
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  flex: 1;
+  padding: 11px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #888;
+  text-align: center;
   cursor: pointer;
+  border: none;
+  background: transparent;
+  border-bottom: 2px solid transparent;
+  font-family: inherit;
   white-space: nowrap;
 }
-#gsp-tabs button:hover { background: rgba(40, 28, 70, 0.85); color: #fff; }
-#gsp-tabs button.gsp-tab-active {
-  border-color: rgba(255, 200, 80, 0.45);
-  background: rgba(90, 60, 140, 0.5);
-  color: #ffe8aa;
+#gsp-tabs button:hover { color: #555; }
+#gsp-tabs button.active {
+  color: #1a1a1a;
+  border-bottom-color: #534AB7;
 }
 #gsp-body {
   flex: 1;
   overflow: auto;
-  padding: 14px 16px 18px;
+  padding: 16px;
   min-height: 160px;
   -webkit-overflow-scrolling: touch;
 }
@@ -386,41 +502,108 @@ html, body {
 .gsp-pane p {
   font-size: 12px;
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.65);
+  color: #555;
   margin-bottom: 10px;
 }
+.gsp-muted { color: #888; font-size: 12px; line-height: 1.5; }
+#gsp-share-btn {
+  margin-top: 12px;
+  padding: 11px 18px;
+  border-radius: 8px;
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.04);
+  color: #333;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+#gsp-share-btn:active { filter: brightness(0.95); }
+/* Leaderboard list (mockup) */
+.lb-week {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.lb-week-title { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+.lb-week-sub { font-size: 12px; color: #888; margin-top: 2px; }
+.lb-prize-pill {
+  font-size: 11px;
+  font-weight: 500;
+  background: #FAEEDA;
+  color: #633806;
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row.me {
+  background: #EEEDFE;
+  margin: 0 -16px;
+  padding: 8px 16px;
+}
+.lb-rank {
+  font-size: 13px;
+  font-weight: 500;
+  color: #888;
+  width: 22px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.lb-rank.gold { color: #BA7517; }
+.lb-rank.silver { color: #888780; }
+.lb-rank.bronze { color: #993C1D; }
+.lb-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.lb-name { flex: 1; font-size: 13px; color: #1a1a1a; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.lb-score { font-size: 13px; font-weight: 500; color: #1a1a1a; flex-shrink: 0; }
+.lb-score.me-score { color: #534AB7; }
+.lb-rank.me-rank { color: #534AB7; font-weight: 500; }
 .gsp-lb-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: 12px;
 }
 .gsp-lb-table th,
 .gsp-lb-table td {
   text-align: left;
-  padding: 6px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.85);
+  padding: 8px 6px;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+  color: #1a1a1a;
 }
 .gsp-lb-table th {
-  color: rgba(255, 200, 140, 0.7);
+  color: #888;
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.06em;
 }
-.gsp-muted { color: rgba(255, 255, 255, 0.4); font-size: 11px; }
-#gsp-share-btn {
-  margin-top: 12px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  border: 2px solid #88ccff;
-  background: rgba(26, 42, 85, 0.9);
-  color: #cceeff;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
-  cursor: pointer;
+#ov-title-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
-#gsp-share-btn:active { filter: brightness(1.15); }
+#ov-postrun-block { pointer-events: auto; }
 </style>
 <script src="supabase-config.js"></script>
 <script>window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'', anonKey:'' };</script>
@@ -434,20 +617,16 @@ html, body {
 <!-- Zone 2 — menu overlay (Leaderboard / My scores / Account / Share) -->
 <div id="gsp-root" aria-hidden="true">
   <div id="gsp-backdrop" aria-hidden="true"></div>
-  <div id="gsp-panel" role="dialog" aria-modal="true" aria-labelledby="gsp-title">
-    <div id="gsp-header">
-      <span id="gsp-title">Menu</span>
-      <button type="button" id="gsp-close" aria-label="Close menu">×</button>
-    </div>
+  <div id="gsp-panel" role="dialog" aria-modal="true" aria-label="Menu">
+    <button type="button" id="gsp-close" aria-label="Close menu">×</button>
     <div id="gsp-tabs" role="tablist">
-      <button type="button" role="tab" class="gsp-tab-active" data-tab="leaderboard" aria-selected="true">Leaderboard</button>
+      <button type="button" role="tab" class="active" data-tab="leaderboard" aria-selected="true">Leaderboard</button>
       <button type="button" role="tab" data-tab="myscores">My scores</button>
       <button type="button" role="tab" data-tab="account">Account</button>
       <button type="button" role="tab" data-tab="share">Share</button>
     </div>
     <div id="gsp-body">
       <div class="gsp-pane gsp-pane-visible" data-pane="leaderboard" role="tabpanel">
-        <p class="gsp-muted" id="gsp-lb-hint">Top scores for this competition week.</p>
         <div id="gsp-lb-body"></div>
       </div>
       <div class="gsp-pane" data-pane="myscores" role="tabpanel">
@@ -484,31 +663,69 @@ html, body {
     <!-- Game overlay (title / gameover) — Zone 2 or Zone 3 -->
     <div id="overlay">
       <div id="ov-card" data-zone="title">
-        <div class="ov-title" id="ovTitle">PENGU FISHER</div>
-        <div class="ov-score" id="ovScore"></div>
-        <div class="ov-sub"   id="ovSub">TAP TO START</div>
+        <div id="ov-title-block">
+          <div class="ov-title" id="ovTitle">PENGU FISHER</div>
+          <div class="ov-score" id="ovScore"></div>
+          <div class="ov-sub"   id="ovSub">TAP TO START</div>
 
-        <!-- Auth form — visible when guest, hidden when signed in -->
-        <div id="ov-auth" style="display:none">
-          <input id="auth-email" type="email" autocomplete="email" placeholder="email" />
-          <input id="auth-pass" type="password" autocomplete="current-password" placeholder="password" />
-          <div class="ov-auth-row">
-            <button type="button" id="auth-signin">Sign In</button>
-            <button type="button" id="auth-signup">Create Account</button>
+          <div id="ov-auth" style="display:none">
+            <input id="auth-email" type="email" autocomplete="email" placeholder="email" />
+            <input id="auth-pass" type="password" autocomplete="current-password" placeholder="password" />
+            <div class="ov-auth-row">
+              <button type="button" id="auth-signin">Sign In</button>
+              <button type="button" id="auth-signup">Create Account</button>
+            </div>
+            <span id="auth-status"></span>
           </div>
-          <span id="auth-status"></span>
+
+          <div id="ov-user-bar" style="display:none">
+            <span id="ov-user-label"></span>
+            <button type="button" id="auth-signout">Sign Out</button>
+          </div>
+
+          <button type="button" id="play-again-btn">PLAY GAME</button>
+          <div class="ov-tip" id="ovTip">
+            🐧 JUMP = Left button  ·  🎣 CAST = Right button when it glows
+            Build combos · Fill FRENZY meter · Read the ice!
+          </div>
         </div>
 
-        <!-- Signed-in strip — visible when competing or free-play -->
-        <div id="ov-user-bar" style="display:none">
-          <span id="ov-user-label"></span>
-          <button type="button" id="auth-signout">Sign Out</button>
-        </div>
-
-        <button type="button" id="play-again-btn">PLAY GAME</button>
-        <div class="ov-tip" id="ovTip">
-          🐧 JUMP = Left button  ·  🎣 CAST = Right button when it glows
-          Build combos · Fill FRENZY meter · Read the ice!
+        <div id="ov-postrun-block" class="postrun-bg" style="display:none" aria-hidden="true">
+          <div class="postrun-top">
+            <div>
+              <div class="postrun-label">Score</div>
+              <div class="postrun-score" id="postrun-score-val">0</div>
+              <div class="postrun-delta postrun-delta-hide" id="postrun-delta">+ 0 personal best</div>
+            </div>
+            <div class="postrun-rank-block">
+              <div class="postrun-rank-num" id="postrun-rank-val">—</div>
+              <div class="postrun-rank-label">this week</div>
+            </div>
+          </div>
+          <div class="postrun-stats">
+            <div class="postrun-stat">
+              <div class="postrun-stat-val" id="postrun-stat-time">0:00</div>
+              <div class="postrun-stat-key">Run time</div>
+            </div>
+            <div class="postrun-stat">
+              <div class="postrun-stat-val" id="postrun-stat-combo">×1</div>
+              <div class="postrun-stat-key">Best combo</div>
+            </div>
+            <div class="postrun-stat">
+              <div class="postrun-stat-val" id="postrun-stat-fish">0</div>
+              <div class="postrun-stat-key">Fish caught</div>
+            </div>
+          </div>
+          <div class="postrun-attempts">
+            <div class="postrun-dots" id="postrun-dots"></div>
+            <span class="postrun-attempt-label" id="postrun-attempt-text"></span>
+          </div>
+          <div class="postrun-tip gsp-muted" id="postrun-tip" style="display:none;margin-bottom:12px;font-size:11px;"></div>
+          <div class="postrun-actions">
+            <button type="button" class="btn-primary" id="postrun-play-btn">Play again</button>
+            <button type="button" class="btn-secondary" id="ov-open-lb">Leaderboard</button>
+            <button type="button" class="btn-secondary" id="ov-share-run">Share</button>
+          </div>
         </div>
       </div>
     </div>
@@ -698,6 +915,8 @@ let weekSponsor = '';
 let weekId      = null;   // stored after fetchActiveWeek for rank lookups
 let gameSpeed=2.6,frameCount=0,distance=0;
 let combo=1,comboTimer=0;
+let maxComboThisRun=1;
+let postrunScoreDelta=0;
 let fishMeter=0,frenzyActive=false,frenzyTimer=0,frenzyFlash=0;
 let backpackPulse=0;
 
@@ -893,6 +1112,7 @@ function updateFrenzy(){
 function comboMult(){ if(frenzyActive)return 3; if(combo>=8)return 5; if(combo>=5)return 3; if(combo>=3)return 2; if(combo>=2)return 1.5; return 1; }
 function buildCombo(){
   combo=Math.min(combo+1,10);comboTimer=cfg().comboDecay;SFX.combo(Math.min(combo,8));
+  maxComboThisRun=Math.max(maxComboThisRun,combo);
   const el=document.getElementById('hud-combo-val');
   el.textContent=`×${comboMult().toFixed(1)}`;
   el.style.color=combo>=8?'#ffee00':combo>=5?'#ff8800':combo>=3?'#ff4488':'#ff4488';
@@ -947,9 +1167,11 @@ function hitOb(){
   updateHUD();
   if(lives<=0){
     pengu.dead=true;state='dead';SFX.gameover();
-    setTimeout(()=>{state='gameover';if(score>hiScore)hiScore=score;
-      // For competing players the overlay is updated again inside
-      // submitRunToSupabase once we know the authoritative attempt count
+    setTimeout(()=>{
+      state='gameover';
+      const prevHi=hiScore;
+      postrunScoreDelta=score>prevHi?score-prevHi:0;
+      if(score>hiScore)hiScore=score;
       if(playMode==='competing'){
         submitRunToSupabase().catch(e=>console.error('submitRun',e));
       } else {
@@ -996,21 +1218,87 @@ const pad=n=>String(n).padStart(5,'0');
 // ── Mode-aware overlay ──────────────────────────────────────
 const CONTROLS_TIP='🐧 LEFT = Jump  ·  🎣 RIGHT = Cast when it glows\nBuild combos · Fill FRENZY meter · Read the ice!';
 
-function showModeOverlay(screen){
-  const btn     = document.getElementById('play-again-btn');
-  const card    = document.getElementById('ov-card');
-  const authDiv = document.getElementById('ov-auth');
-  const userBar = document.getElementById('ov-user-bar');
-  const isGuest = (playMode === 'guest');
+function formatRunDurationMs(ms){
+  const m=Math.floor(ms/60000), s=Math.floor((ms%60000)/1000);
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
 
-  if(btn) btn.style.display = 'none';
+function fillPostrunPanel(){
+  const durMs=Math.max(0,Date.now()-runStartTime);
+  const tEl=document.getElementById('postrun-stat-time');
+  const cEl=document.getElementById('postrun-stat-combo');
+  const fEl=document.getElementById('postrun-stat-fish');
+  const scEl=document.getElementById('postrun-score-val');
+  if(tEl) tEl.textContent=formatRunDurationMs(durMs);
+  if(cEl) cEl.textContent=`×${maxComboThisRun}`;
+  if(fEl) fEl.textContent=String(fishCount);
+  if(scEl) scEl.textContent=Number(score).toLocaleString();
+  const deltaEl=document.getElementById('postrun-delta');
+  if(deltaEl){
+    if(postrunScoreDelta>0){
+      deltaEl.textContent=`+ ${Number(postrunScoreDelta).toLocaleString()} personal best`;
+      deltaEl.classList.remove('postrun-delta-hide');
+    }else{
+      deltaEl.classList.add('postrun-delta-hide');
+    }
+  }
+  const dotsWrap=document.getElementById('postrun-dots');
+  if(dotsWrap){
+    dotsWrap.innerHTML='';
+    const used=(playMode==='guest')?0:attemptsUsed;
+    for(let i=0;i<5;i++){
+      const d=document.createElement('div');
+      d.className='dot '+(i<used?'dot-used':'dot-avail');
+      dotsWrap.appendChild(d);
+    }
+  }
+  const attText=document.getElementById('postrun-attempt-text');
+  if(attText){
+    if(playMode==='guest') attText.textContent='Guest run · scores not saved';
+    else if(playMode==='freeplay') attText.textContent='Free play · scores not saved';
+    else{
+      const rem=Math.max(0,5-attemptsUsed);
+      attText.textContent=`${attemptsUsed} of 5 attempts used · ${rem} remaining today`;
+    }
+  }
+  document.getElementById('postrun-rank-val').textContent='…';
+}
+
+async function refreshPostrunRankDisplay(){
+  const el=document.getElementById('postrun-rank-val');
+  if(!el) return;
+  if(playMode==='guest'||!window._miniGameshowSb){
+    el.textContent='—';
+    return;
+  }
+  try{
+    const { data:{ session } }=await window._miniGameshowSb.auth.getSession();
+    if(!session?.user||!weekId){ el.textContent='—'; return; }
+    const lb=await fetchUserRank(session.user.id);
+    el.textContent=lb?.rank!=null?`#${lb.rank}`:'—';
+  }catch{ el.textContent='—'; }
+}
+
+function showModeOverlay(screen){
+  const btn      = document.getElementById('play-again-btn');
+  const prBtn    = document.getElementById('postrun-play-btn');
+  const card     = document.getElementById('ov-card');
+  const titleBlk = document.getElementById('ov-title-block');
+  const postBlk  = document.getElementById('ov-postrun-block');
+  const authDiv  = document.getElementById('ov-auth');
+  const userBar  = document.getElementById('ov-user-bar');
+  const tipPost  = document.getElementById('postrun-tip');
+  const isGuest  = (playMode === 'guest');
+
   if(card) card.dataset.zone = (screen === 'title') ? 'title' : 'gameover';
 
-  // Show auth form for guests, signed-in strip for competing/freeplay
-  if(authDiv) authDiv.style.display = isGuest ? 'flex'  : 'none';
-  if(userBar) userBar.style.display = isGuest ? 'none'  : 'flex';
-
   if(screen === 'title'){
+    if(titleBlk){ titleBlk.style.display='flex'; titleBlk.removeAttribute('aria-hidden'); }
+    if(postBlk){ postBlk.style.display='none'; postBlk.setAttribute('aria-hidden','true'); }
+    if(btn) btn.style.display = 'none';
+    if(authDiv) authDiv.style.display = isGuest ? 'flex'  : 'none';
+    if(userBar) userBar.style.display = isGuest ? 'none'  : 'flex';
+
     if(playMode === 'competing'){
       const next = attemptsUsed + 1;
       const name = playerName ? `Hey ${playerName} — ` : '';
@@ -1021,35 +1309,42 @@ function showModeOverlay(screen){
         CONTROLS_TIP + '\n\n(All 5 daily attempts used — scores not saved)');
       if(btn){ btn.textContent = 'FREE PLAY'; btn.style.display = 'inline-block'; }
     } else {
-      // guest
       showOverlay('PENGU FISHER', '', 'Sign in to compete for prizes!', CONTROLS_TIP);
       if(btn){ btn.textContent = 'PLAY AS GUEST'; btn.style.display = 'inline-block'; }
     }
     return;
   }
 
-  // screen === 'gameover'
-  const s = `SCORE: ${pad(score)}`;
+  // gameover — Zone 3 mock layout
+  if(titleBlk){ titleBlk.style.display='none'; titleBlk.setAttribute('aria-hidden','true'); }
+  if(postBlk){ postBlk.style.display='block'; postBlk.removeAttribute('aria-hidden'); }
+  if(btn) btn.style.display='none';
+  document.getElementById('overlay').style.display='flex';
+  fillPostrunPanel();
+  refreshPostrunRankDisplay();
+
+  let prLabel='Play again';
+  let tipLines='';
   if(playMode === 'competing'){
     const used = attemptsUsed;
     if(used >= 5){
-      showOverlay('GAME OVER', s, 'All 5 attempts used!',
-        `Fish caught: ${fishCount}\n\nWant to keep playing for fun?`);
-      if(btn){ btn.textContent = 'FREE PLAY'; btn.style.display = 'inline-block'; }
+      prLabel='Free play';
+      tipLines='All 5 attempts used for today.\nFish caught: '+fishCount+'\n\nWant to keep playing for fun?';
     } else {
-      const name = playerName ? `${playerName} — ` : '';
-      showOverlay('GAME OVER', s, 'Score saved!',
-        `${name}Attempt ${used}/5 · Fish caught: ${fishCount}`);
-      if(btn){ btn.textContent = 'PLAY AGAIN'; btn.style.display = 'inline-block'; }
+      prLabel='Play again';
+      tipLines=(playerName?`${playerName} — `:'')+`Attempt ${used}/5 · Fish caught: ${fishCount}`;
     }
   } else if(playMode === 'freeplay'){
-    showOverlay('GAME OVER', s, 'Free Play',
-      `Fish caught: ${fishCount}\n\nNew seed every run — scores not saved`);
-    if(btn){ btn.textContent = 'FREE PLAY'; btn.style.display = 'inline-block'; }
+    prLabel='Free play';
+    tipLines=`Fish caught: ${fishCount}\n\nNew seed every run — scores not saved`;
   } else {
-    // guest
-    showOverlay('GAME OVER', s, '', `Fish caught: ${fishCount}`);
-    if(btn){ btn.textContent = 'PLAY AGAIN'; btn.style.display = 'inline-block'; }
+    prLabel='Play again';
+    tipLines=`Fish caught: ${fishCount}\n\nGuest scores are not saved.`;
+  }
+  if(prBtn) prBtn.textContent = prLabel;
+  if(tipPost){
+    if(tipLines){ tipPost.style.display='block'; tipPost.textContent=tipLines; }
+    else{ tipPost.style.display='none'; tipPost.textContent=''; }
   }
 }
 
@@ -1137,6 +1432,7 @@ function resetGame(){
   rng=makeRng(currentSeed);
   runStartTime=Date.now();
   inputCount=0;
+  maxComboThisRun=1;
   score=0;fishCount=0;lives=3;gameSpeed=2.6;frameCount=0;distance=0;
   combo=1;comboTimer=0;fishMeter=0;frenzyActive=false;frenzyTimer=0;backpackPulse=0;
   obstacles=[];particles=[];textPops=[];obstacleTimer=60;
@@ -1834,8 +2130,8 @@ async function submitRunToSupabase(){
   const { data: game, error: gErr } = await sb.from('games').select('id').eq('slug','pengu-fisher').maybeSingle();
   if(gErr||!game?.id){
     showModeOverlay('gameover');
-    const tipEl=document.getElementById('ovTip');
-    if(tipEl) tipEl.textContent+= '\n\nCould not load game id.';
+    const tipEl=document.getElementById('postrun-tip');
+    if(tipEl){ tipEl.style.display='block'; tipEl.textContent=(tipEl.textContent||'')+'\n\nCould not load game id.'; }
     return;
   }
   const nowIso=new Date().toISOString();
@@ -1847,8 +2143,8 @@ async function submitRunToSupabase(){
     .maybeSingle();
   if(wErr||!week?.id){
     showModeOverlay('gameover');
-    const tipEl=document.getElementById('ovTip');
-    if(tipEl) tipEl.textContent+='\n\nNo active competition week (run seed_week.sql).';
+    const tipEl=document.getElementById('postrun-tip');
+    if(tipEl){ tipEl.style.display='block'; tipEl.textContent=(tipEl.textContent||'')+'\n\nNo active competition week (run seed_week.sql).'; }
     return;
   }
   const row={
@@ -1864,10 +2160,9 @@ async function submitRunToSupabase(){
   };
   const { error: insErr } = await sb.from('runs').insert(row);
   if(insErr){
-    // Show overlay first so feedback is visible
     showModeOverlay('gameover');
-    const tipEl=document.getElementById('ovTip');
-    if(tipEl) tipEl.textContent+='\n\nSave failed: '+(insErr.message||String(insErr));
+    const tipEl=document.getElementById('postrun-tip');
+    if(tipEl){ tipEl.style.display='block'; tipEl.textContent=(tipEl.textContent||'')+'\n\nSave failed: '+(insErr.message||String(insErr)); }
     return;
   }
   // Re-fetch authoritative count + rank, then redraw overlay + HUD
@@ -1879,6 +2174,8 @@ async function submitRunToSupabase(){
     attemptsUsed
   });
   showModeOverlay('gameover');
+  const rk=document.getElementById('postrun-rank-val');
+  if(rk && lb2?.rank != null) rk.textContent='#'+lb2.rank;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1894,6 +2191,26 @@ document.getElementById('play-again-btn').addEventListener('click',e=>{
   e.stopPropagation();
   startFromOverlay();
 });
+document.getElementById('postrun-play-btn').addEventListener('click',e=>{
+  e.stopPropagation();
+  startFromOverlay();
+});
+document.getElementById('ov-open-lb').addEventListener('click',e=>{
+  e.stopPropagation();
+  setGspTab('leaderboard');
+  openGsp();
+});
+document.getElementById('ov-share-run').addEventListener('click',async e=>{
+  e.stopPropagation();
+  const url = window.location.href;
+  try{
+    if(navigator.share){
+      await navigator.share({ title:'Pengu Fisher', text:`Score ${Number(score).toLocaleString()} — Mini Gameshow`, url });
+      return;
+    }
+    await navigator.clipboard.writeText(url);
+  }catch(_){ /* ignore */ }
+});
 
 // ═══════════════════════════════════════════════════════════
 //  ZONE 2 — Menu overlay (Leaderboard / My scores / Account / Share)
@@ -1907,7 +2224,7 @@ let _gspOpen = false;
 function setGspTab(tab){
   document.querySelectorAll('#gsp-tabs [data-tab]').forEach(b=>{
     const on = b.dataset.tab === tab;
-    b.classList.toggle('gsp-tab-active', on);
+    b.classList.toggle('active', on);
     b.setAttribute('aria-selected', on ? 'true' : 'false');
   });
   document.querySelectorAll('.gsp-pane').forEach(p=>{
@@ -1940,6 +2257,26 @@ function openGsp(){
 
 function toggleGsp(){ _gspOpen ? closeGsp() : openGsp(); }
 
+const _LB_AVATAR_STYLES=[
+  ['#FAEEDA','#633806'],
+  ['#F1EFE8','#444441'],
+  ['#FAECE7','#712B13'],
+  ['#E8F4EE','#1D5C3A'],
+  ['#EDEAF8','#534AB7'],
+];
+function _lbRankTone(r){
+  if(r===1) return 'gold';
+  if(r===2) return 'silver';
+  if(r===3) return 'bronze';
+  return '';
+}
+function _lbInitials(name,userId){
+  const s=String(name||'').trim();
+  if(s.length>=2) return s.slice(0,2).toUpperCase();
+  if(userId) return String(userId).replace(/-/g,'').slice(0,2).toUpperCase();
+  return '??';
+}
+
 async function refreshGspLeaderboard(){
   const body = document.getElementById('gsp-lb-body');
   if(!body) return;
@@ -1950,6 +2287,8 @@ async function refreshGspLeaderboard(){
   }
   body.innerHTML = '<p class="gsp-muted">Loading…</p>';
   try{
+    const { data:{ session } } = await sb.auth.getSession();
+    const myId = session?.user?.id || null;
     let { data, error } = await sb.from('leaderboard')
       .select('rank,best_score,user_id,profiles(username)')
       .eq('week_id', weekId)
@@ -1968,12 +2307,22 @@ async function refreshGspLeaderboard(){
       body.innerHTML = '<p class="gsp-muted">No scores yet this week — be the first!</p>';
       return;
     }
-    let html = '<table class="gsp-lb-table"><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead><tbody>';
-    for(const row of data){
-      const name = row.profiles?.username || ('…' + String(row.user_id||'').slice(0,4));
-      html += `<tr><td>${row.rank ?? '—'}</td><td>${gspEscapeHtml(name)}</td><td>${Number(row.best_score).toLocaleString()}</td></tr>`;
-    }
-    html += '</tbody></table>';
+    let html = '<div class="lb-week"><div><div class="lb-week-title">Pengu Fisher · This week</div><div class="lb-week-sub">Ends per week rules · see HUD for live show</div></div>';
+    if(weekPrize) html += `<div class="lb-prize-pill">${gspEscapeHtml(weekPrize)}</div>`;
+    html += '</div>';
+    data.forEach((row,i)=>{
+      const name = row.profiles?.username || 'Player';
+      const ini = _lbInitials(name, row.user_id);
+      const [bg,fg] = _LB_AVATAR_STYLES[i % _LB_AVATAR_STYLES.length];
+      const isMe = myId && row.user_id === myId;
+      const tone = _lbRankTone(row.rank);
+      html += `<div class="lb-row${isMe?' me':''}">` +
+        `<span class="lb-rank ${tone}${isMe?' me-rank':''}">${row.rank ?? '—'}</span>` +
+        `<div class="lb-avatar" style="background:${bg};color:${fg}">${gspEscapeHtml(ini)}</div>` +
+        `<span class="lb-name"${isMe?' style="color:#534AB7;font-weight:500"':''}>${isMe?'you':gspEscapeHtml(name)}</span>` +
+        `<span class="lb-score${isMe?' me-score':''}">${Number(row.best_score).toLocaleString()}</span>` +
+        `</div>`;
+    });
     body.innerHTML = html;
   }catch(e){
     console.error(e);
