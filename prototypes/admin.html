@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiniGameshow — Admin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:        #0a0614;
+  --surface:   #12092a;
+  --border:    rgba(180,140,255,0.18);
+  --accent:    #ffcc44;
+  --accent2:   #a855f7;
+  --green:     #22c55e;
+  --red:       #ef4444;
+  --amber:     #f59e0b;
+  --muted:     #6b7280;
+  --text:      #e2e8f0;
+  --text-dim:  #94a3b8;
+  --card-bg:   rgba(18,9,42,0.95);
+}
+
+html, body {
+  background:var(--bg);
+  color:var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size:14px;
+  min-height:100%;
+}
+
+/* ── layout ── */
+body { display:flex; flex-direction:column; min-height:100vh; }
+
+header {
+  background:rgba(10,6,20,0.96);
+  border-bottom:1px solid var(--border);
+  padding:14px 24px;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; position:sticky; top:0; z-index:100;
+}
+.header-brand {
+  font-family:'Press Start 2P', monospace;
+  font-size:11px;
+  color:var(--accent);
+  text-shadow:2px 2px 0 #884400;
+  letter-spacing:1px;
+}
+.header-user {
+  display:flex; align-items:center; gap:10px;
+  font-size:12px; color:var(--text-dim);
+}
+
+main { flex:1; padding:28px 24px; max-width:1000px; margin:0 auto; width:100%; }
+
+/* ── auth gate ── */
+#auth-gate {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  min-height:60vh; gap:20px; text-align:center;
+}
+#auth-gate h2 {
+  font-family:'Press Start 2P', monospace;
+  font-size:14px; color:var(--accent); margin-bottom:8px;
+}
+#auth-gate p { color:var(--text-dim); line-height:1.7; max-width:380px; }
+
+/* ── admin panel ── */
+#admin-panel { display:none; flex-direction:column; gap:28px; }
+
+/* ── cards ── */
+.card {
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:22px 24px;
+}
+.card-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:18px; gap:12px;
+}
+.card-title {
+  font-family:'Press Start 2P', monospace;
+  font-size:10px; color:var(--accent);
+  letter-spacing:1px;
+}
+
+/* ── buttons ── */
+.btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 16px; border-radius:8px; border:none;
+  font-size:12px; font-weight:600; cursor:pointer;
+  transition:filter .15s, transform .1s;
+}
+.btn:active { transform:scale(0.96); }
+.btn-primary {
+  background:var(--accent2); color:#fff;
+  box-shadow:0 0 16px rgba(168,85,247,0.3);
+}
+.btn-primary:hover { filter:brightness(1.15); }
+.btn-success {
+  background:var(--green); color:#fff;
+  box-shadow:0 0 14px rgba(34,197,94,0.25);
+}
+.btn-success:hover { filter:brightness(1.15); }
+.btn-danger  { background:var(--red); color:#fff; }
+.btn-danger:hover { filter:brightness(1.15); }
+.btn-ghost {
+  background:transparent; color:var(--text-dim);
+  border:1px solid var(--border);
+}
+.btn-ghost:hover { background:rgba(255,255,255,0.05); color:var(--text); }
+.btn-sm { padding:5px 10px; font-size:11px; border-radius:6px; }
+
+/* ── form ── */
+#week-form { display:none; flex-direction:column; gap:0; }
+#week-form.visible { display:flex; }
+
+.form-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px 20px;
+}
+@media(max-width:600px){ .form-grid { grid-template-columns:1fr; } }
+
+.form-group {
+  display:flex; flex-direction:column; gap:5px;
+}
+.form-group.full { grid-column:1/-1; }
+
+label {
+  font-size:11px; font-weight:600;
+  color:var(--text-dim); letter-spacing:0.5px;
+}
+.label-hint {
+  font-size:10px; color:var(--muted);
+  font-weight:normal; margin-left:6px;
+}
+
+input[type=text], input[type=url], input[type=number],
+input[type=datetime-local], select, textarea {
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(180,140,255,0.22);
+  border-radius:8px;
+  color:var(--text);
+  font-size:13px;
+  padding:9px 12px;
+  width:100%;
+  transition:border-color .15s, box-shadow .15s;
+  font-family:inherit;
+}
+input:focus, select:focus, textarea:focus {
+  outline:none;
+  border-color:var(--accent2);
+  box-shadow:0 0 0 3px rgba(168,85,247,0.18);
+}
+textarea { resize:vertical; min-height:72px; }
+select option { background:#1e1040; }
+
+.form-divider {
+  grid-column:1/-1;
+  border:none; border-top:1px solid var(--border);
+  margin:6px 0 2px;
+}
+.form-section-label {
+  grid-column:1/-1;
+  font-size:10px; font-weight:700;
+  color:var(--accent2); letter-spacing:1.5px;
+  text-transform:uppercase;
+  padding-top:4px;
+}
+.form-actions {
+  display:flex; gap:10px; padding-top:6px; grid-column:1/-1;
+  flex-wrap:wrap;
+}
+
+/* ── hud preview ── */
+#hud-preview {
+  background:linear-gradient(to bottom, rgba(10,4,30,0.92) 0%, rgba(10,4,30,0.75) 100%);
+  border-radius:10px;
+  padding:10px 14px;
+  font-family:'Press Start 2P', monospace;
+  font-size:10px;
+  line-height:2;
+  border:1px solid rgba(255,170,100,0.2);
+}
+.prev-prize { color:#ffe600; }
+.prev-prize span { color:#ffaa55; font-size:8px; margin-right:6px; }
+.prev-sched-normal { color:#ffbb66; font-size:8px; }
+.prev-sched-urgent { color:#ff3333; font-size:8px; }
+.prev-sched-closed { color:#778899; font-size:8px; }
+
+/* ── weeks table ── */
+.weeks-table-wrap { overflow-x:auto; }
+table {
+  width:100%; border-collapse:collapse;
+  font-size:12px;
+}
+th {
+  text-align:left; padding:8px 12px;
+  font-size:10px; font-weight:700;
+  color:var(--text-dim); letter-spacing:0.8px;
+  border-bottom:1px solid var(--border);
+}
+td {
+  padding:11px 12px;
+  border-bottom:1px solid rgba(180,140,255,0.08);
+  vertical-align:middle;
+}
+tr:hover td { background:rgba(255,255,255,0.025); }
+
+/* ── status badges ── */
+.badge {
+  display:inline-block;
+  padding:2px 8px; border-radius:100px;
+  font-size:10px; font-weight:700; letter-spacing:0.5px;
+}
+.badge-active   { background:rgba(34,197,94,0.18); color:#4ade80; border:1px solid rgba(34,197,94,0.35); }
+.badge-upcoming { background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.30); }
+.badge-past     { background:rgba(107,114,128,0.15); color:#9ca3af; border:1px solid rgba(107,114,128,0.25); }
+
+/* ── status/toast ── */
+#status-bar {
+  display:none;
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+  background:#1e1040; border:1px solid var(--border);
+  border-radius:10px; padding:11px 20px;
+  font-size:12px; color:var(--text);
+  box-shadow:0 4px 24px rgba(0,0,0,0.5);
+  z-index:999; max-width:420px; text-align:center;
+}
+#status-bar.ok  { border-color:rgba(34,197,94,0.5); color:#4ade80; }
+#status-bar.err { border-color:rgba(239,68,68,0.5); color:#f87171; }
+
+/* ── info note ── */
+.note {
+  background:rgba(168,85,247,0.08);
+  border:1px solid rgba(168,85,247,0.25);
+  border-radius:8px; padding:12px 16px;
+  font-size:12px; color:var(--text-dim); line-height:1.7;
+}
+.note strong { color:var(--text); }
+.note code {
+  background:rgba(255,255,255,0.1);
+  padding:1px 5px; border-radius:4px;
+  font-family:monospace; font-size:11px; color:#c4b5fd;
+}
+
+/* ── sign-in form in gate ── */
+.auth-form {
+  display:flex; flex-direction:column; gap:10px;
+  width:100%; max-width:320px;
+}
+.auth-form input {
+  padding:10px 14px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid var(--border); border-radius:8px;
+  color:var(--text); font-size:13px; font-family:inherit;
+}
+.auth-form input:focus {
+  outline:none; border-color:var(--accent2);
+  box-shadow:0 0 0 3px rgba(168,85,247,0.18);
+}
+</style>
+<script src="supabase-config.js"></script>
+<script>window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'', anonKey:'' };</script>
+</head>
+<body>
+
+<header>
+  <div class="header-brand">🎮 MINI GAMESHOW</div>
+  <div class="header-user">
+    <span id="hdr-user">Not signed in</span>
+    <button class="btn btn-ghost btn-sm" id="btn-signout" style="display:none">Sign out</button>
+  </div>
+</header>
+
+<!-- ── Auth gate ── -->
+<div id="auth-gate">
+  <div>
+    <h2>Admin Panel</h2>
+    <p>Sign in with your admin account to manage competition weeks, prizes, and show schedule.</p>
+  </div>
+  <form class="auth-form" id="signin-form" onsubmit="return false">
+    <input id="g-email" type="email" autocomplete="email" placeholder="Email" required>
+    <input id="g-pass"  type="password" autocomplete="current-password" placeholder="Password" required>
+    <button type="submit" class="btn btn-primary" id="btn-signin">Sign in</button>
+    <p id="signin-err" style="color:var(--red);font-size:12px;text-align:center;display:none"></p>
+  </form>
+</div>
+
+<!-- ── Admin panel ── -->
+<div id="admin-panel">
+  <main>
+
+    <!-- Not-admin warning -->
+    <div id="not-admin-note" class="note" style="display:none;margin-bottom:20px">
+      ⚠ <strong>Not an admin account.</strong>
+      Set <code>is_admin = true</code> on your profile in the Supabase Table Editor,
+      then refresh this page.
+    </div>
+
+    <!-- ── Weeks management ── -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Competition Weeks</div>
+        <button class="btn btn-primary btn-sm" id="btn-new-week">+ New Week</button>
+      </div>
+
+      <!-- Create / Edit form -->
+      <form id="week-form">
+        <div class="form-grid">
+
+          <div class="form-section-label">Game &amp; Window</div>
+
+          <div class="form-group">
+            <label for="f-game">Game <span class="label-hint">required</span></label>
+            <select id="f-game" required></select>
+          </div>
+
+          <div class="form-group">
+            <label for="f-week-code">Week code <span class="label-hint">auto-suggested, unique</span></label>
+            <input type="text" id="f-week-code" placeholder="2026-W14" required>
+          </div>
+
+          <div class="form-group">
+            <label for="f-starts">Scoring opens <span class="label-hint">local time</span></label>
+            <input type="datetime-local" id="f-starts" required>
+          </div>
+
+          <div class="form-group">
+            <label for="f-ends">Scoring closes <span class="label-hint">Sat 23:59 local</span></label>
+            <input type="datetime-local" id="f-ends" required>
+          </div>
+
+          <hr class="form-divider">
+          <div class="form-section-label">Live Show</div>
+
+          <div class="form-group">
+            <label for="f-show-at">Show date &amp; time <span class="label-hint">local time</span></label>
+            <input type="datetime-local" id="f-show-at">
+          </div>
+
+          <div class="form-group">
+            <label for="f-show-url">Stream URL <span class="label-hint">optional</span></label>
+            <input type="url" id="f-show-url" placeholder="https://youtube.com/live/…">
+          </div>
+
+          <hr class="form-divider">
+          <div class="form-section-label">Prize</div>
+
+          <div class="form-group">
+            <label for="f-prize">Prize title <span class="label-hint">shown in game HUD</span></label>
+            <input type="text" id="f-prize" placeholder="$250 Amazon Gift Card" required>
+          </div>
+
+          <div class="form-group">
+            <label for="f-sponsor">Sponsor name <span class="label-hint">optional</span></label>
+            <input type="text" id="f-sponsor" placeholder="Acme Co.">
+          </div>
+
+          <div class="form-group full">
+            <label for="f-prize-desc">Prize description <span class="label-hint">share cards / leaderboard</span></label>
+            <textarea id="f-prize-desc" placeholder="Win a $250 Amazon gift card courtesy of Acme Co."></textarea>
+          </div>
+
+          <hr class="form-divider">
+          <div class="form-section-label">Seed (optional)</div>
+
+          <div class="form-group">
+            <label for="f-seed">Competition seed <span class="label-hint">auto from start date</span></label>
+            <input type="number" id="f-seed" placeholder="20260401">
+          </div>
+
+          <div class="form-group full" id="preview-wrap">
+            <label>HUD strip preview</label>
+            <div id="hud-preview">
+              <div><span class="prev-prize"><span>PRIZE</span><span id="prev-prize-val">···</span></span></div>
+              <div id="prev-sched" class="prev-sched-normal">Scoring closes Sat midnight · Live show Sun ···</div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-success" id="btn-save-week">💾 Save Week</button>
+            <button type="button" class="btn btn-ghost" id="btn-cancel-form">Cancel</button>
+            <button type="button" class="btn btn-danger btn-sm" id="btn-delete-week" style="display:none;margin-left:auto">Delete</button>
+          </div>
+
+        </div><!-- /form-grid -->
+      </form>
+      <!-- /week-form -->
+
+      <!-- Weeks list -->
+      <div class="weeks-table-wrap" id="weeks-list-wrap">
+        <table id="weeks-table">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Week</th>
+              <th>Game</th>
+              <th>Scoring window</th>
+              <th>Live show</th>
+              <th>Prize</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="weeks-tbody">
+            <tr><td colspan="7" style="color:var(--muted);text-align:center;padding:24px">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /card -->
+
+    <!-- ── Setup note ── -->
+    <div class="note">
+      <strong>Setup reminder:</strong>
+      After running the <code>20260329120000_admin_weeks.sql</code> migration, go to
+      Supabase → Table Editor → <code>profiles</code>, find your row, and set
+      <code>is_admin = true</code>. Refresh this page. You will then be able to create and
+      edit competition weeks. The game HUD pulls <strong>prize title</strong> and
+      <strong>show time</strong> live from the active week row.
+    </div>
+
+  </main>
+</div>
+
+<!-- Toast -->
+<div id="status-bar"></div>
+
+<script type="module">
+const cfg = window.__MINIGAMESHOW_SUPABASE__ || {};
+const SB_URL = (cfg.url || '').trim();
+const SB_KEY = (cfg.anonKey || '').trim();
+
+let sb = null;
+let currentUser = null;
+let isAdmin = false;
+let editingWeekId = null; // null = creating, uuid = editing
+let gamesCache = [];
+
+// ── helpers ──────────────────────────────────────────────────────────────
+function toast(msg, type='ok', ms=3000){
+  const el=document.getElementById('status-bar');
+  el.textContent=msg; el.className=type; el.style.display='block';
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>{ el.style.display='none'; }, ms);
+}
+
+function dt(iso){ // ISO → local datetime-local string
+  if(!iso) return '';
+  const d=new Date(iso);
+  const pad=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function dtToIso(val){ // datetime-local value → UTC ISO
+  return val ? new Date(val).toISOString() : null;
+}
+
+function weekStatus(row){
+  const now=Date.now();
+  const s=new Date(row.starts_at).getTime();
+  const e=new Date(row.ends_at).getTime();
+  if(now < s)  return 'upcoming';
+  if(now > e)  return 'past';
+  return 'active';
+}
+function statusBadge(row){
+  const st=weekStatus(row);
+  const labels={active:'● Active',upcoming:'⏳ Upcoming',past:'✓ Past'};
+  return `<span class="badge badge-${st}">${labels[st]}</span>`;
+}
+
+function fmtDate(iso){
+  if(!iso) return '—';
+  return new Date(iso).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+
+// ── show/hide form ────────────────────────────────────────────────────────
+function openForm(week=null){
+  editingWeekId = week?.id ?? null;
+  document.getElementById('week-form').classList.add('visible');
+  document.getElementById('btn-delete-week').style.display = week ? 'inline-flex':'none';
+
+  // populate game dropdown
+  const sel=document.getElementById('f-game');
+  sel.innerHTML = gamesCache.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+
+  if(week){
+    sel.value                                         = week.game_id;
+    document.getElementById('f-week-code').value     = week.week_code;
+    document.getElementById('f-starts').value        = dt(week.starts_at);
+    document.getElementById('f-ends').value          = dt(week.ends_at);
+    document.getElementById('f-show-at').value       = dt(week.show_at);
+    document.getElementById('f-show-url').value      = week.show_url   || '';
+    document.getElementById('f-prize').value         = week.prize_title || '';
+    document.getElementById('f-prize-desc').value    = week.prize_description || '';
+    document.getElementById('f-sponsor').value       = week.sponsor_name || '';
+    document.getElementById('f-seed').value          = week.seed ?? '';
+  } else {
+    // defaults for new week
+    document.getElementById('f-week-code').value    = suggestWeekCode();
+    document.getElementById('f-starts').value       = suggestStart();
+    document.getElementById('f-ends').value         = suggestEnd();
+    document.getElementById('f-show-at').value      = suggestShow();
+    document.getElementById('f-show-url').value     = '';
+    document.getElementById('f-prize').value        = '';
+    document.getElementById('f-prize-desc').value   = '';
+    document.getElementById('f-sponsor').value      = '';
+    document.getElementById('f-seed').value         = suggestSeed();
+  }
+  updatePreview();
+  document.getElementById('f-prize').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function closeForm(){
+  document.getElementById('week-form').classList.remove('visible');
+  editingWeekId=null;
+}
+
+// ── suggest helpers (next ISO Monday) ────────────────────────────────────
+function nextMonday(){
+  const d=new Date(); d.setHours(0,0,0,0);
+  const day=d.getDay(); // 0=Sun
+  const add=day===0?1:(8-day)%7||7;
+  d.setDate(d.getDate()+add);
+  return d;
+}
+function suggestWeekCode(){
+  const d=nextMonday();
+  const jan4=new Date(d.getFullYear(),0,4);
+  const week=Math.ceil(((d-jan4)/86400000+jan4.getDay()+1)/7);
+  return `${d.getFullYear()}-W${String(week).padStart(2,'0')}`;
+}
+function pad2(n){ return String(n).padStart(2,'0'); }
+function toLocal(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
+function suggestStart(){ const d=nextMonday(); d.setHours(0,0,0); return toLocal(d); }
+function suggestEnd(){
+  const d=nextMonday(); d.setDate(d.getDate()+5); d.setHours(23,59,0); return toLocal(d);
+}
+function suggestShow(){
+  const d=nextMonday(); d.setDate(d.getDate()+6); d.setHours(19,0,0); return toLocal(d);
+}
+function suggestSeed(){
+  const d=nextMonday();
+  return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`;
+}
+
+// ── live HUD preview ──────────────────────────────────────────────────────
+function updatePreview(){
+  const prize  = document.getElementById('f-prize').value.trim() || '···';
+  const showAt = document.getElementById('f-show-at').value;
+  const prizeEl = document.getElementById('prev-prize-val');
+  const schedEl = document.getElementById('prev-sched');
+  if(prizeEl) prizeEl.textContent = prize;
+  if(schedEl && showAt){
+    const d=new Date(showAt);
+    const t=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',timeZoneName:'short'}).replace(':00','').toLowerCase();
+    schedEl.textContent=`Scoring closes Sat midnight · Live show Sun ${t}`;
+    schedEl.className='prev-sched-normal';
+  }
+}
+
+// ── load data ──────────────────────────────────────────────────────────────
+async function loadGames(){
+  const {data}=await sb.from('games').select('id,name,slug').order('name');
+  gamesCache=data||[];
+}
+
+async function loadWeeks(){
+  const tbody=document.getElementById('weeks-tbody');
+  const {data,error}=await sb.from('weeks')
+    .select('id,week_code,game_id,starts_at,ends_at,show_at,show_url,prize_title,prize_description,sponsor_name,seed')
+    .order('starts_at',{ascending:false});
+
+  if(error){ tbody.innerHTML=`<tr><td colspan="7" style="color:var(--red)">Error: ${error.message}</td></tr>`; return; }
+  if(!data?.length){ tbody.innerHTML=`<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:24px">No weeks yet. Create one above ↑</td></tr>`; return; }
+
+  const gameMap=Object.fromEntries(gamesCache.map(g=>[g.id,g.name]));
+  tbody.innerHTML=data.map(w=>`
+    <tr>
+      <td>${statusBadge(w)}</td>
+      <td style="font-weight:600">${w.week_code}</td>
+      <td style="color:var(--text-dim)">${gameMap[w.game_id]||'—'}</td>
+      <td style="color:var(--text-dim);font-size:11px">${fmtDate(w.starts_at)} → ${fmtDate(w.ends_at)}</td>
+      <td style="font-size:11px">${w.show_at?fmtDate(w.show_at):'<span style="color:var(--muted)">Not set</span>'}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.prize_title||''}">${w.prize_title||'<span style="color:var(--muted)">—</span>'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="window._editWeek('${w.id}')">Edit</button></td>
+    </tr>
+  `).join('');
+}
+
+// ── save week ──────────────────────────────────────────────────────────────
+async function saveWeek(e){
+  e.preventDefault();
+  const row={
+    game_id:           document.getElementById('f-game').value,
+    week_code:         document.getElementById('f-week-code').value.trim(),
+    starts_at:         dtToIso(document.getElementById('f-starts').value),
+    ends_at:           dtToIso(document.getElementById('f-ends').value),
+    show_at:           dtToIso(document.getElementById('f-show-at').value)||null,
+    show_url:          document.getElementById('f-show-url').value.trim()||null,
+    prize_title:       document.getElementById('f-prize').value.trim()||null,
+    prize_description: document.getElementById('f-prize-desc').value.trim()||null,
+    sponsor_name:      document.getElementById('f-sponsor').value.trim()||null,
+    seed:              document.getElementById('f-seed').value?Number(document.getElementById('f-seed').value):null,
+  };
+  if(!row.starts_at||!row.ends_at){ toast('Start and end dates are required','err'); return; }
+  if(new Date(row.ends_at)<=new Date(row.starts_at)){ toast('End must be after start','err'); return; }
+
+  const btn=document.getElementById('btn-save-week');
+  btn.disabled=true; btn.textContent='Saving…';
+
+  let error;
+  if(editingWeekId){
+    ({error}=await sb.from('weeks').update(row).eq('id',editingWeekId));
+  } else {
+    ({error}=await sb.from('weeks').insert(row));
+  }
+  btn.disabled=false; btn.textContent='💾 Save Week';
+
+  if(error){ toast('Save failed: '+error.message,'err',5000); return; }
+  toast(editingWeekId?'Week updated ✓':'Week created ✓','ok');
+  closeForm();
+  loadWeeks();
+}
+
+// ── delete week ────────────────────────────────────────────────────────────
+async function deleteWeek(){
+  if(!editingWeekId) return;
+  if(!confirm('Delete this week? This cannot be undone.')) return;
+  const {error}=await sb.from('weeks').delete().eq('id',editingWeekId);
+  if(error){ toast('Delete failed: '+error.message,'err'); return; }
+  toast('Week deleted','ok');
+  closeForm(); loadWeeks();
+}
+
+// expose to onclick
+window._editWeek = async (id)=>{
+  const {data}=await sb.from('weeks').select('*').eq('id',id).single();
+  if(data) openForm(data);
+};
+
+// ── auth ───────────────────────────────────────────────────────────────────
+function showAuthGate(){ document.getElementById('auth-gate').style.display='flex'; document.getElementById('admin-panel').style.display='none'; }
+function showAdminPanel(){ document.getElementById('auth-gate').style.display='none'; document.getElementById('admin-panel').style.display='flex'; }
+
+async function onSignedIn(session){
+  currentUser=session.user;
+  document.getElementById('hdr-user').textContent=currentUser.email;
+  document.getElementById('btn-signout').style.display='inline-flex';
+
+  // check is_admin
+  const {data:prof}=await sb.from('profiles').select('is_admin').eq('id',currentUser.id).maybeSingle();
+  isAdmin=prof?.is_admin===true;
+  document.getElementById('not-admin-note').style.display=isAdmin?'none':'block';
+
+  showAdminPanel();
+  if(isAdmin){
+    await loadGames();
+    loadWeeks();
+  }
+}
+
+function onSignedOut(){
+  currentUser=null; isAdmin=false;
+  document.getElementById('hdr-user').textContent='Not signed in';
+  document.getElementById('btn-signout').style.display='none';
+  showAuthGate();
+}
+
+// ── boot ───────────────────────────────────────────────────────────────────
+async function boot(){
+  if(!SB_URL||!SB_KEY){
+    document.getElementById('auth-gate').innerHTML='<p style="color:var(--red)">⚠ supabase-config.js not configured.<br>Copy supabase-config.example.js → supabase-config.js and add your keys.</p>';
+    return;
+  }
+  const { createClient }=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+  sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+
+  const {data:{session}}=await sb.auth.getSession();
+  if(session?.user) await onSignedIn(session);
+  else showAuthGate();
+
+  sb.auth.onAuthStateChange(async(_e,session)=>{
+    if(session?.user) await onSignedIn(session);
+    else onSignedOut();
+  });
+
+  // sign in button
+  document.getElementById('signin-form').addEventListener('submit', async()=>{
+    const email=document.getElementById('g-email').value.trim();
+    const pass =document.getElementById('g-pass').value;
+    const errEl=document.getElementById('signin-err');
+    errEl.style.display='none';
+    const {error}=await sb.auth.signInWithPassword({email,password:pass});
+    if(error){ errEl.textContent=error.message; errEl.style.display='block'; }
+  });
+
+  document.getElementById('btn-signout').addEventListener('click',()=>sb.auth.signOut());
+  document.getElementById('btn-new-week').addEventListener('click',()=>openForm());
+  document.getElementById('btn-cancel-form').addEventListener('click',closeForm);
+  document.getElementById('btn-delete-week').addEventListener('click',deleteWeek);
+  document.getElementById('week-form').addEventListener('submit',saveWeek);
+
+  // live preview wiring
+  ['f-prize','f-show-at'].forEach(id=>{
+    document.getElementById(id).addEventListener('input',updatePreview);
+  });
+}
+
+boot().catch(console.error);
+</script>
+</body>
+</html>

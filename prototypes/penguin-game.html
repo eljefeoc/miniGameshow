@@ -541,23 +541,35 @@ let currentSeed=dailySeed; // active seed for this run (guest/freeplay = random)
 function randomSeed(){ return Math.floor(Math.random()*2147483647)+1; }
 
 // ── Show-strip state ────────────────────────────────────────
-let weekPrize = '';        // set by fetchActiveWeek()
-let weekSponsor = '';
-let schedCountdownId = null; // setInterval id for Saturday countdown
+let weekPrize    = '';    // set by fetchActiveWeek()
+let weekSponsor  = '';
+let weekShowAt   = null;  // Date object for live show — from weeks.show_at
+let schedCountdownId = null;
+
+// Format a Date to a short local time string like "7pm PT" or "8pm ET"
+function fmtShowTime(d){
+  if(!d) return '7pm PT';
+  try{
+    // Show user's local time with short timezone name
+    return d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit',timeZoneName:'short'})
+             .replace(':00','').toLowerCase();
+  }catch{ return '7pm PT'; }
+}
 
 function updateShowStrip(){
-  const prizeEl   = document.getElementById('hud-prize-val');
-  const schedEl   = document.getElementById('hud-schedule');
+  const prizeEl = document.getElementById('hud-prize-val');
+  const schedEl = document.getElementById('hud-schedule');
   if(!prizeEl || !schedEl) return;
 
   prizeEl.textContent = weekPrize || '···';
 
   const now = new Date();
   const day = now.getDay(); // 0=Sun 1=Mon…6=Sat
+  const showTime = fmtShowTime(weekShowAt);
 
   if(day === 0){
     // Sunday — scoring closed, show is today
-    schedEl.textContent = 'Scoring closed · Live show today 7pm PT';
+    schedEl.textContent = `Scoring closed · Live show today ${showTime}`;
     schedEl.className   = 'hud-sched-closed';
     if(schedCountdownId){ clearInterval(schedCountdownId); schedCountdownId=null; }
   } else if(day === 6){
@@ -569,18 +581,17 @@ function updateShowStrip(){
       const h   = Math.floor(sec / 3600);
       const m   = Math.floor((sec % 3600) / 60);
       const s   = sec % 60;
-      const t   = h > 0
-        ? `${h}h ${m}m left`
-        : m > 0 ? `${m}m ${s}s left`
-        : `${s}s left`;
-      schedEl.textContent = `${t} · Live show tomorrow 7pm PT`;
+      const t   = h > 0 ? `${h}h ${m}m left`
+                : m > 0 ? `${m}m ${s}s left`
+                : `${s}s left`;
+      schedEl.textContent = `${t} · Live show tomorrow ${showTime}`;
       schedEl.className   = 'hud-sched-urgent';
     };
     updateSat();
     if(!schedCountdownId) schedCountdownId = setInterval(updateSat, 1000);
   } else {
     // Mon–Fri — normal state
-    schedEl.textContent = 'Scoring closes Sat midnight · Live show Sun 7pm PT';
+    schedEl.textContent = `Scoring closes Sat midnight · Live show Sun ${showTime}`;
     schedEl.className   = 'hud-sched-normal';
     if(schedCountdownId){ clearInterval(schedCountdownId); schedCountdownId=null; }
   }
@@ -965,14 +976,15 @@ async function fetchActiveWeek(){
     const { data: game } = await sb.from('games').select('id').eq('slug','pengu-fisher').maybeSingle();
     if(!game?.id) return;
     const { data: week } = await sb.from('weeks')
-      .select('prize_title,sponsor_name')
+      .select('prize_title,sponsor_name,show_at')
       .eq('game_id',game.id)
       .lte('starts_at',nowIso)
       .gte('ends_at',nowIso)
       .maybeSingle();
     if(week){
-      weekPrize   = week.prize_title   || '';
-      weekSponsor = week.sponsor_name  || '';
+      weekPrize   = week.prize_title  || '';
+      weekSponsor = week.sponsor_name || '';
+      weekShowAt  = week.show_at ? new Date(week.show_at) : null;
       updateShowStrip();
     }
   }catch(e){ console.error('fetchActiveWeek',e); }
