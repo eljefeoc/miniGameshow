@@ -836,14 +836,17 @@ Nightly job → checks content_events
 │   └── assets/
 │       └── pengu-sheet.png   ← transparent sprite sheet (Midjourney, 500×500)
 └── supabase/
-    └── schema.sql            ← full DB schema (apply once in Supabase SQL Editor)
+    ├── schema.sql            ← full DB schema (paste in SQL Editor)
+    ├── config.toml           ← Supabase CLI (local dev / link)
+    └── migrations/
+        └── 20250327120000_initial_schema.sql  ← same SQL; use with `supabase db push`
 ```
 
 *Target structure (src/, audio/, pwa/ dirs) to be created when prototype is promoted to production build.*
 
 ### Next Build Priorities (Phase 1)
 
-1. Create Supabase project + apply `schema.sql`
+1. Create Supabase project + apply `schema.sql` (step-by-step: `README.md` → **Supabase**)
 2. Wire Supabase Auth (email) into prototype — sign-up / sign-in flow
 3. Build score submission Edge Function (Vercel) using schema payload spec
 4. Remove fullscreen button, finalize mobile layout (Game 01)
