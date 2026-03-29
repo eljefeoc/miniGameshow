@@ -149,12 +149,187 @@ html, body {
   max-width:min(460px,88vw);
   width:100%;
 }
-/* Zone 2 — title/start: warm glass, inviting */
+/* Zone 2 — title/start: First Play card (#0a0a0f shell) */
 #ov-card[data-zone="title"] {
-  background:radial-gradient(ellipse at 50% 30%, rgba(60,30,10,0.72) 0%, rgba(15,6,36,0.80) 100%);
-  border:1px solid rgba(255,200,80,0.30);
-  box-shadow:0 0 48px rgba(255,160,40,0.18), inset 0 1px 0 rgba(255,220,120,0.10);
+  background:transparent;
+  border:none;
+  box-shadow:none;
+  padding:0;
+  max-width:min(420px,92vw);
 }
+#ov-title-block {
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  width:100%;
+  pointer-events:auto;
+}
+.fp {
+  background:#0a0a0f;
+  border-radius:14px;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  overflow-x:hidden;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  max-height:min(85vh,calc(100vh - 120px));
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.fp-prize { margin-bottom:18px; }
+.fp-prize-eyebrow {
+  font-size:9px; font-weight:500; letter-spacing:0.09em;
+  color:rgba(255,255,255,0.35); text-transform:uppercase; margin-bottom:3px;
+}
+.fp-prize-name { font-size:22px; font-weight:500; color:#fff; line-height:1.15; }
+.fp-prize-meta { font-size:12px; color:#EF9F27; font-weight:500; margin-top:3px; }
+.fp-divider { height:0.5px; background:rgba(255,255,255,0.1); margin:0 0 18px; }
+.fp-expand {
+  margin-bottom:10px;
+  border:0.5px solid rgba(255,255,255,0.1);
+  border-radius:8px;
+  overflow:hidden;
+}
+.fp-expand-trigger {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:11px 14px; cursor:pointer; user-select:none;
+}
+.fp-expand-trigger:active { background:rgba(255,255,255,0.04); }
+.fp-expand-label { font-size:13px; font-weight:500; color:rgba(255,255,255,0.7); }
+.fp-expand-icon {
+  width:18px; height:18px; border-radius:50%;
+  border:0.5px solid rgba(255,255,255,0.2);
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:transform 0.22s ease;
+}
+.fp-expand-icon svg { width:10px; height:10px; }
+.fp-expand-icon.open { transform:rotate(180deg); }
+.fp-expand-body {
+  max-height:0; overflow:hidden;
+  transition:max-height 0.28s ease, padding 0.22s ease;
+  padding:0 14px;
+}
+.fp-expand-body.open { max-height:320px; padding:0 14px 14px; }
+.fp-expand-inner {
+  border-top:0.5px solid rgba(255,255,255,0.08);
+  padding-top:12px; display:flex; flex-direction:column; gap:8px;
+}
+.fp-step { display:flex; align-items:flex-start; gap:10px; }
+.fp-step-num {
+  width:20px; height:20px; border-radius:50%;
+  background:rgba(255,255,255,0.08);
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:500; color:rgba(255,255,255,0.5);
+  flex-shrink:0; margin-top:1px;
+}
+.fp-step-text { font-size:13px; color:rgba(255,255,255,0.55); line-height:1.5; }
+.fp-step-text strong { color:rgba(255,255,255,0.8); font-weight:500; }
+.fp-attempts-row { display:flex; align-items:center; gap:10px; }
+.fp-dots { display:flex; gap:5px; }
+.fp-dot { width:9px; height:9px; border-radius:50%; background:#EF9F27; }
+.fp-attempts-text { font-size:13px; color:rgba(255,255,255,0.55); line-height:1.5; }
+.fp-attempts-text strong { color:rgba(255,255,255,0.8); font-weight:500; }
+.fp-attempts-sub { font-size:12px; color:rgba(255,255,255,0.3); margin-top:4px; line-height:1.5; }
+.fp-actions { display:flex; flex-direction:column; gap:8px; margin-top:18px; }
+.fp-btn-play {
+  background:#EF9F27; border:none; border-radius:10px;
+  padding:14px; font-size:15px; font-weight:500;
+  color:#412402; cursor:pointer; text-align:center; width:100%;
+  font-family:inherit;
+}
+.fp-btn-play:active { opacity:0.88; }
+.fp-btn-signin {
+  background:rgba(255,255,255,0.07);
+  border:0.5px solid rgba(255,255,255,0.15);
+  border-radius:10px; padding:13px;
+  font-size:14px; font-weight:500;
+  color:rgba(255,255,255,0.6); cursor:pointer;
+  text-align:center; width:100%;
+  font-family:inherit;
+}
+.fp-btn-signin:active { opacity:0.8; }
+.fp-nudge {
+  font-size:11px; color:rgba(255,255,255,0.25);
+  text-align:center; line-height:1.5; margin-top:2px;
+}
+.fp-user-row { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+.fp-avatar {
+  width:34px; height:34px; border-radius:50%;
+  background:#534AB7;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:500; color:#CECBF6; flex-shrink:0;
+}
+.fp-user-name { font-size:14px; font-weight:500; color:#fff; }
+.fp-user-sub { font-size:11px; color:rgba(255,255,255,0.35); margin-top:1px; }
+.fp-rank-row {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;
+  margin-bottom:18px;
+}
+.fp-stat { background:rgba(255,255,255,0.05); border-radius:7px; padding:8px 10px; }
+.fp-stat-val {
+  font-size:16px; font-weight:500; color:#fff;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.fp-stat-val.beat { color:#E24B4A; }
+.fp-stat-key {
+  font-size:9px; color:rgba(255,255,255,0.35);
+  text-transform:uppercase; letter-spacing:0.06em;
+  margin-top:2px; white-space:nowrap;
+}
+.fp-stat-dots { display:flex; gap:3px; margin-top:3px; flex-wrap:wrap; }
+.fp-stat-dot { width:7px; height:7px; border-radius:50%; }
+.fp-auth-embed {
+  margin-top:12px; gap:8px;
+}
+.fp-auth-embed input {
+  font-family:inherit;
+  font-size:13px;
+  padding:10px 12px;
+  border-radius:8px;
+  border:0.5px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.06);
+  color:#fff;
+  width:100%;
+  box-sizing:border-box;
+}
+.fp-auth-row { display:flex; gap:8px; margin-top:8px; }
+.fp-auth-row button {
+  flex:1;
+  padding:10px 8px;
+  border-radius:8px;
+  cursor:pointer;
+  font-family:inherit;
+  font-size:12px;
+  font-weight:500;
+  border:0.5px solid rgba(255,255,255,0.2);
+  background:rgba(255,255,255,0.08);
+  color:rgba(255,255,255,0.85);
+}
+.fp-auth-row button:active { filter:brightness(1.15); }
+.fp-user-bar-foot {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; margin-top:14px; padding-top:12px;
+  border-top:0.5px solid rgba(255,255,255,0.08);
+}
+.fp-user-bar-foot span {
+  font-size:12px; color:rgba(255,255,255,0.4);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+#auth-signout {
+  flex-shrink:0;
+  padding:6px 12px;
+  border-radius:8px;
+  cursor:pointer;
+  font-family:inherit;
+  font-size:11px;
+  font-weight:500;
+  border:0.5px solid rgba(255,100,100,0.4);
+  background:transparent;
+  color:#f5a0a0;
+}
+#auth-signout:active { filter:brightness(1.15); }
 /* Zone 3 — post-run: dark card (mockup) */
 #ov-card[data-zone="gameover"] {
   background:transparent;
@@ -293,34 +468,6 @@ html, body {
 .postrun-actions .btn-secondary:active { filter:brightness(1.1); }
 .postrun-bg .gsp-muted { color: rgba(255,255,255,0.5); }
 
-.ov-title {
-  font-size:clamp(16px,4.5vw,32px);
-  color:#ffdd44;
-  text-shadow:3px 3px 0 #aa3300, 0 0 24px #ffaa00aa;
-  animation:pulse 1s infinite;
-  text-align:center;
-}
-.ov-score {
-  font-size:clamp(9px,2.2vw,15px);
-  color:#ff6688;
-  text-shadow:2px 2px 0 #440022;
-}
-.ov-sub {
-  font-size:clamp(8px,1.8vw,12px);
-  color:#ff9944;
-  text-shadow:2px 2px 0 #660000;
-  animation:blink 0.8s infinite;
-  text-align:center;
-}
-.ov-tip {
-  font-size:clamp(6px,1.3vw,9px);
-  color:#aaaaff;
-  line-height:2;
-  text-align:center;
-  max-width:min(400px,80vw);
-  white-space:pre-line;
-}
-
 /* rotate nudge */
 #rotate-nudge {
   display:none;
@@ -334,8 +481,6 @@ html, body {
 }
 #rotate-nudge .big { font-size:48px; animation:spin 2s infinite linear; }
 @keyframes spin    { from{transform:rotate(0)} to{transform:rotate(360deg)} }
-@keyframes pulse   { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
-@keyframes blink   { 0%,100%{opacity:1} 50%{opacity:0} }
 @keyframes castPulse { from{box-shadow:0 0 14px #ffee0055} to{box-shadow:0 0 36px #ffee00cc,0 0 70px #ffee0044} }
 
 /* bite ring on cast button */
@@ -348,70 +493,16 @@ html, body {
 #cast-ring.visible { opacity:1; }
 @keyframes ringPulse { from{transform:scale(0.9)} to{transform:scale(1.06)} }
 
-/* play-again / free-play button inside overlay */
+/* play-again — Zone 2 primary CTA inside .fp-actions */
 #play-again-btn {
   display:none;
-  pointer-events:all;
-  padding:clamp(7px,1.8vh,14px) clamp(14px,3.5vw,28px);
-  border-radius:14px;
-  border:3px solid #ffee44;
-  background:rgba(20,10,50,0.92);
-  color:#ffee44;
-  font-family:'Press Start 2P', monospace;
-  font-size:clamp(8px,1.8vw,13px);
-  cursor:pointer;
-  letter-spacing:1px;
-  text-shadow:2px 2px 0 #884400;
-  box-shadow:0 0 22px #ffee4455;
-  animation:pulse 1s infinite;
-}
-#play-again-btn:active { filter:brightness(1.4); transform:scale(0.94); }
-
-/* ── In-overlay auth form (guest sign-in) ── */
-#ov-auth {
-  display:flex; flex-direction:column; align-items:stretch;
-  gap:8px; width:100%; max-width:280px;
   pointer-events:auto;
 }
-#ov-auth input {
-  padding:8px 10px; border-radius:8px;
-  border:1px solid rgba(100,150,255,0.45);
-  background:rgba(10,5,30,0.80); color:#ddeeff;
-  font-family:'Press Start 2P', monospace;
-  font-size:clamp(7px,1.4vw,10px);
-  width:100%; box-sizing:border-box;
-}
-.ov-auth-row {
-  display:flex; gap:8px;
-}
-.ov-auth-row button {
-  flex:1; padding:8px 6px; border-radius:8px; cursor:pointer;
-  font-family:'Press Start 2P', monospace; font-size:clamp(6px,1.1vw,8px);
-  border:2px solid #88ccff; background:rgba(26,42,85,0.90); color:#aaddff;
-  pointer-events:auto;
-}
-.ov-auth-row button:active { filter:brightness(1.2); }
 #auth-status {
-  font-size:clamp(6px,1.1vw,8px); color:#88ffaa;
+  font-size:11px; color:#7dffb0;
   text-align:center; min-height:1em;
+  margin-top:6px;
 }
-/* ── Signed-in strip (inside overlay) ── */
-#ov-user-bar {
-  display:none; align-items:center; gap:10px;
-  flex-wrap:wrap; justify-content:center;
-  pointer-events:auto;
-}
-#ov-user-label {
-  font-size:clamp(6px,1.2vw,8px); color:#88ffcc;
-  max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
-#auth-signout {
-  padding:5px 10px; border-radius:6px; cursor:pointer;
-  font-family:'Press Start 2P', monospace; font-size:clamp(5px,1vw,7px);
-  border:2px solid #ff8888; background:transparent; color:#ffcccc;
-  pointer-events:auto;
-}
-#auth-signout:active { filter:brightness(1.2); }
 
 /* ═══ Zone 2 — shell menu (light panel, mockup) ═══ */
 #gsp-root {
@@ -597,12 +688,6 @@ html, body {
   font-size: 10px;
   letter-spacing: 0.06em;
 }
-#ov-title-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
 #ov-postrun-block { pointer-events: auto; }
 </style>
 <script src="supabase-config.js"></script>
@@ -664,29 +749,114 @@ html, body {
     <div id="overlay">
       <div id="ov-card" data-zone="title">
         <div id="ov-title-block">
-          <div class="ov-title" id="ovTitle">PENGU FISHER</div>
-          <div class="ov-score" id="ovScore"></div>
-          <div class="ov-sub"   id="ovSub">TAP TO START</div>
-
-          <div id="ov-auth" style="display:none">
-            <input id="auth-email" type="email" autocomplete="email" placeholder="email" />
-            <input id="auth-pass" type="password" autocomplete="current-password" placeholder="password" />
-            <div class="ov-auth-row">
-              <button type="button" id="auth-signin">Sign In</button>
-              <button type="button" id="auth-signup">Create Account</button>
+          <div class="fp">
+            <div id="fp-signed-header" class="fp-user-row" style="display:none">
+              <div class="fp-avatar" id="fp-avatar">?</div>
+              <div>
+                <div class="fp-user-name" id="fp-user-name">—</div>
+                <div class="fp-user-sub">Welcome back</div>
+              </div>
             </div>
-            <span id="auth-status"></span>
-          </div>
 
-          <div id="ov-user-bar" style="display:none">
-            <span id="ov-user-label"></span>
-            <button type="button" id="auth-signout">Sign Out</button>
-          </div>
+            <div class="fp-prize">
+              <div class="fp-prize-eyebrow">This week's prize</div>
+              <div class="fp-prize-name" id="fp-prize-name">···</div>
+              <div class="fp-prize-meta" id="fp-prize-meta"></div>
+            </div>
+            <div class="fp-divider"></div>
 
-          <button type="button" id="play-again-btn">PLAY GAME</button>
-          <div class="ov-tip" id="ovTip">
-            🐧 JUMP = Left button  ·  🎣 CAST = Right button when it glows
-            Build combos · Fill FRENZY meter · Read the ice!
+            <div id="fp-stat-row" class="fp-rank-row" style="display:none">
+              <div class="fp-stat">
+                <div class="fp-stat-val" id="fp-stat-rank">—</div>
+                <div class="fp-stat-key">My rank</div>
+              </div>
+              <div class="fp-stat">
+                <div class="fp-stat-val" id="fp-stat-best">—</div>
+                <div class="fp-stat-key">My best</div>
+              </div>
+              <div class="fp-stat">
+                <div class="fp-stat-val beat" id="fp-stat-beat">—</div>
+                <div class="fp-stat-key">To beat</div>
+              </div>
+              <div class="fp-stat">
+                <div class="fp-stat-dots" id="fp-stat-dots"></div>
+                <div class="fp-stat-key" style="margin-top:5px">Attempts</div>
+              </div>
+            </div>
+            <div id="fp-stat-divider" class="fp-divider" style="display:none"></div>
+
+            <div class="fp-expand">
+              <div class="fp-expand-trigger" role="button" tabindex="0" data-fp-expand="howto">
+                <span class="fp-expand-label">How to play</span>
+                <span class="fp-expand-icon" id="fp-expand-icon-howto">
+                  <svg viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+              </div>
+              <div class="fp-expand-body" id="fp-expand-body-howto">
+                <div class="fp-expand-inner">
+                  <div class="fp-step">
+                    <div class="fp-step-num">1</div>
+                    <div class="fp-step-text"><strong>Controls.</strong> 🐧 Left = jump · 🎣 Right = cast when it glows. Build combos and fill the FRENZY meter.</div>
+                  </div>
+                  <div class="fp-step">
+                    <div class="fp-step-num">2</div>
+                    <div class="fp-step-text"><strong>Jump, dodge, fish.</strong> Tap to jump over obstacles as your penguin runs along the ice.</div>
+                  </div>
+                  <div class="fp-step">
+                    <div class="fp-step-num">3</div>
+                    <div class="fp-step-text"><strong>Cast at the right moment.</strong> When the bite meter fills, tap again — timing builds your combo.</div>
+                  </div>
+                  <div class="fp-step">
+                    <div class="fp-step-num">4</div>
+                    <div class="fp-step-text"><strong>Fill the fish meter</strong> to trigger Frenzy Mode — 6 seconds of 3× points.</div>
+                  </div>
+                  <div class="fp-step">
+                    <div class="fp-step-num">5</div>
+                    <div class="fp-step-text"><strong>Your best score this week</strong> goes on the leaderboard. Win the weekly prize.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="fp-expand">
+              <div class="fp-expand-trigger" role="button" tabindex="0" data-fp-expand="attempts">
+                <span class="fp-expand-label">How attempts work</span>
+                <span class="fp-expand-icon" id="fp-expand-icon-attempts">
+                  <svg viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+              </div>
+              <div class="fp-expand-body" id="fp-expand-body-attempts">
+                <div class="fp-expand-inner">
+                  <div class="fp-attempts-row">
+                    <div class="fp-dots" id="fp-expand-attempts-dots" aria-hidden="true"></div>
+                    <div class="fp-attempts-text" id="fp-expand-attempts-summary"><strong>5 attempts per day.</strong> Your best score counts.</div>
+                  </div>
+                  <div class="fp-attempts-sub">Resets at midnight your local time. Everyone plays the same course each day — study it, improve your run.</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="ov-auth" class="fp-auth-embed" style="display:none" data-fp-open="0">
+              <input id="auth-email" type="email" autocomplete="email" placeholder="Email" />
+              <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Password" />
+              <div class="fp-auth-row">
+                <button type="button" id="auth-signin">Sign in</button>
+                <button type="button" id="auth-signup">Create account</button>
+              </div>
+              <span id="auth-status"></span>
+            </div>
+
+            <div class="fp-actions">
+              <button type="button" id="play-again-btn" class="fp-btn-play">Play now</button>
+              <button type="button" class="fp-btn-signin" id="fp-reveal-auth" style="display:none">Sign in to save your score</button>
+              <div class="fp-nudge" id="fp-guest-nudge" style="display:none">Playing as guest — scores won't count toward the leaderboard</div>
+              <div class="fp-nudge" id="fp-freeplay-nudge" style="display:none">All attempts used today — free play uses a new seed each run; scores aren't saved.</div>
+            </div>
+
+            <div id="ov-user-bar" class="fp-user-bar-foot" style="display:none">
+              <span id="ov-user-label"></span>
+              <button type="button" id="auth-signout">Sign out</button>
+            </div>
           </div>
         </div>
 
@@ -759,7 +929,7 @@ html, body {
 if (!window.GameshowHud || typeof window.GameshowHud.init !== 'function') {
   window.GameshowHud = {
     init:()=>{}, height:()=>56, setPrize:()=>{},
-    setShowAt:()=>{}, setStats:()=>{}, setPlayer:()=>{}, onMenuClick:()=>{}
+    setShowAt:()=>{}, setScoringEndsAt:()=>{}, setStats:()=>{}, setPlayer:()=>{}, onMenuClick:()=>{}
   };
 }
 // ═══════════════════════════════════════════════════════════
@@ -913,6 +1083,8 @@ function randomSeed(){ return Math.floor(Math.random()*2147483647)+1; }
 let weekPrize   = '';
 let weekSponsor = '';
 let weekId      = null;   // stored after fetchActiveWeek for rank lookups
+let weekShowAt  = null;   // Date — live show (prize meta line)
+let weekEndsAt  = null;   // Date — scoring closes (prize meta line)
 let gameSpeed=2.6,frameCount=0,distance=0;
 let combo=1,comboTimer=0;
 let maxComboThisRun=1;
@@ -1216,8 +1388,6 @@ function updateMood(){
 const pad=n=>String(n).padStart(5,'0');
 
 // ── Mode-aware overlay ──────────────────────────────────────
-const CONTROLS_TIP='🐧 LEFT = Jump  ·  🎣 RIGHT = Cast when it glows\nBuild combos · Fill FRENZY meter · Read the ice!';
-
 function formatRunDurationMs(ms){
   const m=Math.floor(ms/60000), s=Math.floor((ms%60000)/1000);
   return `${m}:${String(s).padStart(2,'0')}`;
@@ -1261,7 +1431,8 @@ function fillPostrunPanel(){
       attText.textContent=`${attemptsUsed} of 5 attempts used · ${rem} remaining today`;
     }
   }
-  document.getElementById('postrun-rank-val').textContent='…';
+  const prRank=document.getElementById('postrun-rank-val');
+  if(prRank) prRank.textContent='…';
 }
 
 async function refreshPostrunRankDisplay(){
@@ -1285,33 +1456,14 @@ function showModeOverlay(screen){
   const card     = document.getElementById('ov-card');
   const titleBlk = document.getElementById('ov-title-block');
   const postBlk  = document.getElementById('ov-postrun-block');
-  const authDiv  = document.getElementById('ov-auth');
-  const userBar  = document.getElementById('ov-user-bar');
   const tipPost  = document.getElementById('postrun-tip');
-  const isGuest  = (playMode === 'guest');
 
   if(card) card.dataset.zone = (screen === 'title') ? 'title' : 'gameover';
 
   if(screen === 'title'){
     if(titleBlk){ titleBlk.style.display='flex'; titleBlk.removeAttribute('aria-hidden'); }
     if(postBlk){ postBlk.style.display='none'; postBlk.setAttribute('aria-hidden','true'); }
-    if(btn) btn.style.display = 'none';
-    if(authDiv) authDiv.style.display = isGuest ? 'flex'  : 'none';
-    if(userBar) userBar.style.display = isGuest ? 'none'  : 'flex';
-
-    if(playMode === 'competing'){
-      const next = attemptsUsed + 1;
-      const name = playerName ? `Hey ${playerName} — ` : '';
-      showOverlay('PENGU FISHER', '', `${name}Attempt ${next}/5`, CONTROLS_TIP);
-      if(btn){ btn.textContent = 'PLAY GAME'; btn.style.display = 'inline-block'; }
-    } else if(playMode === 'freeplay'){
-      showOverlay('PENGU FISHER', '', 'Free Play',
-        CONTROLS_TIP + '\n\n(All 5 daily attempts used — scores not saved)');
-      if(btn){ btn.textContent = 'FREE PLAY'; btn.style.display = 'inline-block'; }
-    } else {
-      showOverlay('PENGU FISHER', '', 'Sign in to compete for prizes!', CONTROLS_TIP);
-      if(btn){ btn.textContent = 'PLAY AS GUEST'; btn.style.display = 'inline-block'; }
-    }
+    void refreshTitleFirstPlayCard();
     return;
   }
 
@@ -1378,7 +1530,7 @@ async function fetchActiveWeek(){
     const { data: game } = await sb.from('games').select('id').eq('slug','pengu-fisher').maybeSingle();
     if(!game?.id) return;
     const { data: week } = await sb.from('weeks')
-      .select('id,prize_title,sponsor_name,show_at')
+      .select('id,prize_title,sponsor_name,show_at,starts_at,ends_at')
       .eq('game_id',game.id)
       .lte('starts_at',nowIso)
       .gte('ends_at',nowIso)
@@ -1387,9 +1539,23 @@ async function fetchActiveWeek(){
       weekPrize   = week.prize_title  || '';
       weekSponsor = week.sponsor_name || '';
       weekId      = week.id           || null;
+      weekShowAt  = week.show_at ? new Date(week.show_at) : null;
+      weekEndsAt  = week.ends_at ? new Date(week.ends_at) : null;
       window.GameshowHud.setPrize(weekPrize);
-      window.GameshowHud.setShowAt(week.show_at ? new Date(week.show_at) : null);
+      window.GameshowHud.setShowAt(weekShowAt);
+      if (typeof window.GameshowHud.setScoringEndsAt === 'function') {
+        window.GameshowHud.setScoringEndsAt(weekEndsAt);
+      }
+    } else {
+      weekPrize = ''; weekSponsor = ''; weekId = null;
+      weekShowAt = null; weekEndsAt = null;
+      window.GameshowHud.setPrize('');
+      window.GameshowHud.setShowAt(null);
+      if (typeof window.GameshowHud.setScoringEndsAt === 'function') {
+        window.GameshowHud.setScoringEndsAt(null);
+      }
     }
+    if(state==='title') void refreshTitleFirstPlayCard();
   }catch(e){ console.error('fetchActiveWeek',e); }
 }
 
@@ -1407,18 +1573,167 @@ async function fetchUserRank(userId){
   }catch(e){ console.error('fetchUserRank',e); return null; }
 }
 
+async function fetchLeaderboardTopScore(wid){
+  const sb=window._miniGameshowSb;
+  if(!sb||!wid) return null;
+  try{
+    const { data } = await sb.from('leaderboard')
+      .select('best_score')
+      .eq('week_id',wid)
+      .order('best_score',{ ascending:false })
+      .limit(1)
+      .maybeSingle();
+    return data?.best_score ?? null;
+  }catch(e){ console.error('fetchLeaderboardTopScore',e); return null; }
+}
+
+function formatFpPrizeScheduleLine(){
+  let closePart='Sat midnight';
+  if(weekEndsAt instanceof Date && !isNaN(weekEndsAt.getTime())){
+    try{
+      closePart=weekEndsAt.toLocaleString([],{ weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+    }catch(_){ /* keep default */ }
+  }
+  let showPart='···';
+  if(weekShowAt instanceof Date && !isNaN(weekShowAt.getTime())){
+    try{
+      showPart=weekShowAt.toLocaleTimeString([],{ hour:'numeric', minute:'2-digit', timeZoneName:'short' }).replace(':00','').toLowerCase();
+    }catch(_){ /* keep */ }
+  }
+  return `Scoring closes ${closePart} · Live show ${showPart}`;
+}
+
+function fpToggleExpand(key){
+  const body=document.getElementById('fp-expand-body-'+key);
+  const icon=document.getElementById('fp-expand-icon-'+key);
+  if(!body) return;
+  const open=!body.classList.contains('open');
+  body.classList.toggle('open',open);
+  if(icon) icon.classList.toggle('open',open);
+}
+
+function renderFpExpandAttemptDots(used){
+  const wrap=document.getElementById('fp-expand-attempts-dots');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  for(let i=0;i<5;i++){
+    const d=document.createElement('div');
+    d.className='fp-dot';
+    if(i<used) d.style.background='rgba(255,255,255,0.18)';
+    wrap.appendChild(d);
+  }
+}
+
+function renderFpStatDots(used){
+  const dotsEl=document.getElementById('fp-stat-dots');
+  if(!dotsEl) return;
+  dotsEl.innerHTML='';
+  for(let i=0;i<5;i++){
+    const d=document.createElement('div');
+    d.className='fp-stat-dot';
+    d.style.background=i<used?'rgba(255,255,255,0.18)':'#EF9F27';
+    dotsEl.appendChild(d);
+  }
+}
+
+async function refreshTitleFirstPlayCard(){
+  document.getElementById('overlay').style.display='flex';
+  const pn=document.getElementById('fp-prize-name');
+  if(pn) pn.textContent=(weekPrize||'').trim()||'Prize TBD';
+  const pm=document.getElementById('fp-prize-meta');
+  if(pm) pm.textContent=formatFpPrizeScheduleLine();
+
+  const head=document.getElementById('fp-signed-header');
+  const statRow=document.getElementById('fp-stat-row');
+  const statDiv=document.getElementById('fp-stat-divider');
+  const revealAuth=document.getElementById('fp-reveal-auth');
+  const guestNudge=document.getElementById('fp-guest-nudge');
+  const freeNudge=document.getElementById('fp-freeplay-nudge');
+  const ovAuth=document.getElementById('ov-auth');
+  const userBar=document.getElementById('ov-user-bar');
+  const btn=document.getElementById('play-again-btn');
+
+  if(playMode==='guest'){
+    if(head) head.style.display='none';
+    if(statRow) statRow.style.display='none';
+    if(statDiv) statDiv.style.display='none';
+    if(revealAuth) revealAuth.style.display='block';
+    if(guestNudge) guestNudge.style.display='block';
+    if(freeNudge) freeNudge.style.display='none';
+    if(userBar) userBar.style.display='none';
+    if(ovAuth){
+      ovAuth.style.display=ovAuth.dataset.fpOpen==='1'?'flex':'none';
+      ovAuth.style.flexDirection='column';
+    }
+    if(btn){ btn.textContent='Play now'; btn.style.display='block'; }
+    const sum=document.getElementById('fp-expand-attempts-summary');
+    if(sum) sum.innerHTML='<strong>5 attempts per day.</strong> Your best score counts.';
+    renderFpExpandAttemptDots(0);
+    return;
+  }
+
+  if(revealAuth) revealAuth.style.display='none';
+  if(guestNudge) guestNudge.style.display='none';
+  if(ovAuth){ ovAuth.style.display='none'; ovAuth.dataset.fpOpen='0'; }
+  if(head) head.style.display='flex';
+  if(statRow) statRow.style.display='grid';
+  if(statDiv) statDiv.style.display='block';
+  if(userBar) userBar.style.display='flex';
+
+  const sb=window._miniGameshowSb;
+  let session=null;
+  if(sb){
+    const { data }=await sb.auth.getSession();
+    session=data?.session||null;
+  }
+  const rankEl=document.getElementById('fp-stat-rank');
+  const bestEl=document.getElementById('fp-stat-best');
+  const beatEl=document.getElementById('fp-stat-beat');
+  if(session?.user&&weekId){
+    const lb=await fetchUserRank(session.user.id);
+    const top=await fetchLeaderboardTopScore(weekId);
+    if(rankEl) rankEl.textContent=lb?.rank!=null?'#'+lb.rank:'—';
+    if(bestEl) bestEl.textContent=lb?.best_score!=null?Number(lb.best_score).toLocaleString():'—';
+    if(beatEl) beatEl.textContent=top!=null?Number(top).toLocaleString():'—';
+  } else {
+    if(rankEl) rankEl.textContent='—';
+    if(bestEl) bestEl.textContent='—';
+    if(beatEl) beatEl.textContent='—';
+  }
+  renderFpStatDots(attemptsUsed);
+  const sum=document.getElementById('fp-expand-attempts-summary');
+  if(sum) sum.innerHTML=`<strong>${attemptsUsed} of 5 attempts used.</strong> Your best score counts.`;
+  renderFpExpandAttemptDots(attemptsUsed);
+
+  const dispName=playerName||(session?.user?.email?.split('@')[0])||'Player';
+  const av=document.getElementById('fp-avatar');
+  const un=document.getElementById('fp-user-name');
+  if(un) un.textContent=dispName;
+  if(av) av.textContent=(dispName||session?.user?.email||'?').slice(0,2).toUpperCase();
+
+  if(playMode==='freeplay'){
+    if(freeNudge) freeNudge.style.display='block';
+    if(btn){ btn.textContent='Free play'; btn.style.display='block'; }
+  } else {
+    if(freeNudge) freeNudge.style.display='none';
+    const next=attemptsUsed+1;
+    if(btn){ btn.textContent=`Play attempt ${next} of 5`; btn.style.display='block'; }
+  }
+}
+
+/** Best score for HUD + canvas BEST line — must match server after clears, not stale session hiScore */
+function syncHiScoreFromLeaderboard(lb){
+  const bestFromLb = lb?.best_score != null ? Number(lb.best_score) : null;
+  hiScore = bestFromLb ?? 0;
+  updateHUD();
+  return bestFromLb;
+}
+
 function updateHUD(){
   document.getElementById('scoreDisplay').textContent=pad(score);
   document.getElementById('fishDisplay').textContent=`🐟×${fishCount}`;
   document.getElementById('livesDisplay').textContent='♥'.repeat(Math.max(0,lives))+'♡'.repeat(Math.max(0,3-lives));
   document.getElementById('hiScoreDisplay').textContent=pad(hiScore);
-}
-function showOverlay(t,s,sub,tip=''){
-  document.getElementById('overlay').style.display='flex';
-  document.getElementById('ovTitle').textContent=t;
-  document.getElementById('ovScore').textContent=s||'';
-  document.getElementById('ovSub').textContent=sub;
-  document.getElementById('ovTip').textContent=tip;
 }
 function hideOverlay(){document.getElementById('overlay').style.display='none';}
 
@@ -2032,6 +2347,20 @@ function updateAuthUI(session){
 }
 
 // Called whenever auth state changes; updates mode + overlay
+async function refreshSignedInCompetitionState(session){
+  if(!session?.user||!window._miniGameshowSb) return;
+  await fetchAttemptsAndSetMode(session.user.id);
+  await fetchActiveWeek().catch(()=>{});
+  const lb = await fetchUserRank(session.user.id);
+  const best = syncHiScoreFromLeaderboard(lb);
+  window.GameshowHud.setStats({
+    rank: lb?.rank ?? null,
+    best,
+    attemptsUsed
+  });
+  if(state==='title'||state==='gameover') showModeOverlay(state);
+}
+
 async function onSignedIn(session){
   updateAuthUI(session);
   const sb=window._miniGameshowSb;
@@ -2049,26 +2378,19 @@ async function onSignedIn(session){
     initials: (playerName||session.user.email||'?').slice(0,2),
     name: playerName || session.user.email || ''
   });
-  // Fetch attempts and set mode
-  await fetchAttemptsAndSetMode(session.user.id);
-  // Fetch active week prize + rank
-  await fetchActiveWeek().catch(()=>{});
-  const lb = await fetchUserRank(session.user.id);
-  window.GameshowHud.setStats({
-    rank: lb?.rank ?? null,
-    best: lb?.best_score ?? (hiScore||null),
-    attemptsUsed
-  });
-  // Refresh overlay if on title or gameover screen
-  if(state==='title'||state==='gameover') showModeOverlay(state);
+  await refreshSignedInCompetitionState(session);
 }
 
 function onSignedOut(){
   updateAuthUI(null);
   playMode='guest'; attemptsUsed=0; playerName='';
+  hiScore=0;
   currentSeed=randomSeed();
+  updateHUD();
   window.GameshowHud.setPlayer(null);
   window.GameshowHud.setStats({ rank:null, best:null, attemptsUsed:0 });
+  const oa=document.getElementById('ov-auth');
+  if(oa){ oa.dataset.fpOpen='0'; oa.style.display='none'; }
   if(state==='title'||state==='gameover') showModeOverlay(state);
 }
 
@@ -2091,6 +2413,13 @@ async function bootSupabaseAuth(){
     sb.auth.onAuthStateChange(async (_e,session)=>{
       if(session?.user) await onSignedIn(session);
       else onSignedOut();
+    });
+
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState !== 'visible') return;
+      sb.auth.getSession().then(({ data:{ session } })=>{
+        if(session?.user) refreshSignedInCompetitionState(session);
+      });
     });
 
     document.getElementById('auth-signin').addEventListener('click', async ()=>{
@@ -2168,9 +2497,10 @@ async function submitRunToSupabase(){
   // Re-fetch authoritative count + rank, then redraw overlay + HUD
   await fetchAttemptsAndSetMode(session.user.id);
   const lb2 = await fetchUserRank(session.user.id);
+  const best = syncHiScoreFromLeaderboard(lb2);
   window.GameshowHud.setStats({
     rank: lb2?.rank ?? null,
-    best: lb2?.best_score ?? (hiScore||null),
+    best,
     attemptsUsed
   });
   showModeOverlay('gameover');
@@ -2230,6 +2560,10 @@ function setGspTab(tab){
   document.querySelectorAll('.gsp-pane').forEach(p=>{
     p.classList.toggle('gsp-pane-visible', p.dataset.pane === tab);
   });
+  if(_gspOpen){
+    if(tab === 'leaderboard') refreshGspLeaderboard();
+    if(tab === 'myscores') refreshGspMyScores();
+  }
 }
 
 function closeGsp(){
@@ -2423,6 +2757,28 @@ function initShellPanel(){
   window.GameshowHud.onMenuClick(()=> toggleGsp());
 }
 
+function initFpFirstPlayCardUI(){
+  document.querySelectorAll('[data-fp-expand]').forEach(el=>{
+    const go=e=>{
+      e.preventDefault();
+      const k=el.dataset.fpExpand;
+      if(k) fpToggleExpand(k);
+    };
+    el.addEventListener('click',go);
+    el.addEventListener('keydown',e=>{
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fpToggleExpand(el.dataset.fpExpand); }
+    });
+  });
+  document.getElementById('fp-reveal-auth')?.addEventListener('click',()=>{
+    const o=document.getElementById('ov-auth');
+    if(!o) return;
+    o.dataset.fpOpen='1';
+    o.style.display='flex';
+    o.style.flexDirection='column';
+    document.getElementById('auth-email')?.focus();
+  });
+}
+
 // ═══════════════════════════════════════════════════════════
 //  LOOP + INIT
 // ═══════════════════════════════════════════════════════════
@@ -2431,6 +2787,7 @@ function loop(){ update(); draw(); requestAnimationFrame(loop); }
 // HUD + menu panel first (wireframe z-order), then game loop
 window.GameshowHud.init('#gameshow-hud-mount');
 initShellPanel();
+initFpFirstPlayCardUI();
 if(document.getElementById('gameshow-hud')){
   resizeCanvas();
 }

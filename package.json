@@ -1,0 +1,8 @@
+{
+  "name": "mini-gameshow",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/vercel-write-supabase-config.mjs"
+  }
+}

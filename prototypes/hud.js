@@ -28,6 +28,7 @@ const GameshowHud = (() => {
   let _isGuest        = true;
   let _menuHandler    = null;
   let _schedInterval  = null;
+  let _endsAt         = null;   // scoring window end from public.weeks.ends_at (admin)
 
   // ── template ─────────────────────────────────────────────
   const HTML = `
@@ -84,6 +85,31 @@ const GameshowHud = (() => {
     } catch (_) { return '7pm PT'; }
   }
 
+  function fmtEndsShort(d) {
+    if (!d) return '···';
+    try {
+      return d.toLocaleString([], {
+        weekday: 'short', month: 'short', day: 'numeric',
+        hour: 'numeric', minute: '2-digit'
+      });
+    } catch (_) { return '···'; }
+  }
+
+  function renderClosedWithShowLine(t) {
+    const wrap = el('ghud-schedule');
+    if (!wrap) return;
+    const now = new Date();
+    let showBit = `at ${t}`;
+    if (_showAt) {
+      const sameDay = now.toDateString() === _showAt.toDateString();
+      if (sameDay) showBit = `today at ${t}`;
+    }
+    wrap.innerHTML =
+      `<span class="ghud-muted">Scoring closed</span>` +
+      ` <span class="ghud-accent"> · Live show ${showBit}</span>`;
+    _clearInterval();
+  }
+
   function renderDots(used) {
     const wrap = el('ghud-attempts');
     if (!wrap) return;
@@ -95,24 +121,62 @@ const GameshowHud = (() => {
     }
   }
 
-  // ── schedule rendering — three states ────────────────────
+  // ── schedule: prefer DB ends_at/show_at (admin); else local weekday fallback ──
   function renderSchedule() {
     const wrap = el('ghud-schedule');
     if (!wrap) return;
 
-    const now  = new Date();
-    const day  = now.getDay();     // 0=Sun 1=Mon…6=Sat
-    const t    = fmtShowTime(_showAt);
+    const now = new Date();
+    const t   = fmtShowTime(_showAt);
+    const useDb = _endsAt instanceof Date && !isNaN(_endsAt.getTime());
+
+    if (useDb) {
+      const endMs = _endsAt.getTime();
+      const pastEnd = now.getTime() > endMs;
+      if (pastEnd) {
+        renderClosedWithShowLine(t);
+        return;
+      }
+      const secLeft = Math.max(0, Math.floor((endMs - now.getTime()) / 1000));
+      if (secLeft <= 172800) {
+        const tick = () => {
+          const n = new Date();
+          const sec = Math.max(0, Math.floor((endMs - n.getTime()) / 1000));
+          if (sec <= 0) {
+            renderClosedWithShowLine(fmtShowTime(_showAt));
+            _clearInterval();
+            return;
+          }
+          const h = Math.floor(sec / 3600);
+          const m = Math.floor((sec % 3600) / 60);
+          const s = sec % 60;
+          const str = h > 48 ? `${Math.floor(h / 24)}d ${h % 24}h left`
+            : h > 0 ? `${h}h ${m}m left`
+            : m > 0 ? `${m}m ${s}s left`
+            : `${s}s left`;
+          const w = el('ghud-schedule');
+          if (w) {
+            w.innerHTML =
+              `Scoring closes <span class="ghud-urgent">${str}</span>` +
+              ` <span class="ghud-muted"> · Live show ${t}</span>`;
+          }
+        };
+        tick();
+        if (!_schedInterval) _schedInterval = setInterval(tick, 1000);
+        return;
+      }
+      _clearInterval();
+      wrap.innerHTML =
+        `Scoring closes <span class="ghud-accent">${fmtEndsShort(_endsAt)}</span>` +
+        ` <span class="ghud-muted"> · Live show ${t}</span>`;
+      return;
+    }
+
+    const day = now.getDay();
 
     if (day === 0) {
-      // Sunday — scoring closed, show today
-      wrap.innerHTML =
-        `<span class="ghud-muted">Scoring closed</span>` +
-        ` <span class="ghud-accent"> · Live show today at ${t}</span>`;
-      _clearInterval();
-
+      renderClosedWithShowLine(t);
     } else if (day === 6) {
-      // Saturday — live red countdown to midnight local
       const tick = () => {
         const n   = new Date();
         const end = new Date(n.getFullYear(), n.getMonth(), n.getDate(), 23, 59, 59);
@@ -130,9 +194,7 @@ const GameshowHud = (() => {
       };
       tick();
       if (!_schedInterval) _schedInterval = setInterval(tick, 1000);
-
     } else {
-      // Mon–Fri — normal
       wrap.innerHTML =
         `Scoring closes <span class="ghud-accent">Sat midnight</span>` +
         ` <span class="ghud-muted"> · Live show Sun ${t}</span>`;
@@ -178,6 +240,11 @@ const GameshowHud = (() => {
     renderSchedule();
   }
 
+  function setScoringEndsAt(date) {
+    _endsAt = date instanceof Date ? date : (date ? new Date(date) : null);
+    renderSchedule();
+  }
+
   function setStats({ rank = null, best = null, attemptsUsed = 0 } = {}) {
     _rank = rank; _best = best; _attemptsUsed = attemptsUsed;
     const rankEl = el('ghud-rank');
@@ -216,7 +283,7 @@ const GameshowHud = (() => {
     return h ? h.offsetHeight : 56;
   }
 
-  return { init, setPrize, setShowAt, setStats, setPlayer, onMenuClick, height };
+  return { init, setPrize, setShowAt, setScoringEndsAt, setStats, setPlayer, onMenuClick, height };
 })();
 // Always on window — inline game scripts and file:// loads rely on this
 window.GameshowHud = GameshowHud;

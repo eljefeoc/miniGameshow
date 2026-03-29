@@ -298,6 +298,56 @@ CREATE TRIGGER runs_after_insert
   FOR EACH ROW
   EXECUTE FUNCTION public.after_run_insert();
 
+CREATE OR REPLACE FUNCTION public.after_run_delete()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_best_id uuid;
+  v_best_score bigint;
+BEGIN
+  UPDATE public.daily_attempts
+  SET attempts_used = GREATEST(0, attempts_used - 1),
+      updated_at = now()
+  WHERE user_id = OLD.user_id AND day_seed = OLD.day_seed;
+
+  IF EXISTS (
+    SELECT 1 FROM public.leaderboard
+    WHERE user_id = OLD.user_id
+      AND week_id = OLD.week_id
+      AND best_run_id = OLD.id
+  ) THEN
+    SELECT r.id, r.score INTO v_best_id, v_best_score
+    FROM public.runs r
+    WHERE r.user_id = OLD.user_id AND r.week_id = OLD.week_id
+    ORDER BY r.score DESC, r.created_at ASC
+    LIMIT 1;
+
+    IF v_best_id IS NULL THEN
+      DELETE FROM public.leaderboard
+      WHERE user_id = OLD.user_id AND week_id = OLD.week_id;
+    ELSE
+      UPDATE public.leaderboard
+      SET best_score = v_best_score,
+          best_run_id = v_best_id,
+          updated_at = now()
+      WHERE user_id = OLD.user_id AND week_id = OLD.week_id;
+    END IF;
+
+    PERFORM public.refresh_leaderboard_ranks(OLD.week_id);
+  END IF;
+
+  RETURN OLD;
+END;
+$$;
+
+CREATE TRIGGER runs_after_delete
+  AFTER DELETE ON public.runs
+  FOR EACH ROW
+  EXECUTE FUNCTION public.after_run_delete();
+
 -- -----------------------------------------------------------------------------
 -- Row Level Security
 -- -----------------------------------------------------------------------------
@@ -340,10 +390,20 @@ CREATE POLICY "runs_select_own"
   TO authenticated
   USING (user_id = auth.uid());
 
+CREATE POLICY "runs_delete_own"
+  ON public.runs FOR DELETE
+  TO authenticated
+  USING (user_id = auth.uid());
+
 -- Leaderboard: public read
 CREATE POLICY "leaderboard_select_all"
   ON public.leaderboard FOR SELECT
   USING (true);
+
+CREATE POLICY "leaderboard_delete_own"
+  ON public.leaderboard FOR DELETE
+  TO authenticated
+  USING (user_id = auth.uid());
 
 -- Daily attempts: own rows only
 CREATE POLICY "daily_attempts_select_own"
@@ -351,8 +411,12 @@ CREATE POLICY "daily_attempts_select_own"
   TO authenticated
   USING (user_id = auth.uid());
 
+CREATE POLICY "daily_attempts_delete_own"
+  ON public.daily_attempts FOR DELETE
+  TO authenticated
+  USING (user_id = auth.uid());
+
 -- content_events: no direct client access (service role / triggers bypass RLS)
--- Optional: allow authenticated read of own-tagged events later via policy
 
 -- -----------------------------------------------------------------------------
 -- Seed: default game (idempotent)
