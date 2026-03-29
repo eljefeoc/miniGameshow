@@ -254,29 +254,51 @@ html, body {
 }
 #play-again-btn:active { filter:brightness(1.4); transform:scale(0.94); }
 
-/* ── Supabase auth — fixed bar below gameshow HUD ── */
-#auth-bar {
-  position:fixed; top:56px; right:0; z-index:300;
-  display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end;
-  gap:6px; padding:8px 10px; max-width:min(100%,420px);
-  background:rgba(8,4,24,0.88); border-bottom-left-radius:12px;
-  border:1px solid rgba(255,170,100,0.25);
+/* ── In-overlay auth form (guest sign-in) ── */
+#ov-auth {
+  display:flex; flex-direction:column; align-items:stretch;
+  gap:8px; width:100%; max-width:280px;
   pointer-events:auto;
-  font-size:clamp(5px,1.1vw,8px);
 }
-#auth-bar input {
-  width:min(140px,28vw); padding:4px 6px; border-radius:6px;
-  border:1px solid #4488ff; background:#1a1030; color:#ddeeff;
+#ov-auth input {
+  padding:8px 10px; border-radius:8px;
+  border:1px solid rgba(100,150,255,0.45);
+  background:rgba(10,5,30,0.80); color:#ddeeff;
+  font-family:'Press Start 2P', monospace;
+  font-size:clamp(7px,1.4vw,10px);
+  width:100%; box-sizing:border-box;
+}
+.ov-auth-row {
+  display:flex; gap:8px;
+}
+.ov-auth-row button {
+  flex:1; padding:8px 6px; border-radius:8px; cursor:pointer;
+  font-family:'Press Start 2P', monospace; font-size:clamp(6px,1.1vw,8px);
+  border:2px solid #88ccff; background:rgba(26,42,85,0.90); color:#aaddff;
+  pointer-events:auto;
+}
+.ov-auth-row button:active { filter:brightness(1.2); }
+#auth-status {
+  font-size:clamp(6px,1.1vw,8px); color:#88ffaa;
+  text-align:center; min-height:1em;
+}
+/* ── Signed-in strip (inside overlay) ── */
+#ov-user-bar {
+  display:none; align-items:center; gap:10px;
+  flex-wrap:wrap; justify-content:center;
+  pointer-events:auto;
+}
+#ov-user-label {
+  font-size:clamp(6px,1.2vw,8px); color:#88ffcc;
+  max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+#auth-signout {
+  padding:5px 10px; border-radius:6px; cursor:pointer;
   font-family:'Press Start 2P', monospace; font-size:clamp(5px,1vw,7px);
+  border:2px solid #ff8888; background:transparent; color:#ffcccc;
+  pointer-events:auto;
 }
-#auth-bar button {
-  padding:5px 8px; border-radius:8px; cursor:pointer;
-  font-family:'Press Start 2P', monospace; font-size:clamp(5px,1vw,7px);
-  border:2px solid #88ccff; background:#1a2a55; color:#aaddff;
-}
-#auth-bar button:active { filter:brightness(1.2); }
-#auth-bar #auth-signout { border-color:#ff8888; color:#ffcccc; }
-#auth-status { color:#88ffaa; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#auth-signout:active { filter:brightness(1.2); }
 </style>
 <script src="supabase-config.js"></script>
 <script>window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'', anonKey:'' };</script>
@@ -287,14 +309,6 @@ html, body {
 <!-- Gameshow HUD — rendered by hud.js -->
 <div id="gameshow-hud-mount"></div>
 
-<div id="auth-bar" aria-label="Account" style="display:none">
-  <input id="auth-email" type="email" autocomplete="email" placeholder="email" />
-  <input id="auth-pass" type="password" autocomplete="current-password" placeholder="password" />
-  <button type="button" id="auth-signin">Sign in</button>
-  <button type="button" id="auth-signup">Sign up</button>
-  <button type="button" id="auth-signout" style="display:none">Out</button>
-  <span id="auth-status" title=""></span>
-</div>
 
 <!-- GAME SHELL — canvas fills screen, HUD + controls float on top -->
 <div id="shell">
@@ -317,8 +331,26 @@ html, body {
         <div class="ov-title" id="ovTitle">PENGU FISHER</div>
         <div class="ov-score" id="ovScore"></div>
         <div class="ov-sub"   id="ovSub">TAP TO START</div>
-        <button type="button" id="play-again-btn">PLAY AGAIN</button>
-        <div class="ov-tip"   id="ovTip">
+
+        <!-- Auth form — visible when guest, hidden when signed in -->
+        <div id="ov-auth" style="display:none">
+          <input id="auth-email" type="email" autocomplete="email" placeholder="email" />
+          <input id="auth-pass" type="password" autocomplete="current-password" placeholder="password" />
+          <div class="ov-auth-row">
+            <button type="button" id="auth-signin">Sign In</button>
+            <button type="button" id="auth-signup">Create Account</button>
+          </div>
+          <span id="auth-status"></span>
+        </div>
+
+        <!-- Signed-in strip — visible when competing or free-play -->
+        <div id="ov-user-bar" style="display:none">
+          <span id="ov-user-label"></span>
+          <button type="button" id="auth-signout">Sign Out</button>
+        </div>
+
+        <button type="button" id="play-again-btn">PLAY GAME</button>
+        <div class="ov-tip" id="ovTip">
           🐧 JUMP = Left button  ·  🎣 CAST = Right button when it glows
           Build combos · Fill FRENZY meter · Read the ice!
         </div>
@@ -810,52 +842,59 @@ const pad=n=>String(n).padStart(5,'0');
 const CONTROLS_TIP='🐧 LEFT = Jump  ·  🎣 RIGHT = Cast when it glows\nBuild combos · Fill FRENZY meter · Read the ice!';
 
 function showModeOverlay(screen){
-  const btn  = document.getElementById('play-again-btn');
-  const card = document.getElementById('ov-card');
-  if(btn) btn.style.display='none';
+  const btn     = document.getElementById('play-again-btn');
+  const card    = document.getElementById('ov-card');
+  const authDiv = document.getElementById('ov-auth');
+  const userBar = document.getElementById('ov-user-bar');
+  const isGuest = (playMode === 'guest');
 
-  // Set zone on the card for visual treatment
-  if(card) card.dataset.zone = (screen==='title') ? 'title' : 'gameover';
+  if(btn) btn.style.display = 'none';
+  if(card) card.dataset.zone = (screen === 'title') ? 'title' : 'gameover';
 
-  if(screen==='title'){
-    if(playMode==='competing'){
-      const next=attemptsUsed+1;
-      const name=playerName?`Hey ${playerName} —`:'';
-      showOverlay('PENGU FISHER','',
-        `${name} Attempt ${next}/5 · TAP TO START`,
-        CONTROLS_TIP);
-    } else if(playMode==='freeplay'){
-      showOverlay('PENGU FISHER','','FREE PLAY · TAP TO START',
-        CONTROLS_TIP+'\n\n(All 5 daily attempts used — scores not saved)');
+  // Show auth form for guests, signed-in strip for competing/freeplay
+  if(authDiv) authDiv.style.display = isGuest ? 'flex'  : 'none';
+  if(userBar) userBar.style.display = isGuest ? 'none'  : 'flex';
+
+  if(screen === 'title'){
+    if(playMode === 'competing'){
+      const next = attemptsUsed + 1;
+      const name = playerName ? `Hey ${playerName} — ` : '';
+      showOverlay('PENGU FISHER', '', `${name}Attempt ${next}/5`, CONTROLS_TIP);
+      if(btn){ btn.textContent = 'PLAY GAME'; btn.style.display = 'inline-block'; }
+    } else if(playMode === 'freeplay'){
+      showOverlay('PENGU FISHER', '', 'Free Play',
+        CONTROLS_TIP + '\n\n(All 5 daily attempts used — scores not saved)');
+      if(btn){ btn.textContent = 'FREE PLAY'; btn.style.display = 'inline-block'; }
     } else {
-      showOverlay('PENGU FISHER','','TAP TO START',
-        CONTROLS_TIP+'\n\nSign in (top right) to compete for real prizes!');
+      // guest
+      showOverlay('PENGU FISHER', '', 'Sign in to compete for prizes!', CONTROLS_TIP);
+      if(btn){ btn.textContent = 'PLAY AS GUEST'; btn.style.display = 'inline-block'; }
     }
     return;
   }
 
   // screen === 'gameover'
-  const s=`SCORE: ${pad(score)}`;
-  if(playMode==='competing'){
-    const used=attemptsUsed;
-    if(used>=5){
-      showOverlay('GAME OVER',s,'All 5 attempts used for today!',
+  const s = `SCORE: ${pad(score)}`;
+  if(playMode === 'competing'){
+    const used = attemptsUsed;
+    if(used >= 5){
+      showOverlay('GAME OVER', s, 'All 5 attempts used!',
         `Fish caught: ${fishCount}\n\nWant to keep playing for fun?`);
-      if(btn){ btn.textContent='FREE PLAY'; btn.style.display='inline-block'; }
+      if(btn){ btn.textContent = 'FREE PLAY'; btn.style.display = 'inline-block'; }
     } else {
-      const name=playerName?`${playerName} — `:'';
-      showOverlay('GAME OVER',s,'Score saved!',
+      const name = playerName ? `${playerName} — ` : '';
+      showOverlay('GAME OVER', s, 'Score saved!',
         `${name}Attempt ${used}/5 · Fish caught: ${fishCount}`);
-      if(btn){ btn.textContent='PLAY AGAIN'; btn.style.display='inline-block'; }
+      if(btn){ btn.textContent = 'PLAY AGAIN'; btn.style.display = 'inline-block'; }
     }
-  } else if(playMode==='freeplay'){
-    showOverlay('GAME OVER',s,'FREE PLAY',
+  } else if(playMode === 'freeplay'){
+    showOverlay('GAME OVER', s, 'Free Play',
       `Fish caught: ${fishCount}\n\nNew seed every run — scores not saved`);
-    if(btn){ btn.textContent='FREE PLAY'; btn.style.display='inline-block'; }
+    if(btn){ btn.textContent = 'FREE PLAY'; btn.style.display = 'inline-block'; }
   } else {
     // guest
-    showOverlay('GAME OVER',s,'Sign in to compete!',
-      `Fish caught: ${fishCount}\n\nGuest scores are not saved.\nCreate a free account to compete for prizes!`);
+    showOverlay('GAME OVER', s, '', `Fish caught: ${fishCount}`);
+    if(btn){ btn.textContent = 'PLAY AGAIN'; btn.style.display = 'inline-block'; }
   }
 }
 
@@ -1542,15 +1581,18 @@ function draw(){
 //  SUPABASE AUTH (email) — step 2; keys in prototypes/supabase-config.js
 // ═══════════════════════════════════════════════════════════
 function updateAuthUI(session){
-  const msgEl=document.getElementById('auth-status');
-  const out=document.getElementById('auth-signout');
+  const statusEl  = document.getElementById('auth-status');
+  const userLabel = document.getElementById('ov-user-label');
+  const signoutBtn = document.getElementById('auth-signout');
   if(session?.user){
-    const em=session.user.email||'Signed in';
-    if(msgEl){ msgEl.textContent=em; msgEl.title=em; }
-    if(out) out.style.display='inline-block';
+    const em = session.user.email || 'Signed in';
+    if(statusEl)  statusEl.textContent  = '';
+    if(userLabel){ userLabel.textContent = em; userLabel.title = em; }
+    if(signoutBtn) signoutBtn.style.display = 'inline-block';
   } else {
-    if(msgEl){ msgEl.textContent='Signed out'; msgEl.title=''; }
-    if(out) out.style.display='none';
+    if(statusEl)  statusEl.textContent  = '';
+    if(userLabel) userLabel.textContent  = '';
+    if(signoutBtn) signoutBtn.style.display = 'none';
   }
 }
 
@@ -1708,10 +1750,10 @@ function startFromOverlay(){
   resetGame(); hideOverlay(); state='playing';
 }
 
-// "Play Again" / "Free Play" dedicated button
+// Main CTA button — works from both title and gameover screens
 document.getElementById('play-again-btn').addEventListener('click',e=>{
   e.stopPropagation();
-  if(state==='gameover'){ resetGame(); hideOverlay(); state='playing'; }
+  startFromOverlay();
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -1728,16 +1770,7 @@ loop();
 // Init HUD after game starts so any failure here never blocks the game loop
 GameshowHud.init('#gameshow-hud-mount');
 if (document.getElementById('gameshow-hud')) {
-  // HUD rendered — wire menu button to toggle auth bar
-  GameshowHud.onMenuClick(()=>{
-    const bar = document.getElementById('auth-bar');
-    if (bar) bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
-  });
   resizeCanvas(); // remeasure now that HUD has real offsetHeight
-} else {
-  // HUD failed — show auth bar directly so sign-in is still reachable
-  const bar = document.getElementById('auth-bar');
-  if (bar) bar.style.display = 'flex';
 }
 </script>
 </body>
