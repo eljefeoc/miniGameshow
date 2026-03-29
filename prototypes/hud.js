@@ -12,9 +12,9 @@
      GameshowHud.setPrize('Weekend in Amsterdam');
      GameshowHud.setShowAt(new Date('2026-03-29T03:00:00Z'));
      GameshowHud.setStats({ rank: 14, best: 8420, attemptsUsed: 2 });
-     GameshowHud.setPlayer({ initials: 'JK', name: 'Jeff K.' });
+       GameshowHud.setPlayer({ initials: 'JK', name: 'Jeff K.' });
      GameshowHud.setPlayer(null); // signed out / guest
-     GameshowHud.onMenuClick(() => { /* toggle auth panel etc. */ });
+     GameshowHud.onMenuClick(() => { … });
    ============================================================ */
 
 const GameshowHud = (() => {
