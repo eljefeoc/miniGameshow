@@ -51,12 +51,16 @@ html, body {
   position:absolute;
   top:0; left:0; right:0;
   display:flex;
-  align-items:center;
-  justify-content:space-around;
-  padding:6px 10px 4px;
-  background:linear-gradient(to bottom, rgba(10,4,30,0.82) 0%, rgba(10,4,30,0) 100%);
+  flex-direction:column;
+  background:linear-gradient(to bottom, rgba(10,4,30,0.90) 0%, rgba(10,4,30,0.75) 70%, rgba(10,4,30,0) 100%);
   z-index:10;
   pointer-events:none;
+}
+#hud-metrics {
+  display:flex;
+  align-items:center;
+  justify-content:space-around;
+  padding:6px 10px 3px;
 }
 .hud-cell {
   display:flex; flex-direction:column; align-items:center;
@@ -66,6 +70,38 @@ html, body {
 .hud-val  { color:#ffe600; font-size:clamp(8px,1.8vw,13px); text-shadow:2px 2px 0 #884400; white-space:nowrap; }
 #hud-combo-val { color:#ff4488; }
 #hud-frenzy-val { color:#00ffaa; }
+
+/* ── HUD show strip (Zone 1 — row 2) ── */
+#hud-show-strip {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:2px 10px 5px;
+  gap:8px;
+  border-top:1px solid rgba(255,170,100,0.18);
+}
+#hud-prize {
+  display:flex; align-items:baseline; gap:5px;
+  flex:1; min-width:0;
+}
+.hud-prize-lbl {
+  color:#ffaa55; font-size:clamp(5px,0.9vw,7px);
+  white-space:nowrap; flex-shrink:0;
+}
+#hud-prize-val {
+  color:#ffe600;
+  font-size:clamp(7px,1.5vw,11px);
+  text-shadow:1px 1px 0 #884400;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+#hud-schedule {
+  font-size:clamp(5px,0.85vw,7px);
+  white-space:nowrap; flex-shrink:0;
+  text-align:right; line-height:1.6;
+}
+.hud-sched-normal { color:#ffbb66; }
+.hud-sched-urgent { color:#ff3333; animation:blink 1s infinite; }
+.hud-sched-closed { color:#778899; }
 
 /* ── CONTROLS — float on bottom of canvas ── */
 #controls {
@@ -149,12 +185,35 @@ html, body {
   position:absolute;
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
-  gap:clamp(6px,2vh,16px);
   pointer-events:none;
   padding:16px;
   z-index:20;
   /* width/height/left/top set by JS */
 }
+
+/* ── Zone 2 / Zone 3 card — the visible content panel ── */
+#ov-card {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:clamp(6px,2vh,16px);
+  padding:clamp(14px,3vh,28px) clamp(16px,4vw,36px);
+  border-radius:20px;
+  max-width:min(460px,88vw);
+  width:100%;
+}
+/* Zone 2 — title/start: warm glass, inviting */
+#ov-card[data-zone="title"] {
+  background:radial-gradient(ellipse at 50% 30%, rgba(60,30,10,0.72) 0%, rgba(15,6,36,0.80) 100%);
+  border:1px solid rgba(255,200,80,0.30);
+  box-shadow:0 0 48px rgba(255,160,40,0.18), inset 0 1px 0 rgba(255,220,120,0.10);
+}
+/* Zone 3 — post-run: dark, calm data readout */
+#ov-card[data-zone="gameover"] {
+  background:rgba(8,3,24,0.94);
+  border:1px solid rgba(120,90,200,0.28);
+  box-shadow:0 0 32px rgba(80,40,160,0.18), inset 0 1px 0 rgba(180,140,255,0.08);
+}
+
 .ov-title {
   font-size:clamp(16px,4.5vw,32px);
   color:#ffdd44;
@@ -162,7 +221,11 @@ html, body {
   animation:pulse 1s infinite;
   text-align:center;
 }
-.ov-score { font-size:clamp(9px,2.2vw,15px); color:#ff6688; text-shadow:2px 2px 0 #440022; }
+.ov-score {
+  font-size:clamp(9px,2.2vw,15px);
+  color:#ff6688;
+  text-shadow:2px 2px 0 #440022;
+}
 .ov-sub {
   font-size:clamp(8px,1.8vw,12px);
   color:#ff9944;
@@ -176,6 +239,7 @@ html, body {
   line-height:2;
   text-align:center;
   max-width:min(400px,80vw);
+  white-space:pre-line;
 }
 
 /* rotate nudge */
@@ -269,25 +333,38 @@ window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'',
   <div id="canvas-wrap">
     <canvas id="gameCanvas"></canvas>
 
-    <!-- HUD floats top -->
+    <!-- HUD floats top — Zone 1 -->
     <div id="top-bar">
-      <div class="hud-cell"><span class="hud-lbl">SCORE</span><span class="hud-val" id="scoreDisplay">00000</span></div>
-      <div class="hud-cell"><span class="hud-lbl">COMBO</span><span class="hud-val" id="hud-combo-val">×1</span></div>
-      <div class="hud-cell"><span class="hud-lbl">FISH</span><span class="hud-val" id="fishDisplay">🐟×0</span></div>
-      <div class="hud-cell"><span class="hud-lbl">LIVES</span><span class="hud-val" id="livesDisplay">♥♥♥</span></div>
-      <div class="hud-cell"><span class="hud-lbl">BEST</span><span class="hud-val" id="hiScoreDisplay">00000</span></div>
-      <div class="hud-cell"><span class="hud-lbl">FRENZY</span><span class="hud-val" id="hud-frenzy-val">0%</span></div>
+      <!-- Row 1: game metrics -->
+      <div id="hud-metrics">
+        <div class="hud-cell"><span class="hud-lbl">SCORE</span><span class="hud-val" id="scoreDisplay">00000</span></div>
+        <div class="hud-cell"><span class="hud-lbl">COMBO</span><span class="hud-val" id="hud-combo-val">×1</span></div>
+        <div class="hud-cell"><span class="hud-lbl">FISH</span><span class="hud-val" id="fishDisplay">🐟×0</span></div>
+        <div class="hud-cell"><span class="hud-lbl">LIVES</span><span class="hud-val" id="livesDisplay">♥♥♥</span></div>
+        <div class="hud-cell"><span class="hud-lbl">BEST</span><span class="hud-val" id="hiScoreDisplay">00000</span></div>
+        <div class="hud-cell"><span class="hud-lbl">FRENZY</span><span class="hud-val" id="hud-frenzy-val">0%</span></div>
+      </div>
+      <!-- Row 2: show strip — prize + schedule -->
+      <div id="hud-show-strip">
+        <div id="hud-prize">
+          <span class="hud-prize-lbl">PRIZE</span>
+          <span id="hud-prize-val">···</span>
+        </div>
+        <span id="hud-schedule" class="hud-sched-normal">Scoring closes Sat midnight · Live show Sun 7pm PT</span>
+      </div>
     </div>
 
-    <!-- Game overlay (title / gameover) -->
+    <!-- Game overlay (title / gameover) — Zone 2 or Zone 3 -->
     <div id="overlay">
-      <div class="ov-title" id="ovTitle">PENGU FISHER</div>
-      <div class="ov-score" id="ovScore"></div>
-      <div class="ov-sub"   id="ovSub">TAP TO START</div>
-      <button type="button" id="play-again-btn">PLAY AGAIN</button>
-      <div class="ov-tip"   id="ovTip">
-        🐧 JUMP = Left button  ·  🎣 CAST = Right button when it glows<br>
-        Build combos · Fill FRENZY meter · Read the ice!
+      <div id="ov-card" data-zone="title">
+        <div class="ov-title" id="ovTitle">PENGU FISHER</div>
+        <div class="ov-score" id="ovScore"></div>
+        <div class="ov-sub"   id="ovSub">TAP TO START</div>
+        <button type="button" id="play-again-btn">PLAY AGAIN</button>
+        <div class="ov-tip"   id="ovTip">
+          🐧 JUMP = Left button  ·  🎣 CAST = Right button when it glows
+          Build combos · Fill FRENZY meter · Read the ice!
+        </div>
       </div>
     </div>
 
@@ -462,6 +539,52 @@ let playerName='';         // profiles.username or email prefix
 let currentSeed=dailySeed; // active seed for this run (guest/freeplay = random)
 
 function randomSeed(){ return Math.floor(Math.random()*2147483647)+1; }
+
+// ── Show-strip state ────────────────────────────────────────
+let weekPrize = '';        // set by fetchActiveWeek()
+let weekSponsor = '';
+let schedCountdownId = null; // setInterval id for Saturday countdown
+
+function updateShowStrip(){
+  const prizeEl   = document.getElementById('hud-prize-val');
+  const schedEl   = document.getElementById('hud-schedule');
+  if(!prizeEl || !schedEl) return;
+
+  prizeEl.textContent = weekPrize || '···';
+
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun 1=Mon…6=Sat
+
+  if(day === 0){
+    // Sunday — scoring closed, show is today
+    schedEl.textContent = 'Scoring closed · Live show today 7pm PT';
+    schedEl.className   = 'hud-sched-closed';
+    if(schedCountdownId){ clearInterval(schedCountdownId); schedCountdownId=null; }
+  } else if(day === 6){
+    // Saturday — live countdown to midnight local
+    const updateSat = ()=>{
+      const n   = new Date();
+      const end = new Date(n.getFullYear(), n.getMonth(), n.getDate(), 23, 59, 59);
+      const sec = Math.max(0, Math.floor((end - n) / 1000));
+      const h   = Math.floor(sec / 3600);
+      const m   = Math.floor((sec % 3600) / 60);
+      const s   = sec % 60;
+      const t   = h > 0
+        ? `${h}h ${m}m left`
+        : m > 0 ? `${m}m ${s}s left`
+        : `${s}s left`;
+      schedEl.textContent = `${t} · Live show tomorrow 7pm PT`;
+      schedEl.className   = 'hud-sched-urgent';
+    };
+    updateSat();
+    if(!schedCountdownId) schedCountdownId = setInterval(updateSat, 1000);
+  } else {
+    // Mon–Fri — normal state
+    schedEl.textContent = 'Scoring closes Sat midnight · Live show Sun 7pm PT';
+    schedEl.className   = 'hud-sched-normal';
+    if(schedCountdownId){ clearInterval(schedCountdownId); schedCountdownId=null; }
+  }
+}
 let gameSpeed=2.6,frameCount=0,distance=0;
 let combo=1,comboTimer=0;
 let fishMeter=0,frenzyActive=false,frenzyTimer=0,frenzyFlash=0;
@@ -763,8 +886,12 @@ const pad=n=>String(n).padStart(5,'0');
 const CONTROLS_TIP='🐧 LEFT = Jump  ·  🎣 RIGHT = Cast when it glows\nBuild combos · Fill FRENZY meter · Read the ice!';
 
 function showModeOverlay(screen){
-  const btn=document.getElementById('play-again-btn');
+  const btn  = document.getElementById('play-again-btn');
+  const card = document.getElementById('ov-card');
   if(btn) btn.style.display='none';
+
+  // Set zone on the card for visual treatment
+  if(card) card.dataset.zone = (screen==='title') ? 'title' : 'gameover';
 
   if(screen==='title'){
     if(playMode==='competing'){
@@ -786,7 +913,7 @@ function showModeOverlay(screen){
   // screen === 'gameover'
   const s=`SCORE: ${pad(score)}`;
   if(playMode==='competing'){
-    const used=attemptsUsed; // already incremented by submit callback
+    const used=attemptsUsed;
     if(used>=5){
       showOverlay('GAME OVER',s,'All 5 attempts used for today!',
         `Fish caught: ${fishCount}\n\nWant to keep playing for fun?`);
@@ -803,8 +930,8 @@ function showModeOverlay(screen){
     if(btn){ btn.textContent='FREE PLAY'; btn.style.display='inline-block'; }
   } else {
     // guest
-    showOverlay('GAME OVER',s,'TAP TO RETRY',
-      `Fish caught: ${fishCount}\n\nSign in to compete for real prizes!`);
+    showOverlay('GAME OVER',s,'Sign in to compete!',
+      `Fish caught: ${fishCount}\n\nGuest scores are not saved.\nCreate a free account to compete for prizes!`);
   }
 }
 
@@ -826,6 +953,29 @@ async function fetchAttemptsAndSetMode(userId){
     console.error('fetchAttempts',e);
     playMode='competing'; currentSeed=dailySeed;
   }
+}
+
+// Fetch the active week's prize_title (and sponsor) for the show strip.
+// Safe to call without a session — public read on weeks.
+async function fetchActiveWeek(){
+  const sb=window._miniGameshowSb;
+  if(!sb) return;
+  try{
+    const nowIso=new Date().toISOString();
+    const { data: game } = await sb.from('games').select('id').eq('slug','pengu-fisher').maybeSingle();
+    if(!game?.id) return;
+    const { data: week } = await sb.from('weeks')
+      .select('prize_title,sponsor_name')
+      .eq('game_id',game.id)
+      .lte('starts_at',nowIso)
+      .gte('ends_at',nowIso)
+      .maybeSingle();
+    if(week){
+      weekPrize   = week.prize_title   || '';
+      weekSponsor = week.sponsor_name  || '';
+      updateShowStrip();
+    }
+  }catch(e){ console.error('fetchActiveWeek',e); }
 }
 
 function updateHUD(){
@@ -1479,6 +1629,8 @@ async function onSignedIn(session){
   }catch{ playerName=session.user.email?.split('@')[0]||''; }
   // Fetch attempts and set mode
   await fetchAttemptsAndSetMode(session.user.id);
+  // Fetch active week prize (re-fetch in case it changed)
+  fetchActiveWeek().catch(()=>{});
   // Refresh overlay if on title or gameover screen
   if(state==='title'||state==='gameover') showModeOverlay(state);
 }
@@ -1608,8 +1760,12 @@ document.getElementById('play-again-btn').addEventListener('click',e=>{
 // ═══════════════════════════════════════════════════════════
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
 updateHUD();
+updateShowStrip();          // run immediately with client-side day logic
 showModeOverlay('title');
-bootSupabaseAuth();
+bootSupabaseAuth().then(()=>{
+  // After auth boots and client is ready, fetch prize from DB
+  fetchActiveWeek().catch(()=>{});
+});
 loop();
 </script>
 </body>
