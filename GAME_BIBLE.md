@@ -2,7 +2,7 @@
 
 ### [WORLD NAME — TBD] — Working Title
 
-*Last updated: March 2026 | Version 1.3*
+*Last updated: March 29, 2026 | Version 1.4*
 
 ---
 
@@ -193,6 +193,18 @@ for them.
 - Always round — no sharp edges on the protagonist
 - Eyes are the primary emotional communicator — make them large and readable
 - The fishing rod is a character prop, always present, always expressive
+
+**Visual implementation (Game 01 — Pengu Fisher, prototype):**
+
+- **Sprite sheet primary:** `prototypes/assets/pengu-sheet.png` (transparent PNG,
+  Midjourney-generated poses). Single file load; `drawImage` crop rectangles per
+  mood (`happy`, `scared`, `excited`, `nervous`, backpack pose). Tuned crops and
+  feet alignment so the character sits on the ice (not floating).
+- **Procedural fallback:** If the sheet is not ready or `USE_PENGU_SPRITE` is off,
+  vector drawing remains — bluish/cream palette, softer wing blobs, cheek blush,
+  two-eye layout (normal / scared X / excited stars), updated beak and feet.
+- **Fish backpack:** Persistent bag behind the body; tiny fish appear inside as
+  catches stack; strap drawn over the sprite for continuity.
 
 ---
 
@@ -787,9 +799,23 @@ Nightly job → checks content_events
   - All core mechanics: jump, double-jump, active fishing cast,
     combo multiplier, frenzy mode, 4 distinct obstacle types
   - Mobile-first layout, Web Audio sfx, haptic feedback (Android)
-  - Daily seed system (client-side only)
-  - **Supabase email auth UI** (sign in / sign up / sign out) in `penguin-game.html`
-    when `prototypes/supabase-config.js` is present — see `README.md` step 2
+  - **Daily seed** for competition runs; **guest and free-play** use a **new
+    random seed every run** so the official daily layout cannot be rehearsed
+    offline on a shared device
+  - **Play modes (client + DB):**
+    - **Guest** — not signed in; random seed each run; scores not saved; overlay
+      prompts sign-in to compete
+    - **Competing** — signed in, under daily attempt cap; **daily seed**; scores
+      submitted to `public.runs`; overlay shows **display name** (profile username
+      or email prefix) and **attempt x/5**; **PLAY AGAIN** when attempts remain
+    - **Free play** — signed in after **5 attempts used for the day**; random seed
+      each run; scores not saved; **FREE PLAY** button; copy states scores are not
+      saved
+  - Attempt counts are **re-fetched from `daily_attempts`** after each successful
+    save so the UI matches server state (not a fragile local-only counter)
+  - **Supabase email auth** + **score insert** to `public.runs` in
+    `penguin-game.html` when `prototypes/supabase-config.js` is configured — see
+    `README.md` steps 2–3 (requires active `weeks` row, e.g. `seed_week.sql`)
 
 - **Game 02 — Fish Stack:** Fully playable HTML5 prototype
   - 7 fish-shaped falling pieces (not tetrominos — actual silhouettes)
@@ -808,24 +834,22 @@ Nightly job → checks content_events
 
 ### Known Issues / Not Yet Built
 
-- [x] **Supabase schema built** — `supabase/schema.sql` complete (7 tables, RLS, triggers). Ready to apply.
-- [ ] Supabase project not yet created / schema not yet applied to live project
-- [ ] No user accounts / authentication wired to frontend
-- [ ] No score submission Edge Function — scores not saved anywhere yet
-- [ ] No server-side seed validation (anti-cheat not active)
+- [x] **Supabase schema built** — `supabase/schema.sql` + migrations; applied pattern documented in `README.md`
+- [x] **Auth + score path (Game 01)** — email auth + insert into `public.runs`; daily attempt cap enforced server-side (`daily_attempts` + triggers)
+- [ ] **Score submission via Edge Function** — prototype uses direct client insert; production may move to a server endpoint for validation and keys
+- [ ] No server-side **seed validation** in gameplay (anti-cheat not active; client still drives RNG)
 - [ ] Service Worker not implemented — no offline support
 - [ ] No PWA manifest — not installable
 - [ ] Score card image generation for social sharing — not built
 - [ ] Web Share API integration — not built
 - [ ] Leaderboard UI — not built
-- [ ] Weekly attempt tracking — client-side only, not enforced server-side
 - [ ] Fish Stack piece physics feel slightly loose (acceptable for now)
 - [ ] Fullscreen button non-functional on mobile — remove it (Game 01)
 - [ ] Deep Dive jellyfish patterns need more variety
 - [ ] Deep Dive narwhal encounter needs more polish
 - [ ] Deep Dive needs daily seed integration
 
-### Repository Structure (Actual, as of v1.3)
+### Repository Structure (Actual, as of v1.4)
 
 ```
 /
@@ -848,13 +872,14 @@ Nightly job → checks content_events
 
 ### Next Build Priorities (Phase 1)
 
-1. Create Supabase project + apply `schema.sql` (step-by-step: `README.md` → **Step 1**)
-2. Wire Supabase Auth (email) — **`README.md` → Step 2** (Dashboard URL settings + `supabase-config.js` + serve over HTTP)
-3. Build score submission Edge Function (Vercel) using schema payload spec
-4. Remove fullscreen button, finalize mobile layout (Game 01)
-5. Proper PWA structure (manifest.json + service worker)
-6. Score card image generation + Web Share API
-7. Performance pass for mid-range Android
+1. ~~Create Supabase project + apply schema~~ — **done for Game 01 path**; keep migrations in sync for new environments
+2. ~~Wire Supabase Auth + prototype score insert~~ — **done** (`README.md` steps 2–3)
+3. **Leaderboard UI** + public read of `leaderboard` / runs for active week
+4. Optional: **Edge Function** (or server route) for score submission + validation instead of client-only insert
+5. Remove fullscreen button, finalize mobile layout (Game 01)
+6. Proper PWA structure (manifest.json + service worker)
+7. Score card image generation + Web Share API
+8. Performance pass for mid-range Android
 
 ---
 
@@ -889,6 +914,9 @@ Never delete entries — cross them out if reversed and note why.*
 | Mar 2026 | Midjourney for initial character reference art         | Fast, quality style exploration before committing to character designer |
 | Mar 2026 | Fish backpack added to pengu as persistent visual prop | Reinforces fishing identity, gives visible reward feedback per catch  |
 | Mar 2026 | Sprite and procedural draw coexist behind `USE_PENGU_SPRITE` flag | Toggle during iteration; remove flag once sprite is final  |
+| Mar 2026 | Pengu Fisher graphics pass: palette + eyes + backpack + sprite crops | Midjourney sheet + tuned `drawImage` rects + on-ice alignment; procedural fallback stays in sync |
+| Mar 2026 | Three play modes: guest / competing / free play | Guest & free play = random seed every run; competing = daily seed + saves; stops pass-the-phone practice of the official seed |
+| Mar 2026 | Attempt UI from DB after each successful `runs` insert | `daily_attempts` is source of truth; overlay shows name + x/5 and PLAY AGAIN vs FREE PLAY |
 
 ---
 
@@ -961,5 +989,5 @@ Don't waste them." / "Your score has been submitted. Hmph."
 
 ---
 
-*End of Game Bible v1.3*
-*Next review: after Supabase auth + score submission wired to prototype*
+*End of Game Bible v1.4*
+*Next review: after leaderboard UI or Edge Function score path (whichever ships first)*
