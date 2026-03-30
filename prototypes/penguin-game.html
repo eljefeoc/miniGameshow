@@ -610,6 +610,28 @@ html, body {
   font-family: inherit;
 }
 #gsp-share-btn:active { filter: brightness(0.95); }
+#gsp-account-body .gsp-account-cta {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 11px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #534AB7;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  box-sizing: border-box;
+  text-align: center;
+}
+#gsp-account-body .gsp-account-cta.secondary {
+  background: rgba(0, 0, 0, 0.06);
+  color: #333;
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+}
+#gsp-account-body .gsp-account-cta:active { filter: brightness(0.95); }
 /* Leaderboard list (mockup) */
 .lb-week {
   display: flex;
@@ -893,6 +915,7 @@ html, body {
           <div class="postrun-tip gsp-muted" id="postrun-tip" style="display:none;margin-bottom:12px;font-size:11px;"></div>
           <div class="postrun-actions">
             <button type="button" class="btn-primary" id="postrun-play-btn">Play again</button>
+            <button type="button" class="btn-secondary" id="postrun-signin-btn" style="display:none">Sign in</button>
             <button type="button" class="btn-secondary" id="ov-open-lb">Leaderboard</button>
             <button type="button" class="btn-secondary" id="ov-share-run">Share</button>
           </div>
@@ -929,7 +952,7 @@ html, body {
 if (!window.GameshowHud || typeof window.GameshowHud.init !== 'function') {
   window.GameshowHud = {
     init:()=>{}, height:()=>56, setPrize:()=>{},
-    setShowAt:()=>{}, setScoringEndsAt:()=>{}, setStats:()=>{}, setPlayer:()=>{}, onMenuClick:()=>{}
+    setShowAt:()=>{}, setScoringEndsAt:()=>{}, setStats:()=>{}, setPlayer:()=>{}, onMenuClick:()=>{}, onAvatarClick:()=>{}
   };
 }
 // ═══════════════════════════════════════════════════════════
@@ -1498,6 +1521,8 @@ function showModeOverlay(screen){
     if(tipLines){ tipPost.style.display='block'; tipPost.textContent=tipLines; }
     else{ tipPost.style.display='none'; tipPost.textContent=''; }
   }
+  const signinBtn = document.getElementById('postrun-signin-btn');
+  if(signinBtn) signinBtn.style.display = playMode === 'guest' ? 'inline-flex' : 'none';
 }
 
 // Fetch attempts_used from DB and set playMode accordingly
@@ -2525,6 +2550,10 @@ document.getElementById('postrun-play-btn').addEventListener('click',e=>{
   e.stopPropagation();
   startFromOverlay();
 });
+document.getElementById('postrun-signin-btn')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  openSignInFromGame();
+});
 document.getElementById('ov-open-lb').addEventListener('click',e=>{
   e.stopPropagation();
   setGspTab('leaderboard');
@@ -2563,6 +2592,7 @@ function setGspTab(tab){
   if(_gspOpen){
     if(tab === 'leaderboard') refreshGspLeaderboard();
     if(tab === 'myscores') refreshGspMyScores();
+    if(tab === 'account') refreshGspAccount();
   }
 }
 
@@ -2706,21 +2736,62 @@ async function refreshGspMyScores(){
   }
 }
 
+function revealAuthPanel(){
+  const o = document.getElementById('ov-auth');
+  if(!o) return;
+  o.dataset.fpOpen = '1';
+  o.style.display = 'flex';
+  o.style.flexDirection = 'column';
+  document.getElementById('auth-email')?.focus();
+}
+
+/** Leave any in-game shell, show title overlay + email sign-in (used after run, from Account tab, etc.). */
+function openTitleAuthPanel(){
+  closeGsp();
+  state = 'title';
+  showModeOverlay('title');
+  revealAuthPanel();
+}
+
+/** From post-run / non-playing: title auth. While playing as guest: open menu on Account (tap Sign in there). */
+function openSignInFromGame(){
+  closeGsp();
+  if(state === 'playing'){
+    openGsp();
+    setGspTab('account');
+    refreshGspAccount();
+    return;
+  }
+  openTitleAuthPanel();
+}
+
+async function signOutFromHud(){
+  const sb = window._miniGameshowSb;
+  if(!sb) return;
+  if(!confirm('Sign out?')) return;
+  try{
+    await sb.auth.signOut();
+  }catch(err){ console.error(err); }
+}
+
 function refreshGspAccount(){
   const body = document.getElementById('gsp-account-body');
   if(!body) return;
   const sb = window._miniGameshowSb;
   if(!sb){
-    body.innerHTML = '<p>Copy <code>supabase-config.example.js</code> to <code>supabase-config.js</code> with your project URL and anon key.</p><p class="gsp-muted">Sign in uses the title screen.</p>';
+    body.innerHTML = '<p>Copy <code>supabase-config.example.js</code> to <code>supabase-config.js</code> with your project URL and anon key.</p>' +
+      '<button type="button" class="gsp-account-cta" id="gsp-account-signin">Sign in (title screen)</button>';
     return;
   }
   sb.auth.getSession().then(({ data:{ session } })=>{
     if(!session?.user){
-      body.innerHTML = '<p>You’re playing as a guest.</p><p class="gsp-muted">Use <strong>Sign In</strong> on the title screen to compete. Sessions persist in this browser.</p>';
+      body.innerHTML = '<p>You’re playing as a guest.</p><p class="gsp-muted">Sign in to save scores and compete. Your session stays in this browser.</p>' +
+        '<button type="button" class="gsp-account-cta" id="gsp-account-signin">Sign in</button>';
       return;
     }
     const em = session.user.email || 'Signed in';
-    body.innerHTML = `<p><strong>Signed in</strong></p><p class="gsp-muted">${gspEscapeHtml(em)}</p><p class="gsp-muted">Sign out from the title or game over screen when those panels are visible.</p>`;
+    body.innerHTML = `<p><strong>Signed in</strong></p><p class="gsp-muted">${gspEscapeHtml(em)}</p>` +
+      '<button type="button" class="gsp-account-cta secondary" id="gsp-account-signout">Sign out</button>';
   });
 }
 
@@ -2754,7 +2825,31 @@ function initShellPanel(){
       }
     });
   }
+  document.getElementById('gsp-account-body')?.addEventListener('click', e=>{
+    const t = e.target;
+    if(!(t instanceof HTMLElement)) return;
+    if(t.id === 'gsp-account-signin' || t.closest('#gsp-account-signin')){
+      e.preventDefault();
+      openTitleAuthPanel();
+    }
+    if(t.id === 'gsp-account-signout' || t.closest('#gsp-account-signout')){
+      e.preventDefault();
+      void signOutFromHud();
+    }
+  });
   window.GameshowHud.onMenuClick(()=> toggleGsp());
+  window.GameshowHud.onAvatarClick(()=>{
+    const sb = window._miniGameshowSb;
+    if(!sb){ openSignInFromGame(); return; }
+    void sb.auth.getSession().then(({ data:{ session } })=>{
+      if(session?.user) void signOutFromHud();
+      else if(state === 'playing'){
+        openGsp();
+        setGspTab('account');
+        refreshGspAccount();
+      } else openSignInFromGame();
+    });
+  });
 }
 
 function initFpFirstPlayCardUI(){
@@ -2769,14 +2864,7 @@ function initFpFirstPlayCardUI(){
       if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fpToggleExpand(el.dataset.fpExpand); }
     });
   });
-  document.getElementById('fp-reveal-auth')?.addEventListener('click',()=>{
-    const o=document.getElementById('ov-auth');
-    if(!o) return;
-    o.dataset.fpOpen='1';
-    o.style.display='flex';
-    o.style.flexDirection='column';
-    document.getElementById('auth-email')?.focus();
-  });
+  document.getElementById('fp-reveal-auth')?.addEventListener('click',()=> revealAuthPanel());
 }
 
 // ═══════════════════════════════════════════════════════════

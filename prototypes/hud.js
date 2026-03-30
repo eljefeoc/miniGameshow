@@ -27,6 +27,7 @@ const GameshowHud = (() => {
   let _initials       = '';
   let _isGuest        = true;
   let _menuHandler    = null;
+  let _avatarHandler  = null;
   let _schedInterval  = null;
   let _endsAt         = null;   // scoring window end from public.weeks.ends_at (admin)
 
@@ -224,6 +225,20 @@ const GameshowHud = (() => {
       });
     }
 
+    const avBtn = el('ghud-avatar');
+    if (avBtn) {
+      avBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        _avatarHandler && _avatarHandler();
+      });
+      avBtn.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          _avatarHandler && _avatarHandler();
+        }
+      });
+    }
+
     // Initial render with current state
     renderDots(_attemptsUsed);
     renderSchedule();
@@ -263,18 +278,24 @@ const GameshowHud = (() => {
       _initials = player.initials.slice(0, 2).toUpperCase();
       av.textContent = _initials;
       av.className   = 'ghud-avatar';
-      av.title       = player.name || _initials;
+      av.title       = (player.name || _initials) + ' — tap to sign out';
+      av.setAttribute('aria-label', 'Sign out');
     } else {
       _isGuest  = true;
       _initials = '';
       av.textContent = '?';
       av.className   = 'ghud-avatar guest';
-      av.title       = 'Guest — sign in to compete';
+      av.title       = 'Guest — tap to sign in';
+      av.setAttribute('aria-label', 'Sign in');
     }
   }
 
   function onMenuClick(handler) {
     _menuHandler = handler;
+  }
+
+  function onAvatarClick(handler) {
+    _avatarHandler = handler;
   }
 
   // ── height helper for game resize calculations ───────────
@@ -283,7 +304,7 @@ const GameshowHud = (() => {
     return h ? h.offsetHeight : 56;
   }
 
-  return { init, setPrize, setShowAt, setScoringEndsAt, setStats, setPlayer, onMenuClick, height };
+  return { init, setPrize, setShowAt, setScoringEndsAt, setStats, setPlayer, onMenuClick, onAvatarClick, height };
 })();
 // Always on window — inline game scripts and file:// loads rely on this
 window.GameshowHud = GameshowHud;

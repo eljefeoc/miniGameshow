@@ -143,8 +143,14 @@
   margin-left: 10px;
   flex-shrink: 0;
   text-transform: uppercase;
-  cursor: default;
+  cursor: pointer;
   user-select: none;
+  transition: filter 0.15s, transform 0.1s;
+}
+
+.ghud-avatar:active {
+  transform: scale(0.94);
+  filter: brightness(1.12);
 }
 
 .ghud-avatar.guest {
