@@ -2424,7 +2424,17 @@ async function bootSupabaseAuth(){
   const url=(cfg.url||'').trim(), key=(cfg.anonKey||'').trim();
   const msgEl=document.getElementById('auth-status');
   if(!url||!key){
-    if(msgEl) msgEl.textContent='Copy supabase-config.example.js → supabase-config.js';
+    if(msgEl){
+      msgEl.textContent='Supabase isn’t configured (no URL/key). Local: copy supabase-config.example.js → supabase-config.js. Hosted: set SUPABASE_URL + SUPABASE_ANON_KEY on the host.';
+    }
+    ['auth-signin','auth-signup'].forEach(id=>{
+      const b=document.getElementById(id);
+      if(b){
+        b.disabled=true;
+        b.setAttribute('aria-disabled','true');
+        b.title='Configure Supabase before sign-in works';
+      }
+    });
     return;
   }
   try{

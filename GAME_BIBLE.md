@@ -2,7 +2,7 @@
 
 ### [WORLD NAME — TBD] — Working Title
 
-*Last updated: March 29, 2026 | Version 1.5*
+*Last updated: March 29, 2026 | Version 1.6*
 
 ---
 
@@ -447,8 +447,25 @@ Breaking streak resets to 1x. Combo decay timer visible as bar.
 - Medium fish: 150 pts in frenzy × combo multiplier
 - Golden fish: 500 pts × combo multiplier
 
-**Status:** Prototype complete. Needs: daily seed server validation, score
-submission API, PWA shell, performance pass for mid-range Android.
+**Status:** Prototype complete. **Score save path live:** Supabase email auth +
+client insert into `public.runs`; daily attempt cap enforced in Postgres
+(`before_run_insert` on `runs` + `daily_attempts`). Still needs: daily seed
+**server-side validation** in gameplay, optional Edge Function for submits,
+PWA shell, performance pass for mid-range Android.
+
+**Shell UX (Game 01, implemented):** Dark **HUD** (Zone 1) — prize/show-time
+line, attempt dots, best/rank when signed in, **menu** button, **avatar**
+(guest `?` or initials). **Avatar tap:** guest → sign-in flow; signed in →
+sign out (confirm). **Menu** opens a full-screen **shell** with tabs:
+**Leaderboard** (this week), **My scores** (signed-in runs), **Account**
+(guest: Sign in → title + auth; signed in: email + Sign out), **Share link**
+(Web Share API or clipboard). **Zone 2** title card: first-play expandables
+(how to play / how attempts work), **auth block inside overlay** (not a
+separate page), **Play now**, **Sign in to save your score** (guests).
+**Zone 3** post-run: **Sign in** button when `playMode === guest`; competing
+copy shows attempt x/5 or free-play messaging. If Supabase URL/anon key are
+missing, status text explains local vs hosted setup and **Sign in / Create
+account** are disabled (handlers are not wired without a client).
 
 ---
 
@@ -612,14 +629,21 @@ The URL is the product.
 
 ```
 Game Engine:    Vanilla JS + HTML5 Canvas (no game framework)
-Frontend:       PWA with Service Worker for offline
-Hosting:        Vercel (edge network, instant deploys)
+Frontend:       PWA with Service Worker for offline (SW not shipped yet)
+Hosting:        Vercel — static output from prototypes/; / → penguin-game.html
 Backend/DB:     Supabase (Postgres + Auth + Realtime subscriptions)
-API:            Vercel Edge Functions
+API:            Vercel Edge Functions (planned; Game 01 uses direct client insert)
 Storage:        Cloudflare R2 (video replays, score card images, audio assets)
-Social Sharing: Web Share API + Canvas-generated score card images
+Social Sharing: Web Share API (post-run + shell) + Canvas score cards (planned)
 Audio:          Web Audio API (sfx) + HTML5 Audio (voiceover — see Section 13)
 ```
+
+**Vercel + Supabase keys (Game 01):** `npm run build` runs
+`scripts/vercel-write-supabase-config.mjs`, which writes
+`prototypes/supabase-config.js` from **`SUPABASE_URL`** and
+**`SUPABASE_ANON_KEY`** (gitignored; never commit secrets). Local dev: copy
+`prototypes/supabase-config.example.js` → `supabase-config.js` and paste keys.
+See **`VERCEL.md`** and repo **`vercel.json`**.
 
 ### Daily Seed System
 
@@ -680,10 +704,15 @@ content_events — event_type, metadata (triggers social content pipeline)
 ### Viral Sharing Architecture
 
 ```
-Run ends → Score card generated (Canvas → PNG)
+Run ends → Score card generated (Canvas → PNG)   ← planned; not in prototype yet
          → Web Share API opens native share sheet
          → Pre-populated: image + score + URL + weekly context
+```
 
+**Prototype today (Game 01):** post-run and shell use **Web Share API** where
+available (fallback: copy URL). **Canvas score card image** not yet generated.
+
+```
 URL carries state: domain.com/play?week=22&score=8420&challenge=jake
                    → Friend sees Jake's score before playing
                    → Immediate competitive context
@@ -692,15 +721,25 @@ URL carries state: domain.com/play?week=22&score=8420&challenge=jake
 
 ### Sign-up Flow (Frictionless)
 
-```
-1. Land on game page
-2. Play a FREE DEMO — no account, local storage only
-3. After first run: "Want your score to count? Create free account"
-4. Username + email → instant account → playing immediately
-5. Phone verify prompt after first real run (required for prize eligibility)
-```
+**Product intent (unchanged):** play first, verify second — never block the
+first run with account creation.
 
-Play first. Verify second. Never block play with account creation.
+**Current prototype (Game 01):**
+
+1. Land on game — **guest** can **Play now** immediately (random seed; no saves).
+2. **Email + password** auth lives **inside the title overlay** (Supabase
+   Auth). Profile **username** is read from `profiles` after sign-in for HUD
+   copy; display falls back to email prefix.
+3. **Sign-in entry points:** title **Sign in to save your score**; **Zone 3**
+   post-run **Sign in** (guests); shell **Account** tab **Sign in** (jumps to
+   title + auth); **HUD avatar** (guest while playing → Account tab with
+   instructions; otherwise → title + auth). **Sign out:** title user bar,
+   Account tab, or avatar (confirm).
+4. **Phone verify after first real run** — not implemented in prototype;
+   required later for prize eligibility.
+
+If `url` / `anon key` are empty, the UI explains **local file** vs **hosted env**
+setup and disables auth buttons until configured.
 
 ---
 
@@ -810,7 +849,10 @@ Nightly job → checks content_events
 
 ### What Exists
 
-- **Game 01 — Pengu Fisher:** Fully playable HTML5 prototype
+- **Game 01 — Pengu Fisher:** Fully playable HTML5 prototype (see **Section 7,
+  Game 01** for full mechanic list + **shell UX** summary)
+  - **`penguin-game.html`** — canvas game + overlay Zones 2–3 + shell markup
+  - **`hud.js` / `hud.css`** — Zone 1 gameshow strip, menu, avatar, stats dots
   - All core mechanics: jump, double-jump, active fishing cast,
     combo multiplier, frenzy mode, 4 distinct obstacle types
   - Mobile-first layout, Web Audio sfx, haptic feedback (Android)
@@ -827,10 +869,17 @@ Nightly job → checks content_events
       each run; scores not saved; **FREE PLAY** button; copy states scores are not
       saved
   - Attempt counts are **re-fetched from `daily_attempts`** after each successful
-    save so the UI matches server state (not a fragile local-only counter)
+    save so the UI matches server state (not a fragile local-only counter).
+    **Gap:** starting a new run does not always re-query the DB first — another
+    signed-in device can advance the count while this tab still shows stale x/5
+    until the next refresh (server trigger still blocks a 6th insert for the same
+    `user_id` + `day_seed`).
   - **Supabase email auth** + **score insert** to `public.runs` in
     `penguin-game.html` when `prototypes/supabase-config.js` is configured — see
-    `README.md` steps 2–3 (requires active `weeks` row, e.g. `seed_week.sql`)
+    `README.md` steps 2–3, **`VERCEL.md`** for deploy, **`supabase-config.example.js`**
+    for local template (requires active `weeks` row, e.g. `seed_week.sql`)
+  - **Vercel:** root **`vercel.json`**, **`package.json`** `build` → generated
+    `supabase-config.js`; production **/** serves **`penguin-game.html`**
 
 - **Game 02 — Fish Stack:** Fully playable HTML5 prototype
   - 7 fish-shaped falling pieces (not tetrominos — actual silhouettes)
@@ -852,49 +901,66 @@ Nightly job → checks content_events
 - [x] **Supabase schema built** — `supabase/schema.sql` + migrations; applied pattern documented in `README.md`
 - [x] **Auth + score path (Game 01)** — email auth + insert into `public.runs`; daily attempt cap enforced server-side (`daily_attempts` + triggers)
 - [ ] **Score submission via Edge Function** — prototype uses direct client insert; production may move to a server endpoint for validation and keys
+- [ ] **Re-fetch `daily_attempts` before each competing run start** — reduces stale x/5 across devices/tabs (DB cap still enforced on insert)
 - [ ] No server-side **seed validation** in gameplay (anti-cheat not active; client still drives RNG)
 - [ ] Service Worker not implemented — no offline support
 - [ ] No PWA manifest — not installable
 - [ ] Score card image generation for social sharing — not built
-- [ ] Web Share API integration — not built
-- [ ] Leaderboard UI — not built
+- [ ] Web Share API — **partial** (post-run share + shell “Share link”; not full score-card image flow)
+- [ ] Standalone marketing / embeddable **leaderboard page** — not built (in-game shell leaderboard exists)
 - [ ] Fish Stack piece physics feel slightly loose (acceptable for now)
 - [ ] Fullscreen button non-functional on mobile — remove it (Game 01)
 - [ ] Deep Dive jellyfish patterns need more variety
 - [ ] Deep Dive narwhal encounter needs more polish
 - [ ] Deep Dive needs daily seed integration
 
-### Repository Structure (Actual, as of v1.5)
+### Repository Structure (Actual, as of v1.6)
 
 ```
 /
 ├── GAME_BIBLE.md
 ├── README.md
+├── VERCEL.md                 ← deploy env vars + Supabase Auth URL config
+├── vercel.json               ← build, outputDirectory prototypes/, / rewrite
+├── package.json              ← npm run build → write supabase-config.js
+├── scripts/
+│   └── vercel-write-supabase-config.mjs
 ├── prototypes/
 │   ├── penguin-game.html     ← Game 01 Pengu Fisher (working prototype)
+│   ├── hud.js                ← Zone 1 gameshow HUD
+│   ├── hud.css
+│   ├── supabase-config.example.js   ← copy → supabase-config.js (local)
+│   ├── supabase-config.js    ← gitignored; generated on Vercel from env
 │   ├── fish-stack.html       ← Game 02 Fish Stack (working prototype)
 │   ├── deep-dive.html        ← Game 03 Deep Dive (working prototype)
 │   └── assets/
 │       └── pengu-sheet.png   ← transparent sprite sheet (Midjourney, 500×500)
 └── supabase/
-    ├── schema.sql            ← full DB schema (paste in SQL Editor)
+    ├── schema.sql            ← full DB schema (reference / SQL Editor)
     ├── config.toml           ← Supabase CLI (local dev / link)
-    └── migrations/
-        └── 20250327120000_initial_schema.sql  ← same SQL; use with `supabase db push`
+    ├── seed_week.sql         ← example active week + game linkage
+    ├── pre_flight_check.sql
+    └── migrations/           ← apply in order (includes RLS delete-own, week admin,
+        runs delete sync, admin RPC lifecycle, drop destructive admin_clear RPC)
 ```
 
 *Target structure (src/, audio/, pwa/ dirs) to be created when prototype is promoted to production build.*
+
+**Note:** Migration **`20260329230000_drop_admin_clear_all_my_competition_data`**
+removes the **`admin_clear_all_my_competition_data`** RPC and related policy;
+stress-test admin UI was removed — use normal Table Editor / SQL for data fixes.
 
 ### Next Build Priorities (Phase 1)
 
 1. ~~Create Supabase project + apply schema~~ — **done for Game 01 path**; keep migrations in sync for new environments
 2. ~~Wire Supabase Auth + prototype score insert~~ — **done** (`README.md` steps 2–3)
-3. **Leaderboard UI** + public read of `leaderboard` / runs for active week
-4. Optional: **Edge Function** (or server route) for score submission + validation instead of client-only insert
-5. Remove fullscreen button, finalize mobile layout (Game 01)
-6. Proper PWA structure (manifest.json + service worker)
-7. Score card image generation + Web Share API
-8. Performance pass for mid-range Android
+3. ~~In-game shell: leaderboard + my scores + account + share~~ — **done** (Game 01); optional **standalone leaderboard** page still open
+4. **Refetch attempts (or RPC) before competing run start** — align UI across devices with `daily_attempts`
+5. Optional: **Edge Function** (or server route) for score submission + validation instead of client-only insert
+6. Remove fullscreen button, finalize mobile layout (Game 01)
+7. Proper PWA structure (manifest.json + service worker)
+8. Score card image generation + fuller Web Share flow
+9. Performance pass for mid-range Android
 
 ---
 
@@ -939,6 +1005,9 @@ Never delete entries — cross them out if reversed and note why.*
 | Mar 2026 | Unified game shell: dark HUD bar (Zone 1), dark post-run (Zone 3), light overlay (Zone 2) | Consistent broadcast identity across all games; overlay flips light as "calm data" contrast |
 | Mar 2026 | HUD prize section: "Prize:" label + name always prominent | Prize is the main hook — largest element in HUD, always visible |
 | Mar 2026 | HUD time line: three states (normal / Saturday urgency / Sunday closed) | Each state has distinct copy and color (amber → red → muted) to signal urgency naturally |
+| Mar 2026 | Game 01: auth inside title overlay; guest post-run + Account + avatar sign-in paths | One URL, no separate login page; avatar doubles as quick sign-in / sign-out |
+| Mar 2026 | Vercel build writes `prototypes/supabase-config.js` from env | Same HTML locally and in prod without committing keys; documented in `VERCEL.md` |
+| Mar 2026 | Remove `admin_clear_all_my_competition_data` RPC + stress admin UI | Destructive helper was dev-only; dropped via migration; RLS delete-own remains for user-owned rows |
 
 ---
 
