@@ -7,8 +7,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>PENGU FISHER</title>
 <link rel="stylesheet" href="hud.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Bubblegum+Sans&display=swap" rel="stylesheet">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  --teal:   #68C7C1;
+  --yellow: #FACA78;
+  --peach:  #F57F5B;
+  --red:    #DD5341;
+  --brown:  #794A3A;
+  --cream:  #F5EDD6;
+  --dark:   #2A1A0E;
+}
 
 
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
@@ -34,7 +47,7 @@ html, body {
   display:flex;
   align-items:center;
   justify-content:center;
-  background:#110822;
+  background:var(--cream);
 }
 
 /* ── CANVAS WRAPPER — always fills entire viewport ── */
@@ -138,6 +151,23 @@ html, body {
   z-index:20;
   /* width/height/left/top set by JS */
 }
+#welcome-sunburst {
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  border-radius:12px;
+  background:repeating-conic-gradient(
+    from -12deg at 50% 42%,
+    #F5EDD6 0deg 11deg,
+    #FACA78 11deg 22deg,
+    #F5EDD6 22deg 33deg,
+    #F57F5B 33deg 44deg,
+    #F5EDD6 44deg 55deg
+  );
+  opacity:0.94;
+}
+#ov-card { position:relative; z-index:1; }
 
 /* ── Zone 2 / Zone 3 card — the visible content panel ── */
 #ov-card {
@@ -163,6 +193,31 @@ html, body {
   align-items:stretch;
   width:100%;
   pointer-events:auto;
+  position:relative;
+  overflow:visible;
+}
+.welcome-sticker {
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-58%) rotate(-6deg);
+  z-index:20;
+  width:175px;
+  height:175px;
+  animation:stickerBounce 3s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes stickerBounce {
+  0%, 100% { transform:translate(-50%,-58%) rotate(-6deg) scale(1); }
+  50%       { transform:translate(-50%,-58%) rotate(-6deg) scale(1.06); }
+}
+.welcome-stripe {
+  height:6px;
+  width:100%;
+  border-radius:3px;
+  margin-top:4px;
+  margin-bottom:14px;
+  background:linear-gradient(90deg, #68C7C1, #FACA78, #F57F5B, #DD5341, #794A3A, #F57F5B, #FACA78, #68C7C1);
 }
 .fp {
   background:#0a0a0f;
@@ -175,6 +230,106 @@ html, body {
   -webkit-overflow-scrolling:touch;
   max-height:min(85vh,calc(100vh - 120px));
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.fp-hook {
+  font-family:'Bubblegum Sans',cursive,sans-serif;
+  font-size:19px;
+  color:var(--red);
+  line-height:1.35;
+  margin:0 0 6px;
+}
+#ov-card[data-zone="title"] .fp {
+  background:var(--cream);
+  border:3px solid var(--brown);
+  box-shadow:6px 6px 0 var(--brown);
+  font-family:'Bubblegum Sans',cursive,sans-serif;
+}
+#ov-card[data-zone="title"] .fp-prize-eyebrow {
+  font-size:11px; letter-spacing:0.06em;
+  color:var(--peach); font-weight:600;
+}
+#ov-card[data-zone="title"] .fp-prize-name {
+  font-size:25px; font-weight:400; color:var(--brown);
+  font-family:'Bubblegum Sans',cursive,sans-serif;
+}
+#ov-card[data-zone="title"] .fp-prize-meta {
+  font-size:14px; color:var(--brown); opacity:0.88; font-weight:500;
+}
+#ov-card[data-zone="title"] .fp-divider {
+  background:rgba(121,74,58,0.25);
+}
+#ov-card[data-zone="title"] .fp-expand {
+  border-color:rgba(121,74,58,0.35);
+}
+#ov-card[data-zone="title"] .fp-expand-label {
+  color:var(--brown);
+}
+#ov-card[data-zone="title"] .fp-expand-inner {
+  border-top-color:rgba(121,74,58,0.2);
+}
+#ov-card[data-zone="title"] .fp-step-text,
+#ov-card[data-zone="title"] .fp-attempts-text {
+  color:rgba(42,26,14,0.75);
+}
+#ov-card[data-zone="title"] .fp-step-text strong,
+#ov-card[data-zone="title"] .fp-attempts-text strong {
+  color:var(--brown);
+}
+#ov-card[data-zone="title"] .fp-attempts-sub {
+  color:rgba(42,26,14,0.45);
+}
+#ov-card[data-zone="title"] .fp-step-num {
+  background:rgba(121,74,58,0.12);
+  color:var(--brown);
+}
+#ov-card[data-zone="title"] .fp-expand-trigger:active {
+  background:rgba(121,74,58,0.08);
+}
+#ov-card[data-zone="title"] .fp-expand-icon svg path {
+  stroke:rgba(121,74,58,0.5);
+}
+#ov-card[data-zone="title"] .fp-expand-body.open {
+  max-height:min(360px,50vh);
+}
+#ov-card[data-zone="title"] .fp-expand {
+  margin-bottom:10px;
+}
+#ov-card[data-zone="title"] .fp-user-name {
+  color:var(--brown);
+}
+#ov-card[data-zone="title"] .fp-user-sub {
+  color:rgba(121,74,58,0.65);
+}
+#ov-card[data-zone="title"] .fp-stat {
+  background:rgba(121,74,58,0.08);
+}
+#ov-card[data-zone="title"] .fp-stat-val {
+  color:var(--brown);
+}
+#ov-card[data-zone="title"] .fp-stat-key {
+  color:rgba(121,74,58,0.55);
+}
+#ov-card[data-zone="title"] .fp-stat-val.beat {
+  color:var(--red);
+}
+#ov-card[data-zone="title"] .fp-auth-embed input {
+  border:1px solid rgba(121,74,58,0.35);
+  background:rgba(255,255,255,0.85);
+  color:var(--dark);
+}
+#ov-card[data-zone="title"] .fp-auth-row button {
+  border:1px solid rgba(121,74,58,0.35);
+  background:rgba(255,255,255,0.5);
+  color:var(--brown);
+}
+#ov-card[data-zone="title"] .fp-user-bar-foot {
+  border-top-color:rgba(121,74,58,0.2);
+}
+#ov-card[data-zone="title"] .fp-user-bar-foot span {
+  color:rgba(121,74,58,0.75);
+}
+#ov-card[data-zone="title"] #auth-status {
+  color:#1a7a5a;
 }
 .fp-prize { margin-bottom:18px; }
 .fp-prize-eyebrow {
@@ -238,6 +393,30 @@ html, body {
   font-family:inherit;
 }
 .fp-btn-play:active { opacity:0.88; }
+#ov-card[data-zone="title"] .fp-btn-play.btn-play {
+  background:#DD5341;
+  border:3px solid #794A3A;
+  border-radius:50px;
+  padding:13px;
+  font-family:'Bubblegum Sans',cursive,sans-serif;
+  font-size:20px;
+  color:#F5EDD6;
+  box-shadow:4px 4px 0 #794A3A;
+  animation:btnPulse 2.5s ease-in-out infinite;
+}
+@keyframes btnPulse {
+  0%, 100% { transform:scale(1); }
+  50%       { transform:scale(1.02); }
+}
+#ov-card[data-zone="title"] .fp-btn-signin {
+  background:transparent;
+  border:none;
+  color:var(--teal);
+  font-family:'Bubblegum Sans',cursive,sans-serif;
+  font-size:14px;
+  text-decoration:underline;
+  box-shadow:none;
+}
 .fp-btn-signin {
   background:rgba(255,255,255,0.07);
   border:0.5px solid rgba(255,255,255,0.15);
@@ -251,6 +430,10 @@ html, body {
 .fp-nudge {
   font-size:11px; color:rgba(255,255,255,0.25);
   text-align:center; line-height:1.5; margin-top:2px;
+}
+#ov-card[data-zone="title"] .fp-nudge {
+  color:rgba(121,74,58,0.65);
+  font-family:'Bubblegum Sans',cursive,sans-serif;
 }
 .fp-user-row { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
 .fp-avatar {
@@ -769,9 +952,12 @@ html, body {
 
     <!-- Game overlay (title / gameover) — Zone 2 or Zone 3 -->
     <div id="overlay">
+      <div id="welcome-sunburst" class="welcome-sunburst" aria-hidden="true"></div>
       <div id="ov-card" data-zone="title">
         <div id="ov-title-block">
+          <img id="welcome-sticker" class="welcome-sticker" src="assets/PLAY-TO-WIN.png" alt="Play to Win!">
           <div class="fp">
+            <div class="welcome-stripe" aria-hidden="true"></div>
             <div id="fp-signed-header" class="fp-user-row" style="display:none">
               <div class="fp-avatar" id="fp-avatar">?</div>
               <div>
@@ -785,6 +971,7 @@ html, body {
               <div class="fp-prize-name" id="fp-prize-name">···</div>
               <div class="fp-prize-meta" id="fp-prize-meta"></div>
             </div>
+            <p class="fp-hook" id="fp-hook-line">Five tries today — beat the ice, hook the fish, climb the board.</p>
             <div class="fp-divider"></div>
 
             <div id="fp-stat-row" class="fp-rank-row" style="display:none">
@@ -869,8 +1056,8 @@ html, body {
             </div>
 
             <div class="fp-actions">
-              <button type="button" id="play-again-btn" class="fp-btn-play">Play now</button>
-              <button type="button" class="fp-btn-signin" id="fp-reveal-auth" style="display:none">Sign in to save your score</button>
+              <button type="button" id="play-again-btn" class="fp-btn-play btn-play">Play now</button>
+              <button type="button" class="fp-btn-signin" id="fp-reveal-auth" style="display:none">Sign in / sign up to compete</button>
               <div class="fp-nudge" id="fp-guest-nudge" style="display:none">Playing as guest — scores won't count toward the leaderboard</div>
               <div class="fp-nudge" id="fp-freeplay-nudge" style="display:none">All attempts used today — free play uses a new seed each run; scores aren't saved.</div>
             </div>

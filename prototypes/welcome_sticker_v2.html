@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Welcome — Mini-Game Show</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Bubblegum+Sans&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal:   #68C7C1;
+  --yellow: #FACA78;
+  --peach:  #F57F5B;
+  --red:    #DD5341;
+  --brown:  #794A3A;
+  --cream:  #F5EDD6;
+  --dark:   #2A1A0E;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  min-height: 100%;
+  background: var(--cream);
+  font-family: 'Bubblegum Sans', cursive, sans-serif;
+}
+
+.hud {
+  background: #794A3A;
+  border-bottom: 3px solid #2A1A0E;
+  padding: 8px 16px;
+  font-family: 'Titan One', cursive, sans-serif;
+  color: #FACA78;
+  text-shadow: 1px 1px 0 #2A1A0E;
+  font-size: 14px;
+  text-align: center;
+}
+
+.page {
+  position: relative;
+  min-height: calc(100vh - 52px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px 40px;
+}
+
+.sunburst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-conic-gradient(
+    from -12deg at 50% 42%,
+    #F5EDD6 0deg 11deg,
+    #FACA78 11deg 22deg,
+    #F5EDD6 22deg 33deg,
+    #F57F5B 33deg 44deg,
+    #F5EDD6 44deg 55deg
+  );
+  opacity: 0.92;
+}
+
+.stripe {
+  height: 6px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 14px;
+  border-radius: 3px;
+  background: linear-gradient(90deg,
+    #68C7C1, #FACA78, #F57F5B, #DD5341, #794A3A, #F57F5B, #FACA78, #68C7C1
+  );
+}
+
+.card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 420px;
+  background: var(--cream);
+  border: 3px solid var(--brown);
+  border-radius: 18px;
+  padding: 22px 20px 20px;
+  box-shadow: 6px 6px 0 var(--brown);
+}
+
+.fp-prize-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--peach);
+  margin-bottom: 4px;
+}
+.fp-show-title {
+  font-family: 'Titan One', cursive, sans-serif;
+  font-size: clamp(26px, 7vw, 34px);
+  color: var(--yellow);
+  text-shadow: 2px 2px 0 var(--dark);
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+.fp-prize-name {
+  font-family: 'Bubblegum Sans', cursive, sans-serif;
+  font-size: 25px;
+  color: var(--brown);
+  line-height: 1.2;
+}
+.fp-prize-meta {
+  font-size: 14px;
+  color: var(--brown);
+  opacity: 0.85;
+  margin-top: 4px;
+}
+.fp-hook {
+  font-family: 'Bubblegum Sans', cursive, sans-serif;
+  font-size: 19px;
+  color: var(--red);
+  margin: 16px 0 18px;
+  line-height: 1.35;
+}
+
+.btn-play {
+  display: block;
+  width: 100%;
+  background: #DD5341;
+  border: 3px solid #794A3A;
+  border-radius: 50px;
+  padding: 13px;
+  font-family: 'Bubblegum Sans', cursive, sans-serif;
+  font-size: 20px;
+  color: #F5EDD6;
+  box-shadow: 4px 4px 0 #794A3A;
+  cursor: pointer;
+  animation: btnPulse 2.5s ease-in-out infinite;
+}
+.btn-play:active { transform: scale(0.98); }
+@keyframes btnPulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.02); }
+}
+
+.fp-link {
+  display: block;
+  text-align: center;
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--teal);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.sticker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -58%) rotate(-6deg);
+  z-index: 20;
+  width: 175px;
+  height: 175px;
+  animation: stickerBounce 3s ease-in-out infinite;
+  pointer-events: none;
+}
+.sticker.hidden { display: none; }
+@keyframes stickerBounce {
+  0%, 100% { transform: translate(-50%, -58%) rotate(-6deg) scale(1); }
+  50%       { transform: translate(-50%, -58%) rotate(-6deg) scale(1.06); }
+}
+
+.wrap { position: relative; width: 100%; max-width: 460px; }
+</style>
+</head>
+<body>
+
+<div class="hud">The Mini-Game Show</div>
+
+<div class="page">
+  <div class="sunburst" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="stripe" aria-hidden="true"></div>
+    <img class="sticker" id="welcome-sticker" src="assets/PLAY-TO-WIN.png" alt="Play to Win!">
+    <div class="card">
+      <div class="fp-prize-eyebrow">This week's prize</div>
+      <div class="fp-show-title">Pengu Fisher</div>
+      <div class="fp-prize-name" id="demo-prize">Prize TBD</div>
+      <div class="fp-prize-meta">Scoring closes Sat midnight · Live show Sun</div>
+      <p class="fp-hook">Five tries today — beat the ice, hook the fish, climb the board.</p>
+      <button type="button" class="btn-play" id="demo-play">Play now</button>
+      <a class="fp-link" id="demo-auth" role="button">Sign in / sign up to compete</a>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('demo-play').addEventListener('click', () => {
+  document.getElementById('welcome-sticker').classList.add('hidden');
+  alert('In the game, this calls startFromOverlay() → run begins.');
+});
+document.getElementById('demo-auth').addEventListener('click', (e) => {
+  e.preventDefault();
+  alert('In the game, this opens the Supabase auth panel (revealAuthPanel).');
+});
+</script>
+</body>
+</html>

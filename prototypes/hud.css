@@ -17,19 +17,20 @@
   position: fixed;
   top: 0; left: 0; right: 0;
   height: var(--ghud-h);
-  background: #0a0a0f;
+  background: #794A3A;
+  border-bottom: 3px solid #2A1A0E;
   display: flex;
   align-items: center;
   padding: 0 12px;
   gap: 0;
   z-index: 260;
   /* subtle bottom edge so it reads as a separate layer */
-  box-shadow: 0 1px 0 rgba(255,255,255,0.07);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  box-shadow: 0 2px 0 rgba(42, 26, 14, 0.35);
+  font-family: "Titan One", "Trebuchet MS", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── prize section (left, flex 1) ─────────────────────────── */
+/* ── brand (left, flex 1) — prize lives in card, not here ─── */
 .ghud-prize {
   display: flex;
   flex-direction: column;
@@ -38,29 +39,21 @@
   min-width: 0;
   padding-right: 14px;
   margin-right: 14px;
-  border-right: 0.5px solid rgba(255,255,255,0.12);
+  border-right: 0.5px solid rgba(245, 237, 214, 0.25);
 }
 
-.ghud-prize-row {
+.ghud-brand-row {
   display: flex;
   align-items: baseline;
   gap: 6px;
 }
 
-.ghud-prize-eyebrow {
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.09em;
-  color: rgba(255,255,255,0.35);
-  text-transform: uppercase;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.ghud-prize-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #fff;
+.ghud-show-title {
+  font-family: "Titan One", "Trebuchet MS", sans-serif;
+  font-size: clamp(11px, 3.2vw, 15px);
+  font-weight: 400;
+  color: #FACA78;
+  text-shadow: 1px 1px 0 #2A1A0E;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -68,18 +61,19 @@
 }
 
 .ghud-prize-time {
-  font-size: 11px;
-  color: rgba(255,255,255,0.45);
-  margin-top: 1px;
+  font-size: 10px;
+  font-family: "Bubblegum Sans", "Trebuchet MS", sans-serif;
+  color: rgba(245, 237, 214, 0.75);
+  margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 /* ── schedule state colours ───────────────────────────────── */
-.ghud-accent  { color: #EF9F27; font-weight: 500; }
-.ghud-urgent  { color: #E24B4A; font-weight: 500; }
-.ghud-muted   { color: rgba(255,255,255,0.30); }
+.ghud-accent  { color: #FACA78; font-weight: 600; }
+.ghud-urgent  { color: #FF8A7A; font-weight: 600; }
+.ghud-muted   { color: rgba(245, 237, 214, 0.45); }
 
 /* ── stat cells ───────────────────────────────────────────── */
 .ghud-stat {
@@ -88,7 +82,7 @@
   align-items: center;
   justify-content: center;
   padding: 0 12px;
-  border-right: 0.5px solid rgba(255,255,255,0.12);
+  border-right: 0.5px solid rgba(245, 237, 214, 0.2);
   flex-shrink: 0;
 }
 
@@ -96,15 +90,17 @@
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.07em;
-  color: rgba(255,255,255,0.35);
+  color: rgba(245, 237, 214, 0.45);
   text-transform: uppercase;
+  font-family: "Bubblegum Sans", "Trebuchet MS", sans-serif;
 }
 
 .ghud-stat-value {
   font-size: 15px;
   font-weight: 500;
-  color: #fff;
+  color: #F5EDD6;
   line-height: 1.3;
+  font-family: "Bubblegum Sans", "Trebuchet MS", sans-serif;
 }
 
 /* ── attempts dots ────────────────────────────────────────── */
@@ -125,8 +121,8 @@
   transition: background 0.2s;
 }
 
-.ghud-dot-used  { background: rgba(255,255,255,0.18); }
-.ghud-dot-avail { background: #EF9F27; }
+.ghud-dot-used  { background: rgba(245, 237, 214, 0.25); }
+.ghud-dot-avail { background: #FACA78; }
 
 /* ── avatar circle ────────────────────────────────────────── */
 .ghud-avatar {
@@ -163,7 +159,7 @@
   width: 30px;
   height: 30px;
   border-radius: 6px;
-  border: 0.5px solid rgba(255,255,255,0.15);
+  border: 0.5px solid rgba(245, 237, 214, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -173,8 +169,8 @@
   transition: background 0.15s;
 }
 
-.ghud-menu:hover { background: rgba(255,255,255,0.07); }
-.ghud-menu:active { background: rgba(255,255,255,0.12); }
+.ghud-menu:hover { background: rgba(0,0,0,0.12); }
+.ghud-menu:active { background: rgba(0,0,0,0.2); }
 
 .ghud-menu-bars {
   display: flex;
@@ -185,13 +181,13 @@
 .ghud-menu-bar {
   width: 14px;
   height: 1.5px;
-  background: rgba(255,255,255,0.60);
+  background: rgba(245, 237, 214, 0.85);
   border-radius: 2px;
 }
 
 /* ── responsive: hide rank on narrow screens ──────────────── */
 @media (max-width: 480px) {
   .ghud-stat-rank { display: none; }
-  .ghud-prize-name { font-size: 12px; }
+  .ghud-show-title { font-size: 11px; }
   .ghud-stat-value { font-size: 13px; }
 }
