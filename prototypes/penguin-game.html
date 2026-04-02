@@ -5,10 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/assets/icon-192.png">
 <title>PENGU FISHER</title>
 <link rel="stylesheet" href="hud.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="font" crossorigin
+      href="https://fonts.gstatic.com/s/titanone/v17/mFTzWbsGxbbS_J5cQcjClDgm-khykw.woff2">
+<link rel="preload" as="font" crossorigin
+      href="https://fonts.gstatic.com/s/bubblegumsans/v22/AYCSpXb_Z9EORv1M5QTjEzMEteaAxILtbKR5.woff2">
 <link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Bubblegum+Sans&display=swap" rel="stylesheet">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -149,7 +155,7 @@ html, body {
   pointer-events:none;
   padding:16px;
   z-index:20;
-  /* width/height/left/top set by JS */
+  /* width/height/left/top set by JS — children #welcome-sunburst fills this box */
 }
 #welcome-sunburst {
   position:absolute;
@@ -1671,6 +1677,8 @@ function showModeOverlay(screen){
   if(card) card.dataset.zone = (screen === 'title') ? 'title' : 'gameover';
 
   if(screen === 'title'){
+    const sun=document.getElementById('welcome-sunburst');
+    if(sun) sun.style.display='';
     if(titleBlk){ titleBlk.style.display='flex'; titleBlk.removeAttribute('aria-hidden'); }
     if(postBlk){ postBlk.style.display='none'; postBlk.setAttribute('aria-hidden','true'); }
     void refreshTitleFirstPlayCard();
@@ -1678,6 +1686,8 @@ function showModeOverlay(screen){
   }
 
   // gameover — Zone 3 mock layout
+  const sunGo=document.getElementById('welcome-sunburst');
+  if(sunGo) sunGo.style.display='none';
   if(titleBlk){ titleBlk.style.display='none'; titleBlk.setAttribute('aria-hidden','true'); }
   if(postBlk){ postBlk.style.display='block'; postBlk.removeAttribute('aria-hidden'); }
   if(btn) btn.style.display='none';
@@ -1850,6 +1860,8 @@ function renderFpStatDots(used){
 
 async function refreshTitleFirstPlayCard(){
   document.getElementById('overlay').style.display='flex';
+  const sticker=document.getElementById('welcome-sticker');
+  if(sticker) sticker.style.display='';
   const pn=document.getElementById('fp-prize-name');
   if(pn) pn.textContent=(weekPrize||'').trim()||'Prize TBD';
   const pm=document.getElementById('fp-prize-meta');
@@ -2625,7 +2637,10 @@ async function bootSupabaseAuth(){
     return;
   }
   try{
-    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    // Supabase JS pinned to exact version per SECU-03 — immutable CDN URL
+    // SRI hash not applicable to dynamic import() (browser spec limitation)
+    // Pin: @supabase/supabase-js@2.101.1
+    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.101.1/+esm');
     const sb=createClient(url,key,{ auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
     window._miniGameshowSb=sb;
     const { data:{ session } } = await sb.auth.getSession();
@@ -2735,6 +2750,8 @@ async function submitRunToSupabase(){
 // ═══════════════════════════════════════════════════════════
 function startFromOverlay(){
   if(state!=='title'&&state!=='gameover') return;
+  const sticker=document.getElementById('welcome-sticker');
+  if(sticker) sticker.style.display='none';
   resetGame(); hideOverlay(); state='playing';
 }
 
