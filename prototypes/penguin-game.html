@@ -3102,6 +3102,7 @@ updateHUD();
 showModeOverlay('title');
 bootSupabaseAuth().then(()=>{ fetchActiveWeek().catch(()=>{}); });
 loop();
+if(new URLSearchParams(location.search).get('autostart')==='1') startFromOverlay();
 </script>
 </body>
 </html>
