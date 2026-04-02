@@ -3,12 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-last_updated: "2026-04-02T17:08:57Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-04-02T17:14:18.399Z"
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -27,8 +28,8 @@ See: `.planning/PROJECT.md` (updated 2026-04-02)
 ## Current Phase
 
 **Phase 01 — phone-first-shell-pwa** (in progress)
-**Stopped at:** Completed 01-01-PLAN.md
-**Last session:** 2026-04-02T17:08:57Z
+**Stopped at:** Completed 01-02-PLAN.md
+**Last session:** 2026-04-02T17:14:18.396Z
 
 ## Phase Status
 
@@ -45,6 +46,8 @@ See: `.planning/PROJECT.md` (updated 2026-04-02)
 
 - (01-01) Fixed #controls to position:fixed for viewport-anchored thumb buttons (D-10)
 - (01-01) Used .ghud-stat structural CSS selector to collapse score stat without modifying hud.js
+- [Phase 01]: Play button uses anchor tag with href=/penguin-game.html for native browser navigation; JS click handler is stub for future event param passing
+- [Phase 01]: Event card in index.html is a static placeholder — Phase 3 wires real Supabase event data
 
 ## Planning Artifacts
 
