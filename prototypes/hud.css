@@ -194,4 +194,10 @@
   .ghud-stat-rank { display: none; }
   .ghud-prize-name { font-size: 12px; }
   .ghud-stat-value { font-size: 13px; }
+  /* D-07 / D-08: collapse to essentials — dots, countdown, menu only */
+  .ghud-prize  { display: none; }   /* hides show title + schedule line */
+  .ghud-avatar { display: none; }   /* avatar hidden; accessible via menu */
+  /* hide score stat cell (not rank, not attempts/last) */
+  .ghud-stat:not(.ghud-stat-rank):not(.ghud-stat-last) { display: none; }
+  /* keep: .ghud-stat-last (attempts dots), .ghud-menu */
 }
