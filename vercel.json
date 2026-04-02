@@ -3,6 +3,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "prototypes",
   "rewrites": [
-    { "source": "/", "destination": "/penguin-game.html" }
+    { "source": "/", "destination": "/index.html" }
   ]
 }
