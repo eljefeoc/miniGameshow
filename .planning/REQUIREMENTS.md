@@ -9,8 +9,8 @@
 
 - [x] **SHEL-01**: Game is fully playable on a 375px-wide phone screen without horizontal scrolling
 - [x] **SHEL-02**: All touch targets are at minimum 44×44px; tap-to-play works on iOS Safari and Android Chrome
-- [ ] **SHEL-03**: Game shell loads and is interactive within 3 seconds on mid-range phone on LTE
-- [ ] **SHEL-04**: App has a PWA manifest with icon and theme color (installable but no install required to play)
+- [x] **SHEL-03**: Game shell loads and is interactive within 3 seconds on mid-range phone on LTE
+- [x] **SHEL-04**: App has a PWA manifest with icon and theme color (installable but no install required to play)
 - [x] **SHEL-05**: Landscape and portrait orientations both work on phone; layout adapts without breaking
 
 ### Authentication & Profiles
@@ -67,7 +67,7 @@
 
 - [ ] **SECU-01**: Score submissions require valid Supabase auth JWT (existing via RLS — already enforced)
 - [ ] **SECU-02**: Score submission includes a server-side-checkable gameplay hash (input count, duration, seed match) to detect trivially fake scores
-- [ ] **SECU-03**: Supabase JS is pinned to a specific CDN version (no floating "latest")
+- [x] **SECU-03**: Supabase JS is pinned to a specific CDN version (no floating "latest")
 - [ ] **SECU-04**: `is_banned` flag is checked on score submission; banned players' runs are rejected
 
 ## v2 Requirements

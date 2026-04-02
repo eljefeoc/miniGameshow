@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-04-02T17:14:18.399Z"
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-04-02T17:18:27.565Z"
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -28,8 +28,8 @@ See: `.planning/PROJECT.md` (updated 2026-04-02)
 ## Current Phase
 
 **Phase 01 — phone-first-shell-pwa** (in progress)
-**Stopped at:** Completed 01-02-PLAN.md
-**Last session:** 2026-04-02T17:14:18.396Z
+**Stopped at:** Completed 01-03-PLAN.md
+**Last session:** 2026-04-02T17:18:27.562Z
 
 ## Phase Status
 
@@ -48,6 +48,9 @@ See: `.planning/PROJECT.md` (updated 2026-04-02)
 - (01-01) Used .ghud-stat structural CSS selector to collapse score stat without modifying hud.js
 - [Phase 01]: Play button uses anchor tag with href=/penguin-game.html for native browser navigation; JS click handler is stub for future event param passing
 - [Phase 01]: Event card in index.html is a static placeholder — Phase 3 wires real Supabase event data
+- [Phase 01-phone-first-shell-pwa]: Supabase JS pinned to @2.101.1 immutable CDN URL (SRI on dynamic import not browser-supported)
+- [Phase 01-phone-first-shell-pwa]: Font preload URLs fetched live from Google Fonts API — plan's example URLs were stale versions
+- [Phase 01-phone-first-shell-pwa]: Placeholder icons generated via pure Python stdlib (PNG byte construction) since ImageMagick and PIL unavailable
 
 ## Planning Artifacts
 

@@ -10,7 +10,7 @@
 
 | Phase | Name | Goal | Plans | Requirements |
 |-------|------|------|-------|--------------|
-| 1 | Phone-First Shell & PWA | 2/3 | In Progress|  |
+| 1 | Phone-First Shell & PWA | 3/3 | Complete   | 2026-04-02 |
 | 2 | Auth & Player Profiles | Players can create verified accounts with age declaration, enabling prize-eligible competition | 3 | AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06 |
 | 3 | Event System & Admin Controls | An operator can create, run, and close a competition event; everything downstream is event-aware | 4 | EVNT-01, EVNT-02, EVNT-03, EVNT-04, EVNT-05, EVNT-06, EVNT-07, ADMN-01, ADMN-02, ADMN-03, ADMN-04, ADMN-05, ADMN-06 |
 | 4 | Gameplay Polish, Leaderboard & Security | The full competitive loop is hardened — scores are validated, leaderboard is accurate, banned players are blocked | 4 | GAME-01, GAME-02, GAME-03, GAME-04, GAME-05, LBRD-01, LBRD-02, LBRD-03, LBRD-04, SECU-01, SECU-02, SECU-03, SECU-04 |
@@ -26,7 +26,7 @@
 **Requirements covered:** SHEL-01, SHEL-02, SHEL-03, SHEL-04, SHEL-05
 
 **Plans:**
-2/3 plans executed
+3/3 plans complete
 2. Touch target audit & interaction polish — verify all tap targets meet 44×44px minimum, ensure tap-to-play works reliably, suppress double-tap zoom, apply safe-area insets for notched phones
 3. PWA manifest & load performance — add `manifest.json` with icon and theme color, pin Supabase JS CDN to a specific version (addresses SECU-03 / CONCERNS.md CDN risk), audit asset loading order to hit sub-3-second interactive on LTE
 
