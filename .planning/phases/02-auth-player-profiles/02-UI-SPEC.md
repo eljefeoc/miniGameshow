@@ -77,17 +77,17 @@ Declared values (multiples of 4 only). All values match the rhythm already estab
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Icon gaps, inline field padding nudge |
-| sm | 8px | Gap between stacked inputs, gap between inline buttons, stat cell gap |
-| md | 16px | Panel body padding (`#gsp-body: padding: 16px`), form section spacing |
+| xs | 4px | Icon gaps, inline field padding nudge, badge vertical padding |
+| sm | 8px | Gap between stacked inputs, gap between inline buttons, stat cell gap, input vertical padding, sign out button vertical padding |
+| md | 16px | Panel body padding (`#gsp-body: padding: 16px`), form section spacing, button horizontal padding |
 | lg | 24px | Vertical separation between form groups (label cluster + input cluster) |
 | xl | 32px | Top/bottom padding for standalone auth card on large viewports |
 | 2xl | 48px | Reserved — not used in this phase |
 | 3xl | 64px | Reserved — not used in this phase |
 
 Exceptions:
-- Touch targets: all interactive controls minimum 44×44px (SHEL-02, carried from Phase 1). Auth buttons must meet this; use `padding: 13px 14px` minimum (matching existing `.fp-btn-play`).
-- Input field height: minimum 44px tall for tap accuracy on mobile. Use `padding: 10px 12px` + `font-size: 16px` (16px prevents iOS zoom on focus).
+- Touch targets: all interactive controls minimum 44×44px (SHEL-02, carried from Phase 1). Auth buttons must meet this; use `min-height: 44px` as a separate declaration alongside `padding: 12px 16px`.
+- Input field: `padding: 8px 12px` + `min-height: 44px` + `font-size: 16px` (16px prevents iOS zoom on focus).
 - Checkbox touch target: wrap label in a block with `min-height: 44px` and `display: flex; align-items: center`.
 
 ---
@@ -98,14 +98,14 @@ Source: extracted from prototype. UI panel typography uses system sans-serif sta
 
 | Role | Size | Weight | Line Height | Font | Usage |
 |------|------|--------|-------------|------|-------|
-| Body | 13px | 400 | 1.5 | system sans-serif | Field placeholder text, helper copy, nudge lines, panel `<p>` |
-| Label | 11px | 500 | 1.4 | system sans-serif | Form field labels, stat keys, eyebrow text (uppercase, letter-spacing 0.06em) |
-| Heading | 16px | 500 | 1.2 | system sans-serif | Account tab section titles, panel headings (e.g. "My Account") |
+| Body | 13px | 400 | 1.5 | system sans-serif | Field placeholder text, helper copy, nudge lines, panel `<p>`, account tab CTA button text, email address display |
+| Label | 11px | 500 | 1.4 | system sans-serif | Form field labels, stat keys, eyebrow text (uppercase, letter-spacing 0.06em), validation messages, age tier badge text, avatar initials, sign out button text |
+| Heading | 16px | 500 | 1.2 | system sans-serif | Account tab section titles, panel headings (e.g. "My Account"), primary auth button text |
 | Display | 19px | 400 | 1.35 | Bubblegum Sans | Auth panel hook line (fp-hook), age declaration banner heading |
 
 Exactly 2 weights: 400 (regular) and 500 (medium). No bold (700) used in UI panels.
 
-Note: `font-size: 16px` on all `<input>` elements is mandatory — prevents iOS Safari automatic zoom on focus.
+Note: `font-size: 16px` on all `<input>` elements is mandatory — prevents iOS Safari automatic zoom on focus. This is an input-element override rule, not an additional type scale size.
 
 ---
 
@@ -115,6 +115,8 @@ Note: `font-size: 16px` on all `<input>` elements is mandatory — prevents iOS 
 
 Location: embedded in first-play card (`.fp` panel, light/cream surface zone).
 
+Focal point: "Create account" button — full-width red fill CTA is the primary visual anchor on the cream panel.
+
 Fields (in order):
 1. Display name — `type="text"`, `autocomplete="nickname"`, placeholder: "Display name (shown on leaderboard)"
 2. Email — `type="email"`, `autocomplete="email"`, placeholder: "Email"
@@ -122,28 +124,32 @@ Fields (in order):
 4. Age declaration — checkbox: "I am 18 or older" with inline label. Must be checked to enable submit.
 
 Buttons:
-- Primary: "Create account" — full-width, `--red` fill, `--brown` border, Bubblegum Sans 16px, border-radius 50px, box-shadow 4px 4px 0 `--brown`. Matches existing `.fp-btn-play.btn-play` style exactly.
-- Secondary: "Sign in instead" — ghost style, `--teal` text, no border, Bubblegum Sans 14px underline. Matches existing `#ov-card[data-zone="title"] .fp-btn-signin`.
+- Primary: "Create account" — full-width, `--red` fill, `--brown` border, Bubblegum Sans 16px, border-radius 50px, box-shadow 4px 4px 0 `--brown`, `padding: 12px 16px`, `min-height: 44px`. Matches existing `.fp-btn-play.btn-play` style exactly.
+- Secondary: "Sign in instead" — ghost style, `--teal` text, no border, Bubblegum Sans 13px underline. Matches existing `#ov-card[data-zone="title"] .fp-btn-signin`.
 
 Submit disabled state: when age checkbox is unchecked, "Create account" button is `opacity: 0.4` and `pointer-events: none`.
 
-Validation messages: displayed in existing `#auth-status` span, `font-size: 11px`, success `#7dffb0`, error `#f5a0a0`.
+Validation messages: displayed in existing `#auth-status` span, `font-size: 11px` (Label token), success `#7dffb0`, error `#f5a0a0`.
 
 ### 2. Sign In Form (existing, minor polish)
+
+Focal point: "Sign in" button — full-width red fill CTA mirrors the signup form anchor.
 
 Fields:
 1. Email — `type="email"`, `autocomplete="email"`
 2. Password — `type="password"`, `autocomplete="current-password"`
 
 Buttons:
-- Primary: "Sign in" — same style as Create account button
-- Secondary: "Create account instead" — ghost style
+- Primary: "Sign in" — same style as Create account button (`padding: 12px 16px`, `min-height: 44px`)
+- Secondary: "Create account instead" — ghost style, 13px (Body token)
 
-Add below buttons: "Forgot password?" — text link, `font-size: 12px`, `color: var(--teal)`, no underline by default, underline on hover/focus.
+Add below buttons: "Forgot password?" — text link, `font-size: 11px` (Label token), `color: var(--teal)`, no underline by default, underline on hover/focus.
 
 ### 3. Forgot Password Screen
 
 Triggered by: tapping "Forgot password?" link.
+
+Focal point: "Send reset link" button — only action available; red fill draws the eye to the single path forward.
 
 Replaces auth form fields in place (JS swap, no page navigation):
 
@@ -151,8 +157,8 @@ Fields:
 1. Email — `type="email"`, `autocomplete="email"`, placeholder: "Your account email"
 
 Buttons:
-- Primary: "Send reset link" — full-width, same button style
-- Secondary: "Back to sign in" — ghost, `--teal` text
+- Primary: "Send reset link" — full-width, same button style (`padding: 12px 16px`, `min-height: 44px`)
+- Secondary: "Back to sign in" — ghost, `--teal` text, 13px (Body token)
 
 Confirmation state (after submit): hide form, show confirmation message in `#auth-status`:
 - Copy: "Reset link sent — check your email."
@@ -162,33 +168,37 @@ Confirmation state (after submit): hide form, show confirmation message in `#aut
 
 Location: `data-pane="account"` inside the existing white menu panel. Panel body `padding: 16px`.
 
+Focal point: User identity block (avatar circle + display name + age tier badge) — the first thing a signed-in user visually confirms is who they are.
+
 Layout (stacked, gap 16px between groups):
 
 **User identity block:**
-- Avatar circle: 34px, `background: #534AB7`, initials (first letter of display name), font-size 12px, weight 500, color `#CECBF6`
-- Display name: `font-size: 14px`, weight 500, color `#1a1a1a`
+- Avatar circle: 34px, `background: #534AB7`, initials (first letter of display name), `font-size: 11px` (Label token), weight 500, color `#CECBF6`
+- Display name: `font-size: 13px` (Body token), weight 500, color `#1a1a1a`
 - Age tier badge: inline pill right of display name
-  - 18+ competitors: `background: #FAEEDA`, `color: #633806`, text "Competitor", `border-radius: 20px`, `padding: 2px 8px`, `font-size: 11px` — matches existing `.lb-prize-pill`
+  - 18+ competitors: `background: #FAEEDA`, `color: #633806`, text "Competitor", `border-radius: 20px`, `padding: 4px 8px`, `font-size: 11px` (Label token) — matches existing `.lb-prize-pill`
   - Under-18: `background: rgba(83,74,183,0.12)`, `color: #534AB7`, text "Practice Mode", same sizing
 
 **Account info (read-only in v1):**
-- Email address: `font-size: 12px`, `color: #888`
+- Email address: `font-size: 11px` (Label token), `color: #888`
 - Display name field: read-only in v1 — show as static text with "Edit" note deferred to v2
 
 **Actions:**
-- "Sign out" button — existing `#auth-signout` ghost style: `border: 0.5px solid rgba(255,100,100,0.4)`, `color: #f5a0a0`, `font-size: 11px`, `border-radius: 8px`, `padding: 6px 12px`
+- "Sign out" button — existing `#auth-signout` ghost style: `border: 0.5px solid rgba(255,100,100,0.4)`, `color: #f5a0a0`, `font-size: 11px` (Label token), `border-radius: 8px`, `padding: 8px 12px`
 
 Account tab authenticated empty state (user not logged in while Account tab is open):
 - Body copy: "Sign in to see your account and compete for prizes."
-- CTA button: "Sign in" — `background: #534AB7`, `color: #fff`, `font-size: 13px`, `border-radius: 8px`, `padding: 11px 18px`. Matches existing `.gsp-account-cta`.
+- CTA button: "Sign in" — `background: #534AB7`, `color: #fff`, `font-size: 13px` (Body token), `border-radius: 8px`, `padding: 12px 16px`, `min-height: 44px`. Matches existing `.gsp-account-cta`.
 
 ### 5. Practice Mode Indicator
 
 Location: first-play card (`.fp`), shown beneath the hook line for under-18 users.
 
+Focal point: Amber border and text color draw the eye to the mode restriction without competing with the main CTA button below.
+
 Visual: amber-bordered notice block.
 - `background: rgba(239,159,39,0.1)`, `border: 0.5px solid rgba(239,159,39,0.4)`, `border-radius: 8px`, `padding: 8px 12px`
-- Text (13px, system sans-serif, weight 400): "Practice mode — scores don't count toward prizes or the 18+ leaderboard."
+- Text (13px Body token, system sans-serif, weight 400): "Practice mode — scores don't count toward prizes or the 18+ leaderboard."
 - Color: `rgba(239,159,39,1)` (`--action-amber`) for the text
 
 Do NOT show the Practice Mode indicator inside the HUD bar in Phase 2 (HUD modifications are deferred to Phase 4 leaderboard work).
