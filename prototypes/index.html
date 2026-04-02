@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>miniGameshow</title>
+  <!-- PWA manifest — created in Plan 03 -->
+  <link rel="manifest" href="/manifest.json">
+  <!-- Fonts (same as penguin-game.html) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="font" crossorigin href="https://fonts.gstatic.com/s/titanone/v13/mFTyWbofw6zc9NtnW43SuRwr.woff2">
+  <link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Bubblegum+Sans&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --teal:   #68C7C1;
+      --yellow: #FACA78;
+      --peach:  #F57F5B;
+      --red:    #DD5341;
+      --brown:  #794A3A;
+      --cream:  #F5EDD6;
+      --dark:   #2A1A0E;
+    }
+
+    *, *::before, *::after {
+      margin: 0; padding: 0; box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%; min-height: 100%;
+      background: var(--dark);
+      font-family: 'Bubblegum Sans', 'Trebuchet MS', sans-serif;
+      color: var(--cream);
+      overflow-x: hidden;   /* portrait scroll, no horizontal */
+    }
+
+    /* Full-height shell: vertically scrollable column */
+    .shell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100dvh;
+      padding: max(48px, env(safe-area-inset-top)) 24px max(32px, env(safe-area-inset-bottom));
+      gap: 24px;
+    }
+
+    /* Show title */
+    .show-title {
+      font-family: 'Titan One', 'Trebuchet MS', sans-serif;
+      font-size: clamp(28px, 8vw, 48px);
+      color: var(--yellow);
+      text-align: center;
+      text-shadow: 3px 3px 0 var(--dark);
+      line-height: 1.1;
+    }
+
+    /* Event card — placeholder; Phase 3 wires real event data */
+    .event-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--brown);
+      border: 3px solid var(--yellow);
+      border-radius: 20px;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 4px 0 var(--dark);
+    }
+
+    .event-label {
+      font-size: 11px;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--yellow);
+      opacity: 0.75;
+    }
+
+    .event-name {
+      font-family: 'Titan One', 'Trebuchet MS', sans-serif;
+      font-size: clamp(20px, 5vw, 28px);
+      color: var(--cream);
+    }
+
+    .event-prize {
+      font-size: 16px;
+      color: var(--yellow);
+    }
+
+    /* Play button — D-11 minimum 44×44px; actual size much larger for thumb reach */
+    .btn-play {
+      display: block;
+      width: 100%;
+      max-width: 400px;
+      min-height: 64px;           /* well above 44px minimum */
+      padding: 16px 24px;
+      background: var(--teal);
+      color: var(--dark);
+      border: none;
+      border-radius: 18px;
+      font-family: 'Titan One', 'Trebuchet MS', sans-serif;
+      font-size: clamp(20px, 5vw, 26px);
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #3A8A85, 0 6px 24px rgba(104,199,193,0.3);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: transform 0.1s, box-shadow 0.1s;
+      user-select: none;
+    }
+
+    .btn-play:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #3A8A85, 0 2px 8px rgba(104,199,193,0.2);
+    }
+
+    /* Character art placeholder — will be replaced when icon crop is done in Plan 03 */
+    .char-art {
+      font-size: 80px;
+      text-align: center;
+      line-height: 1;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+    }
+
+    /* Tagline */
+    .tagline {
+      font-size: clamp(14px, 3.5vw, 18px);
+      color: var(--cream);
+      opacity: 0.75;
+      text-align: center;
+      max-width: 320px;
+    }
+
+    /* Footer spacer */
+    .footer {
+      font-size: 11px;
+      color: var(--cream);
+      opacity: 0.35;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <h1 class="show-title">mini<br>Gameshow</h1>
+
+    <div class="char-art">🐧</div>
+
+    <p class="tagline">Tap Play. Five chances a day.<br>Beat everyone. Win prizes.</p>
+
+    <div class="event-card" id="event-card">
+      <div class="event-label">This week's event</div>
+      <div class="event-name" id="event-name">Pengu Fisher</div>
+      <div class="event-prize" id="event-prize">Play now — prizes coming soon</div>
+    </div>
+
+    <a href="/penguin-game.html" class="btn-play" id="btn-play" role="button">
+      ▶ Play Now
+    </a>
+
+    <p class="footer">miniGameshow · No app needed · Free to play</p>
+  </div>
+  <script>
+    // Resolve game path: works on Vercel (/ → index.html, /penguin-game.html served)
+    // and on local file:// or localhost (prototypes/index.html next to penguin-game.html)
+    const playBtn = document.getElementById('btn-play');
+    if (playBtn) {
+      playBtn.addEventListener('click', function(e) {
+        // href is already set to /penguin-game.html — browser handles navigation
+        // This handler is only for future enhancement (e.g. pass event params)
+      });
+    }
+  </script>
+</body>
+</html>
