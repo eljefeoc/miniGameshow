@@ -7,11 +7,11 @@
 
 ### Shell & Mobile Experience
 
-- [ ] **SHEL-01**: Game is fully playable on a 375px-wide phone screen without horizontal scrolling
+- [x] **SHEL-01**: Game is fully playable on a 375px-wide phone screen without horizontal scrolling
 - [ ] **SHEL-02**: All touch targets are at minimum 44×44px; tap-to-play works on iOS Safari and Android Chrome
 - [ ] **SHEL-03**: Game shell loads and is interactive within 3 seconds on mid-range phone on LTE
 - [ ] **SHEL-04**: App has a PWA manifest with icon and theme color (installable but no install required to play)
-- [ ] **SHEL-05**: Landscape and portrait orientations both work on phone; layout adapts without breaking
+- [x] **SHEL-05**: Landscape and portrait orientations both work on phone; layout adapts without breaking
 
 ### Authentication & Profiles
 
