@@ -20,7 +20,7 @@
 - [ ] **AUTH-03**: User can reset password via email link
 - [x] **AUTH-04**: User sets a display name during signup (shown on leaderboard)
 - [x] **AUTH-05**: User declares age (18+) during signup; stored on profile; gates prize eligibility
-- [ ] **AUTH-06**: Users under 18 can play but are placed in a separate practice leaderboard, cannot win prizes
+- [x] **AUTH-06**: Users under 18 can play but are placed in a separate practice leaderboard, cannot win prizes
 
 ### Event System
 

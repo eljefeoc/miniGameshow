@@ -11,7 +11,7 @@
 | Phase | Name | Goal | Plans | Requirements |
 |-------|------|------|-------|--------------|
 | 1 | Phone-First Shell & PWA | 3/3 | Complete   | 2026-04-02 |
-| 2 | Auth & Player Profiles | 1/3 | In Progress|  |
+| 2 | Auth & Player Profiles | 3/3 | Complete   | 2026-04-03 |
 | 3 | Event System & Admin Controls | An operator can create, run, and close a competition event; everything downstream is event-aware | 4 | EVNT-01, EVNT-02, EVNT-03, EVNT-04, EVNT-05, EVNT-06, EVNT-07, ADMN-01, ADMN-02, ADMN-03, ADMN-04, ADMN-05, ADMN-06 |
 | 4 | Gameplay Polish, Leaderboard & Security | The full competitive loop is hardened — scores are validated, leaderboard is accurate, banned players are blocked | 4 | GAME-01, GAME-02, GAME-03, GAME-04, GAME-05, LBRD-01, LBRD-02, LBRD-03, LBRD-04, SECU-01, SECU-02, SECU-03, SECU-04 |
 | 5 | Social & Sharing | Players can share score cards that drive new players to the game via a single link | 2 | SOCL-01, SOCL-02, SOCL-03 |
@@ -45,12 +45,12 @@
 
 **Requirements covered:** AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06
 
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 02-01-PLAN.md — Schema migration + signup form polish + session/leaderboard fixes (AUTH-01, AUTH-02, AUTH-04, AUTH-05)
-- [ ] 02-02-PLAN.md — Password reset flow + account tab overhaul (AUTH-03)
-- [ ] 02-03-PLAN.md — Age-gated play modes with practice mode indicator (AUTH-06)
+- [x] 02-02-PLAN.md — Password reset flow + account tab overhaul (AUTH-03)
+- [x] 02-03-PLAN.md — Age-gated play modes with practice mode indicator (AUTH-06)
 
 **Done when:**
 - [ ] A new user can sign up with email, password, display name, and an age declaration in a single flow

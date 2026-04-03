@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Executing Phase 02
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-04-03T18:34:21.198Z"
+stopped_at: "Checkpoint: human-verify in 02-03-PLAN.md (Task 1 complete, awaiting verification)"
+last_updated: "2026-04-03T18:41:29.896Z"
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 6
 ---
 
 # Project State
@@ -28,8 +28,8 @@ See: `.planning/PROJECT.md` (updated 2026-04-02)
 ## Current Phase
 
 **Phase 01 — phone-first-shell-pwa** (in progress)
-**Stopped at:** Completed 02-01-PLAN.md
-**Last session:** 2026-04-03T18:34:21.196Z
+**Stopped at:** Checkpoint: human-verify in 02-03-PLAN.md (Task 1 complete, awaiting verification)
+**Last session:** 2026-04-03T18:41:12.227Z
 
 ## Phase Status
 
@@ -53,6 +53,11 @@ See: `.planning/PROJECT.md` (updated 2026-04-02)
 - [Phase 01-phone-first-shell-pwa]: Placeholder icons generated via pure Python stdlib (PNG byte construction) since ImageMagick and PIL unavailable
 - [Phase 02-auth-player-profiles]: Signup handler passes is_18_plus as checkbox boolean — under-18 users not blocked (AUTH-06 compatible)
 - [Phase 02-auth-player-profiles]: Password minimum raised from 6 to 8 characters per AUTH-01
+- [Phase 02-auth-player-profiles]: Auth button listeners refactored to event delegation on #ov-auth — allows buttons replaced via innerHTML to work without re-attaching
+- [Phase 02-auth-player-profiles]: showPasswordResetForm() defined at module scope so PASSWORD_RECOVERY handler works before bootSupabaseAuth completes
+- [Phase 02-auth-player-profiles]: practice mode submits scores to Supabase same as competing — leaderboard separation by is_18_plus deferred to Phase 4
+- [Phase 02-auth-player-profiles]: practice mode uses dailySeed (same daily challenge as 18+ competitors) — under-18 players experience the same course without prize eligibility
+- [Phase 02-auth-player-profiles]: playerIs18Plus reset to false on sign-out to prevent stale state if a different user signs in on the same device
 
 ## Planning Artifacts
 
