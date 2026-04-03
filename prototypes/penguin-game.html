@@ -1077,6 +1077,10 @@ html, body {
               <span id="auth-status" aria-live="polite"></span>
             </div>
 
+            <div id="fp-practice-notice" style="display:none;background:rgba(239,159,39,0.1);border:0.5px solid rgba(239,159,39,0.4);border-radius:8px;padding:8px 12px;margin:8px 0;">
+              <span style="font-size:13px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-weight:400;color:rgba(239,159,39,1);">Practice mode — scores don't count toward prizes or the 18+ leaderboard.</span>
+            </div>
+
             <div class="fp-actions">
               <button type="button" id="play-again-btn" class="fp-btn-play btn-play">Play now</button>
               <button type="button" class="fp-btn-signin" id="fp-reveal-auth" style="display:none">Sign in / sign up to compete</button>
@@ -1578,7 +1582,7 @@ function hitOb(){
       const prevHi=hiScore;
       postrunScoreDelta=score>prevHi?score-prevHi:0;
       if(score>hiScore)hiScore=score;
-      if(playMode==='competing'){
+      if(playMode==='competing'||playMode==='practice'){
         submitRunToSupabase().catch(e=>console.error('submitRun',e));
       } else {
         showModeOverlay('gameover');
@@ -1727,6 +1731,15 @@ function showModeOverlay(screen){
   } else if(playMode === 'freeplay'){
     prLabel='Free play';
     tipLines=`Fish caught: ${fishCount}\n\nNew seed every run — scores not saved`;
+  } else if(playMode === 'practice'){
+    const used=attemptsUsed;
+    if(used>=5){
+      prLabel='Free play';
+      tipLines='All 5 attempts used for today.\nFish caught: '+fishCount+'\n\nPractice mode \u2014 scores don\'t count toward prizes.';
+    } else {
+      prLabel='Play again';
+      tipLines=(playerName?`${playerName} \u2014 `:'')+`Attempt ${used}/5 \u00B7 Practice mode`;
+    }
   } else {
     prLabel='Play again';
     tipLines=`Fish caught: ${fishCount}\n\nGuest scores are not saved.`;
@@ -1751,12 +1764,18 @@ async function fetchAttemptsAndSetMode(userId){
       .eq('day_seed',dailySeed)
       .maybeSingle();
     attemptsUsed=data?.attempts_used??0;
-    playMode=attemptsUsed>=5?'freeplay':'competing';
+    if(attemptsUsed>=5){
+      playMode='freeplay';
+    } else if(playerIs18Plus){
+      playMode='competing';
+    } else {
+      playMode='practice';
+    }
     if(playMode==='freeplay') currentSeed=randomSeed();
     else currentSeed=dailySeed;
   }catch(e){
     console.error('fetchAttempts',e);
-    playMode='competing'; currentSeed=dailySeed;
+    playMode=playerIs18Plus?'competing':'practice'; currentSeed=dailySeed;
   }
 }
 
@@ -1911,6 +1930,8 @@ async function refreshTitleFirstPlayCard(){
     const sum=document.getElementById('fp-expand-attempts-summary');
     if(sum) sum.innerHTML='<strong>5 attempts per day.</strong> Your best score counts.';
     renderFpExpandAttemptDots(0);
+    const practiceNoticeGuest=document.getElementById('fp-practice-notice');
+    if(practiceNoticeGuest) practiceNoticeGuest.style.display='none';
     return;
   }
 
@@ -1960,6 +1981,10 @@ async function refreshTitleFirstPlayCard(){
     if(freeNudge) freeNudge.style.display='none';
     const next=attemptsUsed+1;
     if(btn){ btn.textContent=`Play attempt ${next} of 5`; btn.style.display='block'; }
+  }
+  const practiceNotice=document.getElementById('fp-practice-notice');
+  if(practiceNotice){
+    practiceNotice.style.display=playMode==='practice'?'block':'none';
   }
 }
 
@@ -2627,6 +2652,7 @@ async function onSignedIn(session){
 function onSignedOut(){
   updateAuthUI(null);
   playMode='guest'; attemptsUsed=0; playerName='';
+  playerIs18Plus=false;
   hiScore=0;
   currentSeed=randomSeed();
   updateHUD();
@@ -2634,6 +2660,8 @@ function onSignedOut(){
   window.GameshowHud.setStats({ rank:null, best:null, attemptsUsed:0 });
   const oa=document.getElementById('ov-auth');
   if(oa){ oa.dataset.fpOpen='0'; oa.style.display='none'; }
+  const practiceNotice=document.getElementById('fp-practice-notice');
+  if(practiceNotice) practiceNotice.style.display='none';
   if(state==='title'||state==='gameover') showModeOverlay(state);
 }
 
@@ -2666,7 +2694,11 @@ async function bootSupabaseAuth(){
     if(session?.user) await onSignedIn(session);
     else updateAuthUI(null);
 
-    sb.auth.onAuthStateChange(async (_e,session)=>{
+    sb.auth.onAuthStateChange(async (event, session)=>{
+      if(event === 'PASSWORD_RECOVERY'){
+        showPasswordResetForm();
+        return;
+      }
       if(session?.user) await onSignedIn(session);
       else onSignedOut();
     });
