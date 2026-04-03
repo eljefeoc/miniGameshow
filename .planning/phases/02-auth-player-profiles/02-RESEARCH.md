@@ -225,8 +225,8 @@ For Phase 2 scope: `playMode = 'practice'` is set when `playerIs18Plus === false
 ### Pitfall 5: Age checkbox not blocking signup when unchecked (submit disabled state)
 **What goes wrong:** Users can submit signup without checking the age declaration.
 **Why it happens:** The disabled state on the "Create account" button is visual only (`opacity: 0.4`, `pointer-events: none` per UI-SPEC), but if the event listener fires on Enter key or programmatically it bypasses the visual gate.
-**How to avoid:** Add an explicit JS guard at the top of the signup click handler: `if (!ageCheckbox.checked) return;`. The visual state is CSS; the functional gate is JS.
-**Warning signs:** Signup succeeds with `is_18_plus: false` when the checkbox was never checked.
+**⚠️ AUTH-06 OVERRIDE — DO NOT BLOCK UNDER-18 SIGNUPS:** Under-18 users MUST be allowed to sign up (AUTH-06 — they get `playMode='practice'`). Do NOT add `if (!ageCheckbox.checked) return;` to the signup handler. Pass `is_18_plus: is18Plus` (the boolean variable) so under-18 users are stored with `is_18_plus=false`. See Plan 02-01 Task 2 action for the correct implementation.
+**Warning signs:** Under-18 users cannot create accounts at all (they should be allowed in and get practice mode).
 
 ### Pitfall 6: display_name vs. username — leaderboard query still references username
 **What goes wrong:** After Phase 2, new users have `display_name` populated but `username` is null. The leaderboard query at line 2875 (`profiles(username)`) returns null for new users.
@@ -250,7 +250,7 @@ document.getElementById('auth-signup').addEventListener('click', async () => {
   const msgEl       = document.getElementById('auth-status');
   const btn         = document.getElementById('auth-signup');
 
-  if (!is18Plus) return; // guarded visually + functionally
+  // AUTH-06: Do NOT block under-18 signups — is18Plus=false → practice mode (Plan 02-03)
   if (password.length < 8) {
     msgEl.textContent = 'Password must be at least 8 characters.';
     msgEl.style.color = '#f5a0a0';
@@ -263,7 +263,7 @@ document.getElementById('auth-signup').addEventListener('click', async () => {
   const { error } = await sb.auth.signUp({
     email,
     password,
-    options: { data: { display_name: displayName, is_18_plus: true } }
+    options: { data: { display_name: displayName, is_18_plus: is18Plus } } // ⚠️ Use variable, NOT hardcoded true
   });
 
   btn.textContent = 'Create account';
