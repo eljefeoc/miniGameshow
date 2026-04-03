@@ -143,3 +143,11 @@ vite.config.ts.timestamp-*
 .env
 .env
 .DS_Store
+.vercel
+
+# Claude Code local session state (not shared)
+.claude/
+
+# Large design masters — ship optimized sticker in repo (e.g. PLAY-TO-WIN_1.png)
+prototypes/assets/*.ai
+prototypes/assets/PLAY-TO-WIN.png

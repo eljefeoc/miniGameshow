@@ -2,7 +2,7 @@
 
 ### [WORLD NAME — TBD] — Working Title
 
-*Last updated: March 29, 2026 | Version 1.6*
+*Last updated: April 3, 2026 | Version 1.7*
 
 ---
 
@@ -607,6 +607,10 @@ never two survival games in a row.
 ---
 
 ## 8. TECHNICAL ARCHITECTURE
+
+### Show shell vs weekly competition game
+
+Engineering split: the **Game Show shell** (HUD, welcome/title overlay, menus, auth chrome, schedule copy) is the reusable broadcast layer each week. The **competition game** is the swappable canvas experience (Pengu Fisher, Fish Stack, etc.) plus run scoring rules. Keep boundaries clear when adding features — see **`CURSOR_ROADMAP.md`** (“Game Show shell vs competition game”) for the living table and file pointers.
 
 ### Platform Decision
 

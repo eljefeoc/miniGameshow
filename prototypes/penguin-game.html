@@ -47,13 +47,14 @@ html, body {
 }
 
 /* ── FULL-SCREEN GAME SHELL — sits below gameshow HUD ── */
+/* Keep shell dark (#110822): canvas is 2:1 letterboxed on desktop — cream here shows as ugly bands. Cream/sunburst stay on the title overlay only. */
 #shell {
   position:fixed;
   top:56px; left:0; right:0; bottom:0;
   display:flex;
   align-items:center;
   justify-content:center;
-  background:var(--cream);
+  background:#110822;
 }
 
 /* ── CANVAS WRAPPER — always fills entire viewport ── */
@@ -206,18 +207,18 @@ html, body {
 }
 .welcome-sticker {
   position:absolute;
-  top:50%;
+  top:0;
   left:50%;
-  transform:translate(-50%,-58%) rotate(-6deg);
+  transform:translate(-50%,-50%) rotate(-6deg);
   z-index:20;
-  width:175px;
-  height:175px;
+  width:160px;
+  height:160px;
   animation:stickerBounce 3s ease-in-out infinite;
   pointer-events:none;
 }
 @keyframes stickerBounce {
-  0%, 100% { transform:translate(-50%,-58%) rotate(-6deg) scale(1); }
-  50%       { transform:translate(-50%,-58%) rotate(-6deg) scale(1.06); }
+  0%, 100% { transform:translate(-50%,-50%) rotate(-6deg) scale(1); }
+  50%       { transform:translate(-50%,-50%) rotate(-6deg) scale(1.06); }
 }
 .welcome-stripe {
   height:6px;
@@ -251,6 +252,7 @@ html, body {
   border:3px solid var(--brown);
   box-shadow:6px 6px 0 var(--brown);
   font-family:'Bubblegum Sans',cursive,sans-serif;
+  padding-top:88px;
 }
 #ov-card[data-zone="title"] .fp-prize-eyebrow {
   font-size:11px; letter-spacing:0.06em;
@@ -970,7 +972,7 @@ html, body {
       <div id="welcome-sunburst" class="welcome-sunburst" aria-hidden="true"></div>
       <div id="ov-card" data-zone="title">
         <div id="ov-title-block">
-          <img id="welcome-sticker" class="welcome-sticker" src="assets/PLAY-TO-WIN.png" alt="Play to Win!">
+          <img id="welcome-sticker" class="welcome-sticker" src="assets/PLAY-TO-WIN_1.png" alt="Play to Win!">
           <div class="fp">
             <div class="welcome-stripe" aria-hidden="true"></div>
             <div id="fp-signed-header" class="fp-user-row" style="display:none">
