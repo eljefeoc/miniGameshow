@@ -20,7 +20,6 @@
       --yellow: #FACA78;
       --peach:  #F57F5B;
       --red:    #DD5341;
-      --brown:  #794A3A;
       --cream:  #F5EDD6;
       --dark:   #2A1A0E;
     }
@@ -30,16 +29,46 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
-      width: 100%; min-height: 100%;
-      background: var(--dark);
+    html {
+      min-height: 100%;
+    }
+
+    /* L1 base + sunburst (game-show energy; same palette spirit as in-game First Play) */
+    body {
+      width: 100%;
+      min-height: 100%;
+      position: relative;
+      isolation: isolate;
+      background-color: var(--dark);
       font-family: 'Bubblegum Sans', 'Trebuchet MS', sans-serif;
       color: var(--cream);
-      overflow-x: hidden;   /* portrait scroll, no horizontal */
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 130% 85% at 50% 16%, rgba(250, 202, 120, 0.28), transparent 52%),
+        radial-gradient(ellipse 95% 55% at 50% 105%, rgba(42, 26, 14, 0.92), transparent 42%),
+        repeating-conic-gradient(
+          from -12deg at 50% 28%,
+          var(--cream) 0deg 11deg,
+          var(--yellow) 11deg 22deg,
+          var(--cream) 22deg 33deg,
+          var(--peach) 33deg 44deg,
+          var(--cream) 44deg 55deg
+        );
+      opacity: 0.62;
     }
 
     /* Full-height shell: vertically scrollable column */
     .shell {
+      position: relative;
+      z-index: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -54,7 +83,9 @@
       font-size: clamp(28px, 8vw, 48px);
       color: var(--yellow);
       text-align: center;
-      text-shadow: 3px 3px 0 var(--dark);
+      text-shadow:
+        3px 3px 0 var(--dark),
+        0 0 20px rgba(42, 26, 14, 0.65);
       line-height: 1.1;
     }
 
@@ -62,14 +93,19 @@
     .event-card {
       width: 100%;
       max-width: 400px;
-      background: var(--brown);
+      background: rgba(42, 26, 14, 0.58);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 3px solid var(--yellow);
       border-radius: 20px;
       padding: 24px 20px;
       display: flex;
       flex-direction: column;
       gap: 10px;
-      box-shadow: 0 4px 0 var(--dark);
+      box-shadow:
+        0 0 0 1px rgba(250, 202, 120, 0.22),
+        0 10px 32px rgba(0, 0, 0, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
     }
 
     .event-label {

@@ -1,21 +1,55 @@
 # MiniGameshow — Cursor Roadmap
-*Last updated: 2026-04-03*
+*Last updated: 2026-03-30*
 
 ---
 
-## Game Show shell vs competition game
+## Prototype baseline & GSD rollback (Mar 2026)
 
-Two layers — keep them separate in code and in conversation:
+**Pinned baseline commit:** `4048999` — `chore(prototype): baseline penguin game + HUD at 25d5d2c (stable layout)`.
 
-| **Game Show shell** | **Competition game** |
-|---------------------|----------------------|
-| Brand, schedule copy, prize framing in the **title / post-run cards** | Canvas loop, obstacles, input, daily seed, local run state |
-| Top HUD bar ([`hud.js`](prototypes/hud.js)), hamburger menu (leaderboard, account, share), auth entry points | Score, fish/combo UI on canvas, game-over flow, `runs` insert |
-| “What week is it, can I still score, who am I?” | “What happened this run; practice vs competing?” |
+**What we did:** The playable files [`prototypes/penguin-game.html`](prototypes/penguin-game.html), [`prototypes/hud.js`](prototypes/hud.js), and [`prototypes/hud.css`](prototypes/hud.css) were reset to match the tree at git commit **`25d5d2c`** (“fix viewport meta, controls anchor, and rotate-nudge timing”). That snapshot predates a large follow-up change set on those same files. The version you see on a local test server (`npx serve prototypes`) after pulling this commit is the **layout contract**: do not regress desktop or phone playability when re-adding features.
 
-The **shell is reused every week**; the **game swaps** (Pengu Fisher today, Fish Stack tomorrow) while Supabase events, attempts, and leaderboard stay the same contract.
+**What “the refactor” was (no second *r*):** In git history, commit **`c7f62f3`** is titled *“Refactor HUD and penguin-game styles; update branding and layout”*. In plain terms, a **refactor** is supposed to reorganize code (structure, CSS, markup) without changing game rules—but that batch (and later commits on top of it) **heavily reworked layout and shell styling**. Combined with a separate **uncommitted desktop resize experiment** (centering/scaling + `fixed` controls), the game became hard to use on desktop. Those changes were **not** the new baseline; we intentionally stepped back to **`25d5d2c`**-era game + HUD sources.
 
-**Where it lives today:** shell chrome + overlay markup mostly in [`prototypes/penguin-game.html`](prototypes/penguin-game.html) (Zones 1–3) + [`prototypes/hud.js`](prototypes/hud.js); the arcade layer is the canvas + game loop in the same HTML file until we split it.
+**Still in the repo but not in the baseline game file:** Items built in GSD / later `main` on the rolled-back files—e.g. deeper First Play / post-run overlay work, practice-mode chrome in the game page, welcome **sticker** asset wiring, PWA/font hooks inside the game HTML—need to be **re-added in small steps** after planning, with **layout-only changes isolated** (one reviewable change-set, tested on wide + narrow viewports) so we do not repeat the breakage. **Exception:** home-shell **`?autostart=1`** is wired again on the baseline game (skips title overlay when present in the URL).
+
+**Supabase / migrations:** Phase 2 DB and server behavior may still be ahead of the baseline **overlay**; treat in-game UX as “catch up carefully” where the HTML no longer shows every flow the backend supports.
+
+---
+
+## L1 / L2 / L3 — Entry, competition shell, and arcade game
+
+Three layers — use these names in docs and PRs so “game show” is not confused with the canvas mini-game.
+
+| Layer | Role | Primary URLs / files | Answers for the player |
+|-------|------|----------------------|-------------------------|
+| **L1 — Entry / show front door** | First paint from a shared link; weekly promise; one obvious CTA | [`prototypes/index.html`](prototypes/index.html) (served as `/` on Vercel) | “What is this, what’s this week, why should I tap?” |
+| **L2 — Competition shell** | Identity, attempts, event context, menus, auth entry | [`prototypes/hud.js`](prototypes/hud.js) + title/post-run overlay chrome in [`prototypes/penguin-game.html`](prototypes/penguin-game.html) | “Who am I, can I score, how many tries, leaderboard?” |
+| **L3 — Arcade instance** | Canvas, input, run loop, score submission | Canvas + game loop in [`prototypes/penguin-game.html`](prototypes/penguin-game.html) | “What happened this run?” |
+
+**One-line summary:** The **game show** brand moment for cold traffic is **L1**; **L2** is the operating layer once you’re in the app; **L3** is the interchangeable mini-game (Pengu Fisher today, another title later).
+
+**User flow (social or direct link):**
+
+```mermaid
+flowchart LR
+  share[Shared_link] --> index[L1_index]
+  index --> play[Play_Now]
+  play --> game[L2_plus_L3_game_page]
+```
+
+- **L1 → L2/L3:** Play Now goes to `/penguin-game.html?autostart=1` so the title overlay can be skipped for a faster path; opening `/penguin-game.html` without the param still shows the title / First Play card.
+- **L1 styling** is owned by [`prototypes/index.html`](prototypes/index.html) only until we extract shared design tokens (optional later).
+
+The **L2 contract is reused every week**; **L3 swaps** while Supabase events, attempts, and leaderboard stay the same.
+
+**Where it lives today:**
+
+| Layer | Where |
+|-------|--------|
+| L1 | [`prototypes/index.html`](prototypes/index.html) |
+| L2 | [`prototypes/hud.js`](prototypes/hud.js), [`prototypes/hud.css`](prototypes/hud.css), overlay / menu markup in [`prototypes/penguin-game.html`](prototypes/penguin-game.html) |
+| L3 | Canvas + loop in [`prototypes/penguin-game.html`](prototypes/penguin-game.html) |
 
 ---
 
@@ -41,7 +75,7 @@ A mobile-first web game show. Players tap a link, play a simple arcade game (5 a
 ## The Codebase Right Now
 
 ```
-prototypes/penguin-game.html     ← the entire game (~3,400 lines, single file)
+prototypes/penguin-game.html     ← the entire game (~2,900 lines at baseline 4048999, single file)
 prototypes/hud.js                ← the top bar HUD (prize, countdown, rank, avatar, menu)
 prototypes/hud.css               ← HUD styles
 prototypes/admin.html            ← operator admin panel (create/manage events)
@@ -70,7 +104,7 @@ GAME_BIBLE.md                    ← full creative/design reference (characters,
 - PWA manifest — installable from browser, no app store
 - Supabase JS pinned to specific CDN version
 
-### ✅ Phase 2 — Auth & Player Profiles (complete, needs repair)
+### ✅ Phase 2 — Auth & Player Profiles (complete on backend / HUD track; game overlay may lag baseline)
 - Signup with display name + age checkbox (18+)
 - Session persists across browser refreshes
 - Forgot password / email reset flow
@@ -79,23 +113,21 @@ GAME_BIBLE.md                    ← full creative/design reference (characters,
 - Leaderboard shows display name (not email)
 - DB migration: `profiles` table has `display_name` and `is_18_plus` columns
 
+**Baseline note:** After rollback commit `4048999`, the **in-game** title/post-run surfaces may not yet expose every Phase 2 UX that existed on pre-baseline `main`. Reconcile with the **Prototype baseline** section above when planning re-adds.
+
 ---
 
 ## 🔧 Repair List (Do These First)
 
-These are known issues from today's session that need fixing before moving forward:
+These are known issues that need fixing or verification before moving forward:
 
-### 1. Desktop layout — shell background
-**File:** `prototypes/penguin-game.html`
-**Status:** **Resolved.** `#shell` uses dark `#110822` again; cream/sunburst stay on the title overlay only. A short comment above `#shell` explains why (letterboxing on desktop).
-**CSS selector:** `#shell` in the `<style>` block.
+### 1. Desktop / phone layout — keep baseline sacred
+**Files:** `prototypes/penguin-game.html`, `prototypes/hud.css` (anything touching `#canvas-wrap`, `#controls`, `#top-bar`, `resizeCanvas`, or shell letterboxing)
+**Status:** **Baseline `4048999` is the working reference** (verified on local `serve`). Prior breakage came from post-`25d5d2c` layout refactors plus an uncommitted resize experiment. Any future layout tweak should be **its own small change**, tested wide + narrow, before stacking features.
 
 ### 2. Welcome sticker image
-**File:** `prototypes/penguin-game.html`
-**Problem:** The sticker `src` was originally pointing to `assets/PLAY-TO-WIN.png` which is a 2752×1536 landscape image (4MB) that doesn't fit the square sticker shape.
-**Current state:** Already updated today to use `assets/PLAY-TO-WIN_1.png` (200×200px, correct).
-**Sticker position:** Also updated today — sticker sits at `top:0` of the card, centered horizontally, with `transform:translate(-50%,-50%)` so it's half above/half below the card's top edge. Card has `padding-top:88px` so prize content shows below it.
-**Status:** Visually fixed but needs real-device testing.
+**File:** `prototypes/penguin-game.html` (when reintroduced)
+**Status:** **Not in baseline `4048999`.** Earlier `main` used `assets/PLAY-TO-WIN_1.png` (200×200) with careful card padding so the sticker could sit half above the card. When adding it back, use the small asset—not the 2752×1536 `PLAY-TO-WIN.png`—and avoid mixing sticker work with canvas/control scaling in the same pass.
 
 ### 3. Auth flow — end-to-end test needed
 **Problem:** The entire auth system (signup, signin, forgot password, age gating, account tab) was built by AI agents and never manually tested end-to-end.
@@ -198,7 +230,7 @@ These are known issues from today's session that need fixing before moving forwa
 
 ## How to Use This Doc in Cursor
 
-Paste the relevant section at the start of your Cursor session. The **Repair List** is where to start. After repairs are done and tested on a real phone, move to Phase 3.
+Paste the relevant section at the start of your Cursor session. Read **Prototype baseline & GSD rollback** first so agents do not “restore” pre-baseline layout refactors by accident. Use the **Repair List** for verification and migrations; plan **incremental re-adds** from GSD against baseline `4048999`. After repairs are done and tested on a real phone + a wide desktop browser, move to Phase 3.
 
 For creative/design questions (character behavior, tone, game mechanics) → refer to `GAME_BIBLE.md`.
-For code structure questions → the entire game is in `prototypes/penguin-game.html`.
+For code structure questions → **L1** is [`prototypes/index.html`](prototypes/index.html); **L2** and **L3** live in [`prototypes/penguin-game.html`](prototypes/penguin-game.html) plus [`prototypes/hud.js`](prototypes/hud.js) / [`prototypes/hud.css`](prototypes/hud.css).

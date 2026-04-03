@@ -2895,6 +2895,11 @@ if(document.getElementById('gameshow-hud')){
 
 updateHUD();
 showModeOverlay('title');
+if(new URLSearchParams(location.search).get('autostart') === '1'){
+  requestAnimationFrame(() => {
+    if(state === 'title') startFromOverlay();
+  });
+}
 bootSupabaseAuth().then(()=>{ fetchActiveWeek().catch(()=>{}); });
 loop();
 </script>
