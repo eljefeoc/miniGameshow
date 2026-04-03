@@ -45,10 +45,12 @@
 
 **Requirements covered:** AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06
 
-**Plans:**
-1. Signup & session polish — clean up the existing email/password signup flow, add display name field and age declaration (18+ checkbox) to the signup form, persist session across browser refresh
-2. Password reset & account management — implement the "forgot password" email link flow via Supabase Auth; add a basic account tab in the menu panel showing display name and age tier
-3. Age-gated play modes — wire `is_18_plus` (or equivalent profile flag) to the play mode state machine: 18+ users compete on the main leaderboard; under-18 users are placed in practice mode with a separate leaderboard and cannot win prizes
+**Plans:** 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Schema migration + signup form polish + session/leaderboard fixes (AUTH-01, AUTH-02, AUTH-04, AUTH-05)
+- [ ] 02-02-PLAN.md — Password reset flow + account tab overhaul (AUTH-03)
+- [ ] 02-03-PLAN.md — Age-gated play modes with practice mode indicator (AUTH-06)
 
 **Done when:**
 - [ ] A new user can sign up with email, password, display name, and an age declaration in a single flow
@@ -199,8 +201,8 @@
 
 | Phase | Status | Plans Complete |
 |-------|--------|----------------|
-| 1 — Phone-First Shell & PWA | Not started | 0 / 3 |
-| 2 — Auth & Player Profiles | Not started | 0 / 3 |
+| 1 — Phone-First Shell & PWA | Complete | 3 / 3 |
+| 2 — Auth & Player Profiles | Planned | 0 / 3 |
 | 3 — Event System & Admin Controls | Not started | 0 / 4 |
 | 4 — Gameplay Polish, Leaderboard & Security | Not started | 0 / 4 |
 | 5 — Social & Sharing | Not started | 0 / 2 |
