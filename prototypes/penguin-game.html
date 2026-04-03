@@ -902,6 +902,13 @@ html, body {
   letter-spacing: 0.06em;
 }
 #ov-postrun-block { pointer-events: auto; }
+#ov-auth input[type="text"]:focus,
+#ov-auth input[type="email"]:focus,
+#ov-auth input[type="password"]:focus {
+  outline: 2px solid #534AB7;
+  outline-offset: 0;
+  border-color: #534AB7;
+}
 </style>
 <script src="supabase-config.js"></script>
 <script>window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'', anonKey:'' };</script>
@@ -1053,14 +1060,21 @@ html, body {
               </div>
             </div>
 
-            <div id="ov-auth" class="fp-auth-embed" style="display:none" data-fp-open="0">
-              <input id="auth-email" type="email" autocomplete="email" placeholder="Email" />
-              <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Password" />
+            <div id="ov-auth" class="fp-auth-embed" style="display:none" data-fp-open="0" data-auth-mode="signup">
+              <input id="auth-display-name" type="text" autocomplete="nickname" placeholder="Display name (shown on leaderboard)" style="font-size:16px;padding:8px 12px;min-height:44px;border:1px solid rgba(0,0,0,0.15);border-radius:8px;width:100%;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;" />
+              <input id="auth-email" type="email" autocomplete="email" placeholder="Email" style="font-size:16px;padding:8px 12px;min-height:44px;border:1px solid rgba(0,0,0,0.15);border-radius:8px;width:100%;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;" />
+              <input id="auth-pass" type="password" autocomplete="new-password" placeholder="Password (8+ characters)" style="font-size:16px;padding:8px 12px;min-height:44px;border:1px solid rgba(0,0,0,0.15);border-radius:8px;width:100%;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;" />
+              <label id="auth-age-label" style="display:flex;align-items:center;gap:8px;min-height:44px;font-size:13px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--dark);">
+                <input id="auth-age-check" type="checkbox" />
+                I am 18 or older
+              </label>
+              <p id="auth-age-sub" style="font-size:11px;color:#888;margin:0 0 4px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">Under 18? You can still play in practice mode — scores won't count toward prizes.</p>
               <div class="fp-auth-row">
                 <button type="button" id="auth-signin">Sign in</button>
                 <button type="button" id="auth-signup">Create account</button>
               </div>
-              <span id="auth-status"></span>
+              <button type="button" id="auth-forgot-pw" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;padding:4px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">Forgot password?</button>
+              <span id="auth-status" aria-live="polite"></span>
             </div>
 
             <div class="fp-actions">
@@ -1293,7 +1307,8 @@ const GAME_VERSION='0.1.0-proto';
 // 'freeplay'   : signed in, all 5 attempts used; random seed; no saves
 let playMode='guest';
 let attemptsUsed=0;        // fetched from DB + tracked locally
-let playerName='';         // profiles.username or email prefix
+let playerName='';         // profiles.display_name or username or email prefix
+let playerIs18Plus = false; // profiles.is_18_plus — set after sign-in
 let currentSeed=dailySeed; // active seed for this run (guest/freeplay = random)
 
 function randomSeed(){ return Math.floor(Math.random()*2147483647)+1; }
@@ -2592,14 +2607,15 @@ async function onSignedIn(session){
   updateAuthUI(session);
   const sb=window._miniGameshowSb;
   if(!sb||!session?.user) return;
-  // Fetch username from profiles
+  // Fetch display_name, is_18_plus, and username from profiles
   try{
     const { data: prof } = await sb.from('profiles')
-      .select('username')
+      .select('display_name, is_18_plus, username')
       .eq('id',session.user.id)
       .maybeSingle();
-    playerName = prof?.username || session.user.email?.split('@')[0] || '';
-  }catch{ playerName=session.user.email?.split('@')[0]||''; }
+    playerName = prof?.display_name || prof?.username || session.user.email?.split('@')[0] || '';
+    playerIs18Plus = prof?.is_18_plus ?? false;
+  }catch{ playerName=session.user.email?.split('@')[0]||''; playerIs18Plus=false; }
   // Update gameshow HUD avatar
   window.GameshowHud.setPlayer({
     initials: (playerName||session.user.email||'?').slice(0,2),
@@ -2663,22 +2679,100 @@ async function bootSupabaseAuth(){
     });
 
     document.getElementById('auth-signin').addEventListener('click', async ()=>{
-      const email=document.getElementById('auth-email').value.trim();
-      const password=document.getElementById('auth-pass').value;
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-pass').value;
+      const msgEl = document.getElementById('auth-status');
+      const btn = document.getElementById('auth-signin');
+
+      btn.textContent = '\u00B7\u00B7\u00B7';
+      btn.style.pointerEvents = 'none';
+
       const { error } = await sb.auth.signInWithPassword({ email, password });
-      if(error) alert(error.message);
+
+      btn.textContent = 'Sign in';
+      btn.style.pointerEvents = '';
+
+      if(error){
+        if(error.message.includes('Invalid login')){
+          msgEl.textContent = 'Wrong password. Try again or reset it below.';
+        } else if(error.message.includes('not found') || error.message.includes('No user')){
+          msgEl.textContent = 'No account with that email. Create one instead.';
+        } else {
+          msgEl.textContent = 'Something went wrong. Check your connection and try again.';
+        }
+        msgEl.style.color = '#f5a0a0';
+      } else {
+        msgEl.textContent = 'Welcome back!';
+        msgEl.style.color = '#7dffb0';
+      }
     });
     document.getElementById('auth-signup').addEventListener('click', async ()=>{
-      const email=document.getElementById('auth-email').value.trim();
-      const password=document.getElementById('auth-pass').value;
-      if(password.length<6){ alert('Password: at least 6 characters'); return; }
-      const { error } = await sb.auth.signUp({ email, password });
-      if(error) alert(error.message);
-      else alert('Account created. If email confirmation is on, check your inbox; otherwise sign in.');
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-pass').value;
+      const displayName = document.getElementById('auth-display-name').value.trim();
+      const is18Plus = document.getElementById('auth-age-check').checked;
+      const msgEl = document.getElementById('auth-status');
+      const btn = document.getElementById('auth-signup');
+
+      // Do NOT block under-18 signups — they get practice mode via Plan 03 (AUTH-06)
+      if(password.length < 8){
+        msgEl.textContent = 'Password must be at least 8 characters.';
+        msgEl.style.color = '#f5a0a0';
+        return;
+      }
+
+      btn.textContent = '\u00B7\u00B7\u00B7';
+      btn.style.pointerEvents = 'none';
+
+      const { error } = await sb.auth.signUp({
+        email,
+        password,
+        options: { data: { display_name: displayName, is_18_plus: is18Plus } }
+      });
+
+      btn.textContent = 'Create account';
+      btn.style.pointerEvents = '';
+
+      if(error){
+        if(error.message.includes('already registered') || error.code === 'user_already_exists'){
+          msgEl.textContent = 'That email is already registered. Try signing in instead.';
+        } else {
+          msgEl.textContent = 'Something went wrong. Check your connection and try again.';
+        }
+        msgEl.style.color = '#f5a0a0';
+      } else {
+        msgEl.textContent = "Account created \u2014 you're in!";
+        msgEl.style.color = '#7dffb0';
+      }
     });
     document.getElementById('auth-signout').addEventListener('click', async ()=>{
       await sb.auth.signOut();
     });
+
+    // Forgot password button — enabled in Plan 02
+    const forgotBtn = document.getElementById('auth-forgot-pw');
+    if(forgotBtn) forgotBtn.style.display = 'none'; // Enabled in Plan 02
+
+    // Auth mode toggle: hide/show signup-only fields based on form mode
+    function setAuthMode(mode){
+      const oa = document.getElementById('ov-auth');
+      if(oa) oa.dataset.authMode = mode;
+      const dnEl = document.getElementById('auth-display-name');
+      const ageLabelEl = document.getElementById('auth-age-label');
+      const ageSubEl = document.getElementById('auth-age-sub');
+      const passEl = document.getElementById('auth-pass');
+      if(mode === 'signin'){
+        if(dnEl) dnEl.style.display = 'none';
+        if(ageLabelEl) ageLabelEl.style.display = 'none';
+        if(ageSubEl) ageSubEl.style.display = 'none';
+        if(passEl){ passEl.placeholder = 'Password'; passEl.autocomplete = 'current-password'; }
+      } else {
+        if(dnEl) dnEl.style.display = '';
+        if(ageLabelEl) ageLabelEl.style.display = 'flex';
+        if(ageSubEl) ageSubEl.style.display = '';
+        if(passEl){ passEl.placeholder = 'Password (8+ characters)'; passEl.autocomplete = 'new-password'; }
+      }
+    }
   }catch(e){
     console.error(e);
     const msgEl=document.getElementById('auth-status');
@@ -2872,7 +2966,7 @@ async function refreshGspLeaderboard(){
     const { data:{ session } } = await sb.auth.getSession();
     const myId = session?.user?.id || null;
     let { data, error } = await sb.from('leaderboard')
-      .select('rank,best_score,user_id,profiles(username)')
+      .select('rank,best_score,user_id,profiles(display_name,username)')
       .eq('week_id', weekId)
       .order('rank', { ascending: true })
       .limit(30);
@@ -2893,7 +2987,7 @@ async function refreshGspLeaderboard(){
     if(weekPrize) html += `<div class="lb-prize-pill">${gspEscapeHtml(weekPrize)}</div>`;
     html += '</div>';
     data.forEach((row,i)=>{
-      const name = row.profiles?.username || 'Player';
+      const name = row.profiles?.display_name || row.profiles?.username || 'Player';
       const ini = _lbInitials(name, row.user_id);
       const [bg,fg] = _LB_AVATAR_STYLES[i % _LB_AVATAR_STYLES.length];
       const isMe = myId && row.user_id === myId;
