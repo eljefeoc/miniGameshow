@@ -185,6 +185,12 @@ These are known issues that need fixing or verification before moving forward:
 **Problem:** The migration file exists locally but may not have been applied to your Supabase project yet.
 **Fix:** Run it via Supabase CLI (`supabase db push`) or paste it in the SQL editor in the Supabase dashboard.
 
+### 5. Supabase Auth — Site URL and redirect allow list
+**Problem:** Signup confirmation emails can contain **`http://localhost:…`** links. Mobile Safari cannot open that host, so the user never confirms. **Sign-in then fails** with “Invalid login credentials” while **Confirm email** is still required for that account.
+**Fix (dashboard):** Supabase → **Authentication** → **URL Configuration**: set **Site URL** to your real app origin (e.g. `https://<project>.vercel.app`). Under **Redirect URLs**, add that origin and paths you use (e.g. `https://<project>.vercel.app/penguin-game.html`, or a pattern like `https://*.vercel.app/**` if your plan allows). Keep a separate localhost entry for local dev if needed.
+**Fix (app):** Sign-up uses `emailRedirectTo` = current page URL so production signups get production links (see `signUp` in [`prototypes/penguin-game.html`](prototypes/penguin-game.html)).
+**Stuck users:** In Supabase → **Authentication** → **Users**, either delete the test user and sign up again after fixing URLs, or manually confirm the email for that user.
+
 ---
 
 ## What's Next — Remaining Phases

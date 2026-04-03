@@ -2470,7 +2470,13 @@ async function bootSupabaseAuth(){
       const email=document.getElementById('auth-email').value.trim();
       const password=document.getElementById('auth-pass').value;
       if(password.length<6){ alert('Password: at least 6 characters'); return; }
-      const { error } = await sb.auth.signUp({ email, password });
+      // Links in the confirmation email use this URL; must match Supabase Auth → Redirect URLs allow list.
+      const emailRedirectTo = window.location.origin + window.location.pathname;
+      const { error } = await sb.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo },
+      });
       if(error) alert(error.message);
       else alert('Account created. If email confirmation is on, check your inbox; otherwise sign in.');
     });
