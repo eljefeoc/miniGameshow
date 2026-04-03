@@ -5,29 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/assets/icon-192.png">
 <title>PENGU FISHER</title>
 <link rel="stylesheet" href="hud.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="font" crossorigin
-      href="https://fonts.gstatic.com/s/titanone/v17/mFTzWbsGxbbS_J5cQcjClDgm-khykw.woff2">
-<link rel="preload" as="font" crossorigin
-      href="https://fonts.gstatic.com/s/bubblegumsans/v22/AYCSpXb_Z9EORv1M5QTjEzMEteaAxILtbKR5.woff2">
-<link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Bubblegum+Sans&display=swap" rel="stylesheet">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-:root {
-  --teal:   #68C7C1;
-  --yellow: #FACA78;
-  --peach:  #F57F5B;
-  --red:    #DD5341;
-  --brown:  #794A3A;
-  --cream:  #F5EDD6;
-  --dark:   #2A1A0E;
-}
 
 
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
@@ -47,7 +28,6 @@ html, body {
 }
 
 /* ── FULL-SCREEN GAME SHELL — sits below gameshow HUD ── */
-/* Keep shell dark (#110822): canvas is 2:1 letterboxed on desktop — cream here shows as ugly bands. Cream/sunburst stay on the title overlay only. */
 #shell {
   position:fixed;
   top:56px; left:0; right:0; bottom:0;
@@ -158,25 +138,8 @@ html, body {
   pointer-events:none;
   padding:16px;
   z-index:20;
-  /* width/height/left/top set by JS — children #welcome-sunburst fills this box */
+  /* width/height/left/top set by JS */
 }
-#welcome-sunburst {
-  position:absolute;
-  inset:0;
-  z-index:0;
-  pointer-events:none;
-  border-radius:12px;
-  background:repeating-conic-gradient(
-    from -12deg at 50% 42%,
-    #F5EDD6 0deg 11deg,
-    #FACA78 11deg 22deg,
-    #F5EDD6 22deg 33deg,
-    #F57F5B 33deg 44deg,
-    #F5EDD6 44deg 55deg
-  );
-  opacity:0.94;
-}
-#ov-card { position:relative; z-index:1; }
 
 /* ── Zone 2 / Zone 3 card — the visible content panel ── */
 #ov-card {
@@ -202,31 +165,6 @@ html, body {
   align-items:stretch;
   width:100%;
   pointer-events:auto;
-  position:relative;
-  overflow:visible;
-}
-.welcome-sticker {
-  position:absolute;
-  top:0;
-  left:50%;
-  transform:translate(-50%,-50%) rotate(-6deg);
-  z-index:20;
-  width:160px;
-  height:160px;
-  animation:stickerBounce 3s ease-in-out infinite;
-  pointer-events:none;
-}
-@keyframes stickerBounce {
-  0%, 100% { transform:translate(-50%,-50%) rotate(-6deg) scale(1); }
-  50%       { transform:translate(-50%,-50%) rotate(-6deg) scale(1.06); }
-}
-.welcome-stripe {
-  height:6px;
-  width:100%;
-  border-radius:3px;
-  margin-top:4px;
-  margin-bottom:14px;
-  background:linear-gradient(90deg, #68C7C1, #FACA78, #F57F5B, #DD5341, #794A3A, #F57F5B, #FACA78, #68C7C1);
 }
 .fp {
   background:#0a0a0f;
@@ -239,107 +177,6 @@ html, body {
   -webkit-overflow-scrolling:touch;
   max-height:min(85vh,calc(100vh - 120px));
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-}
-.fp-hook {
-  font-family:'Bubblegum Sans',cursive,sans-serif;
-  font-size:19px;
-  color:var(--red);
-  line-height:1.35;
-  margin:0 0 6px;
-}
-#ov-card[data-zone="title"] .fp {
-  background:var(--cream);
-  border:3px solid var(--brown);
-  box-shadow:6px 6px 0 var(--brown);
-  font-family:'Bubblegum Sans',cursive,sans-serif;
-  padding-top:88px;
-}
-#ov-card[data-zone="title"] .fp-prize-eyebrow {
-  font-size:11px; letter-spacing:0.06em;
-  color:var(--peach); font-weight:600;
-}
-#ov-card[data-zone="title"] .fp-prize-name {
-  font-size:25px; font-weight:400; color:var(--brown);
-  font-family:'Bubblegum Sans',cursive,sans-serif;
-}
-#ov-card[data-zone="title"] .fp-prize-meta {
-  font-size:14px; color:var(--brown); opacity:0.88; font-weight:500;
-}
-#ov-card[data-zone="title"] .fp-divider {
-  background:rgba(121,74,58,0.25);
-}
-#ov-card[data-zone="title"] .fp-expand {
-  border-color:rgba(121,74,58,0.35);
-}
-#ov-card[data-zone="title"] .fp-expand-label {
-  color:var(--brown);
-}
-#ov-card[data-zone="title"] .fp-expand-inner {
-  border-top-color:rgba(121,74,58,0.2);
-}
-#ov-card[data-zone="title"] .fp-step-text,
-#ov-card[data-zone="title"] .fp-attempts-text {
-  color:rgba(42,26,14,0.75);
-}
-#ov-card[data-zone="title"] .fp-step-text strong,
-#ov-card[data-zone="title"] .fp-attempts-text strong {
-  color:var(--brown);
-}
-#ov-card[data-zone="title"] .fp-attempts-sub {
-  color:rgba(42,26,14,0.45);
-}
-#ov-card[data-zone="title"] .fp-step-num {
-  background:rgba(121,74,58,0.12);
-  color:var(--brown);
-}
-#ov-card[data-zone="title"] .fp-expand-trigger:active {
-  background:rgba(121,74,58,0.08);
-}
-#ov-card[data-zone="title"] .fp-expand-icon svg path {
-  stroke:rgba(121,74,58,0.5);
-}
-#ov-card[data-zone="title"] .fp-expand-body.open {
-  max-height:min(360px,50vh);
-}
-#ov-card[data-zone="title"] .fp-expand {
-  margin-bottom:10px;
-}
-#ov-card[data-zone="title"] .fp-user-name {
-  color:var(--brown);
-}
-#ov-card[data-zone="title"] .fp-user-sub {
-  color:rgba(121,74,58,0.65);
-}
-#ov-card[data-zone="title"] .fp-stat {
-  background:rgba(121,74,58,0.08);
-}
-#ov-card[data-zone="title"] .fp-stat-val {
-  color:var(--brown);
-}
-#ov-card[data-zone="title"] .fp-stat-key {
-  color:rgba(121,74,58,0.55);
-}
-#ov-card[data-zone="title"] .fp-stat-val.beat {
-  color:var(--red);
-}
-#ov-card[data-zone="title"] .fp-auth-embed input {
-  border:1px solid rgba(121,74,58,0.35);
-  background:rgba(255,255,255,0.85);
-  color:var(--dark);
-}
-#ov-card[data-zone="title"] .fp-auth-row button {
-  border:1px solid rgba(121,74,58,0.35);
-  background:rgba(255,255,255,0.5);
-  color:var(--brown);
-}
-#ov-card[data-zone="title"] .fp-user-bar-foot {
-  border-top-color:rgba(121,74,58,0.2);
-}
-#ov-card[data-zone="title"] .fp-user-bar-foot span {
-  color:rgba(121,74,58,0.75);
-}
-#ov-card[data-zone="title"] #auth-status {
-  color:#1a7a5a;
 }
 .fp-prize { margin-bottom:18px; }
 .fp-prize-eyebrow {
@@ -403,30 +240,6 @@ html, body {
   font-family:inherit;
 }
 .fp-btn-play:active { opacity:0.88; }
-#ov-card[data-zone="title"] .fp-btn-play.btn-play {
-  background:#DD5341;
-  border:3px solid #794A3A;
-  border-radius:50px;
-  padding:13px;
-  font-family:'Bubblegum Sans',cursive,sans-serif;
-  font-size:20px;
-  color:#F5EDD6;
-  box-shadow:4px 4px 0 #794A3A;
-  animation:btnPulse 2.5s ease-in-out infinite;
-}
-@keyframes btnPulse {
-  0%, 100% { transform:scale(1); }
-  50%       { transform:scale(1.02); }
-}
-#ov-card[data-zone="title"] .fp-btn-signin {
-  background:transparent;
-  border:none;
-  color:var(--teal);
-  font-family:'Bubblegum Sans',cursive,sans-serif;
-  font-size:14px;
-  text-decoration:underline;
-  box-shadow:none;
-}
 .fp-btn-signin {
   background:rgba(255,255,255,0.07);
   border:0.5px solid rgba(255,255,255,0.15);
@@ -440,10 +253,6 @@ html, body {
 .fp-nudge {
   font-size:11px; color:rgba(255,255,255,0.25);
   text-align:center; line-height:1.5; margin-top:2px;
-}
-#ov-card[data-zone="title"] .fp-nudge {
-  color:rgba(121,74,58,0.65);
-  font-family:'Bubblegum Sans',cursive,sans-serif;
 }
 .fp-user-row { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
 .fp-avatar {
@@ -904,13 +713,6 @@ html, body {
   letter-spacing: 0.06em;
 }
 #ov-postrun-block { pointer-events: auto; }
-#ov-auth input[type="text"]:focus,
-#ov-auth input[type="email"]:focus,
-#ov-auth input[type="password"]:focus {
-  outline: 2px solid #534AB7;
-  outline-offset: 0;
-  border-color: #534AB7;
-}
 </style>
 <script src="supabase-config.js"></script>
 <script>window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'', anonKey:'' };</script>
@@ -969,12 +771,9 @@ html, body {
 
     <!-- Game overlay (title / gameover) — Zone 2 or Zone 3 -->
     <div id="overlay">
-      <div id="welcome-sunburst" class="welcome-sunburst" aria-hidden="true"></div>
       <div id="ov-card" data-zone="title">
         <div id="ov-title-block">
-          <img id="welcome-sticker" class="welcome-sticker" src="assets/PLAY-TO-WIN_1.png" alt="Play to Win!">
           <div class="fp">
-            <div class="welcome-stripe" aria-hidden="true"></div>
             <div id="fp-signed-header" class="fp-user-row" style="display:none">
               <div class="fp-avatar" id="fp-avatar">?</div>
               <div>
@@ -988,7 +787,6 @@ html, body {
               <div class="fp-prize-name" id="fp-prize-name">···</div>
               <div class="fp-prize-meta" id="fp-prize-meta"></div>
             </div>
-            <p class="fp-hook" id="fp-hook-line">Five tries today — beat the ice, hook the fish, climb the board.</p>
             <div class="fp-divider"></div>
 
             <div id="fp-stat-row" class="fp-rank-row" style="display:none">
@@ -1062,30 +860,19 @@ html, body {
               </div>
             </div>
 
-            <div id="ov-auth" class="fp-auth-embed" style="display:none" data-fp-open="0" data-auth-mode="signup">
-              <input id="auth-display-name" type="text" autocomplete="nickname" placeholder="Display name (shown on leaderboard)" style="font-size:16px;padding:8px 12px;min-height:44px;border:1px solid rgba(0,0,0,0.15);border-radius:8px;width:100%;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;" />
-              <input id="auth-email" type="email" autocomplete="email" placeholder="Email" style="font-size:16px;padding:8px 12px;min-height:44px;border:1px solid rgba(0,0,0,0.15);border-radius:8px;width:100%;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;" />
-              <input id="auth-pass" type="password" autocomplete="new-password" placeholder="Password (8+ characters)" style="font-size:16px;padding:8px 12px;min-height:44px;border:1px solid rgba(0,0,0,0.15);border-radius:8px;width:100%;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;" />
-              <label id="auth-age-label" style="display:flex;align-items:center;gap:8px;min-height:44px;font-size:13px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--dark);">
-                <input id="auth-age-check" type="checkbox" />
-                I am 18 or older
-              </label>
-              <p id="auth-age-sub" style="font-size:11px;color:#888;margin:0 0 4px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">Under 18? You can still play in practice mode — scores won't count toward prizes.</p>
+            <div id="ov-auth" class="fp-auth-embed" style="display:none" data-fp-open="0">
+              <input id="auth-email" type="email" autocomplete="email" placeholder="Email" />
+              <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Password" />
               <div class="fp-auth-row">
                 <button type="button" id="auth-signin">Sign in</button>
                 <button type="button" id="auth-signup">Create account</button>
               </div>
-              <button type="button" id="auth-forgot-pw" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;padding:4px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">Forgot password?</button>
-              <span id="auth-status" aria-live="polite"></span>
-            </div>
-
-            <div id="fp-practice-notice" style="display:none;background:rgba(239,159,39,0.1);border:0.5px solid rgba(239,159,39,0.4);border-radius:8px;padding:8px 12px;margin:8px 0;">
-              <span style="font-size:13px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-weight:400;color:rgba(239,159,39,1);">Practice mode — scores don't count toward prizes or the 18+ leaderboard.</span>
+              <span id="auth-status"></span>
             </div>
 
             <div class="fp-actions">
-              <button type="button" id="play-again-btn" class="fp-btn-play btn-play">Play now</button>
-              <button type="button" class="fp-btn-signin" id="fp-reveal-auth" style="display:none">Sign in / sign up to compete</button>
+              <button type="button" id="play-again-btn" class="fp-btn-play">Play now</button>
+              <button type="button" class="fp-btn-signin" id="fp-reveal-auth" style="display:none">Sign in to save your score</button>
               <div class="fp-nudge" id="fp-guest-nudge" style="display:none">Playing as guest — scores won't count toward the leaderboard</div>
               <div class="fp-nudge" id="fp-freeplay-nudge" style="display:none">All attempts used today — free play uses a new seed each run; scores aren't saved.</div>
             </div>
@@ -1313,8 +1100,7 @@ const GAME_VERSION='0.1.0-proto';
 // 'freeplay'   : signed in, all 5 attempts used; random seed; no saves
 let playMode='guest';
 let attemptsUsed=0;        // fetched from DB + tracked locally
-let playerName='';         // profiles.display_name or username or email prefix
-let playerIs18Plus = false; // profiles.is_18_plus — set after sign-in
+let playerName='';         // profiles.username or email prefix
 let currentSeed=dailySeed; // active seed for this run (guest/freeplay = random)
 
 function randomSeed(){ return Math.floor(Math.random()*2147483647)+1; }
@@ -1584,7 +1370,7 @@ function hitOb(){
       const prevHi=hiScore;
       postrunScoreDelta=score>prevHi?score-prevHi:0;
       if(score>hiScore)hiScore=score;
-      if(playMode==='competing'||playMode==='practice'){
+      if(playMode==='competing'){
         submitRunToSupabase().catch(e=>console.error('submitRun',e));
       } else {
         showModeOverlay('gameover');
@@ -1701,8 +1487,6 @@ function showModeOverlay(screen){
   if(card) card.dataset.zone = (screen === 'title') ? 'title' : 'gameover';
 
   if(screen === 'title'){
-    const sun=document.getElementById('welcome-sunburst');
-    if(sun) sun.style.display='';
     if(titleBlk){ titleBlk.style.display='flex'; titleBlk.removeAttribute('aria-hidden'); }
     if(postBlk){ postBlk.style.display='none'; postBlk.setAttribute('aria-hidden','true'); }
     void refreshTitleFirstPlayCard();
@@ -1710,8 +1494,6 @@ function showModeOverlay(screen){
   }
 
   // gameover — Zone 3 mock layout
-  const sunGo=document.getElementById('welcome-sunburst');
-  if(sunGo) sunGo.style.display='none';
   if(titleBlk){ titleBlk.style.display='none'; titleBlk.setAttribute('aria-hidden','true'); }
   if(postBlk){ postBlk.style.display='block'; postBlk.removeAttribute('aria-hidden'); }
   if(btn) btn.style.display='none';
@@ -1733,15 +1515,6 @@ function showModeOverlay(screen){
   } else if(playMode === 'freeplay'){
     prLabel='Free play';
     tipLines=`Fish caught: ${fishCount}\n\nNew seed every run — scores not saved`;
-  } else if(playMode === 'practice'){
-    const used=attemptsUsed;
-    if(used>=5){
-      prLabel='Free play';
-      tipLines='All 5 attempts used for today.\nFish caught: '+fishCount+'\n\nPractice mode \u2014 scores don\'t count toward prizes.';
-    } else {
-      prLabel='Play again';
-      tipLines=(playerName?`${playerName} \u2014 `:'')+`Attempt ${used}/5 \u00B7 Practice mode`;
-    }
   } else {
     prLabel='Play again';
     tipLines=`Fish caught: ${fishCount}\n\nGuest scores are not saved.`;
@@ -1766,18 +1539,12 @@ async function fetchAttemptsAndSetMode(userId){
       .eq('day_seed',dailySeed)
       .maybeSingle();
     attemptsUsed=data?.attempts_used??0;
-    if(attemptsUsed>=5){
-      playMode='freeplay';
-    } else if(playerIs18Plus){
-      playMode='competing';
-    } else {
-      playMode='practice';
-    }
+    playMode=attemptsUsed>=5?'freeplay':'competing';
     if(playMode==='freeplay') currentSeed=randomSeed();
     else currentSeed=dailySeed;
   }catch(e){
     console.error('fetchAttempts',e);
-    playMode=playerIs18Plus?'competing':'practice'; currentSeed=dailySeed;
+    playMode='competing'; currentSeed=dailySeed;
   }
 }
 
@@ -1899,8 +1666,6 @@ function renderFpStatDots(used){
 
 async function refreshTitleFirstPlayCard(){
   document.getElementById('overlay').style.display='flex';
-  const sticker=document.getElementById('welcome-sticker');
-  if(sticker) sticker.style.display='';
   const pn=document.getElementById('fp-prize-name');
   if(pn) pn.textContent=(weekPrize||'').trim()||'Prize TBD';
   const pm=document.getElementById('fp-prize-meta');
@@ -1932,8 +1697,6 @@ async function refreshTitleFirstPlayCard(){
     const sum=document.getElementById('fp-expand-attempts-summary');
     if(sum) sum.innerHTML='<strong>5 attempts per day.</strong> Your best score counts.';
     renderFpExpandAttemptDots(0);
-    const practiceNoticeGuest=document.getElementById('fp-practice-notice');
-    if(practiceNoticeGuest) practiceNoticeGuest.style.display='none';
     return;
   }
 
@@ -1983,10 +1746,6 @@ async function refreshTitleFirstPlayCard(){
     if(freeNudge) freeNudge.style.display='none';
     const next=attemptsUsed+1;
     if(btn){ btn.textContent=`Play attempt ${next} of 5`; btn.style.display='block'; }
-  }
-  const practiceNotice=document.getElementById('fp-practice-notice');
-  if(practiceNotice){
-    practiceNotice.style.display=playMode==='practice'?'block':'none';
   }
 }
 
@@ -2634,15 +2393,14 @@ async function onSignedIn(session){
   updateAuthUI(session);
   const sb=window._miniGameshowSb;
   if(!sb||!session?.user) return;
-  // Fetch display_name, is_18_plus, and username from profiles
+  // Fetch username from profiles
   try{
     const { data: prof } = await sb.from('profiles')
-      .select('display_name, is_18_plus, username')
+      .select('username')
       .eq('id',session.user.id)
       .maybeSingle();
-    playerName = prof?.display_name || prof?.username || session.user.email?.split('@')[0] || '';
-    playerIs18Plus = prof?.is_18_plus ?? false;
-  }catch{ playerName=session.user.email?.split('@')[0]||''; playerIs18Plus=false; }
+    playerName = prof?.username || session.user.email?.split('@')[0] || '';
+  }catch{ playerName=session.user.email?.split('@')[0]||''; }
   // Update gameshow HUD avatar
   window.GameshowHud.setPlayer({
     initials: (playerName||session.user.email||'?').slice(0,2),
@@ -2654,7 +2412,6 @@ async function onSignedIn(session){
 function onSignedOut(){
   updateAuthUI(null);
   playMode='guest'; attemptsUsed=0; playerName='';
-  playerIs18Plus=false;
   hiScore=0;
   currentSeed=randomSeed();
   updateHUD();
@@ -2662,8 +2419,6 @@ function onSignedOut(){
   window.GameshowHud.setStats({ rank:null, best:null, attemptsUsed:0 });
   const oa=document.getElementById('ov-auth');
   if(oa){ oa.dataset.fpOpen='0'; oa.style.display='none'; }
-  const practiceNotice=document.getElementById('fp-practice-notice');
-  if(practiceNotice) practiceNotice.style.display='none';
   if(state==='title'||state==='gameover') showModeOverlay(state);
 }
 
@@ -2686,21 +2441,14 @@ async function bootSupabaseAuth(){
     return;
   }
   try{
-    // Supabase JS pinned to exact version per SECU-03 — immutable CDN URL
-    // SRI hash not applicable to dynamic import() (browser spec limitation)
-    // Pin: @supabase/supabase-js@2.101.1
-    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.101.1/+esm');
+    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
     const sb=createClient(url,key,{ auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
     window._miniGameshowSb=sb;
     const { data:{ session } } = await sb.auth.getSession();
     if(session?.user) await onSignedIn(session);
     else updateAuthUI(null);
 
-    sb.auth.onAuthStateChange(async (event, session)=>{
-      if(event === 'PASSWORD_RECOVERY'){
-        showPasswordResetForm();
-        return;
-      }
+    sb.auth.onAuthStateChange(async (_e,session)=>{
       if(session?.user) await onSignedIn(session);
       else onSignedOut();
     });
@@ -2712,243 +2460,28 @@ async function bootSupabaseAuth(){
       });
     });
 
+    document.getElementById('auth-signin').addEventListener('click', async ()=>{
+      const email=document.getElementById('auth-email').value.trim();
+      const password=document.getElementById('auth-pass').value;
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if(error) alert(error.message);
+    });
+    document.getElementById('auth-signup').addEventListener('click', async ()=>{
+      const email=document.getElementById('auth-email').value.trim();
+      const password=document.getElementById('auth-pass').value;
+      if(password.length<6){ alert('Password: at least 6 characters'); return; }
+      const { error } = await sb.auth.signUp({ email, password });
+      if(error) alert(error.message);
+      else alert('Account created. If email confirmation is on, check your inbox; otherwise sign in.');
+    });
     document.getElementById('auth-signout').addEventListener('click', async ()=>{
       await sb.auth.signOut();
     });
-
-    // Auth mode toggle: hide/show signup-only fields based on form mode
-    function setAuthMode(mode){
-      const oa = document.getElementById('ov-auth');
-      if(oa) oa.dataset.authMode = mode;
-      const dnEl = document.getElementById('auth-display-name');
-      const ageLabelEl = document.getElementById('auth-age-label');
-      const ageSubEl = document.getElementById('auth-age-sub');
-      const passEl = document.getElementById('auth-pass');
-      const forgotBtn2 = document.getElementById('auth-forgot-pw');
-      if(mode === 'signin'){
-        if(dnEl) dnEl.style.display = 'none';
-        if(ageLabelEl) ageLabelEl.style.display = 'none';
-        if(ageSubEl) ageSubEl.style.display = 'none';
-        if(passEl){ passEl.placeholder = 'Password'; passEl.autocomplete = 'current-password'; }
-        if(forgotBtn2) forgotBtn2.style.display = '';
-      } else {
-        if(dnEl) dnEl.style.display = '';
-        if(ageLabelEl) ageLabelEl.style.display = 'flex';
-        if(ageSubEl) ageSubEl.style.display = '';
-        if(passEl){ passEl.placeholder = 'Password (8+ characters)'; passEl.autocomplete = 'new-password'; }
-        if(forgotBtn2) forgotBtn2.style.display = 'none';
-      }
-    }
-
-    // restoreAuthForm — rebuild auth panel to signin or signup mode
-    function restoreAuthForm(mode){
-      const oa = document.getElementById('ov-auth');
-      if(!oa) return;
-      const emailEl = document.getElementById('auth-email');
-      const passEl = document.getElementById('auth-pass');
-      const msgEl = document.getElementById('auth-status');
-      if(emailEl){ emailEl.style.display = ''; emailEl.placeholder = 'Email'; }
-      if(passEl){ passEl.style.display = ''; passEl.value = ''; passEl.autocomplete = 'current-password'; passEl.placeholder = 'Password'; }
-      if(msgEl){ msgEl.textContent = ''; }
-      // Rebuild the .fp-auth-row with original buttons
-      const row = oa.querySelector('.fp-auth-row');
-      if(row){
-        row.style.display = '';
-        row.innerHTML = '<button type="button" id="auth-signin">Sign in</button>' +
-          '<button type="button" id="auth-signup">Create account</button>';
-      }
-      // Apply mode-specific field visibility (also restores forgot-pw button visibility)
-      setAuthMode(mode || 'signin');
-    }
-
-    // Expose for showPasswordResetForm (defined at module scope below)
-    window._authRestoreForm = restoreAuthForm;
-
-    // Event delegation on #ov-auth handles all dynamic button clicks
-    document.getElementById('ov-auth').addEventListener('click', async (e)=>{
-      const t = e.target;
-      if(!(t instanceof HTMLElement)) return;
-
-      // ── Sign in ──
-      if(t.id === 'auth-signin'){
-        const email = document.getElementById('auth-email').value.trim();
-        const password = document.getElementById('auth-pass').value;
-        const msgEl = document.getElementById('auth-status');
-        t.textContent = '\u00B7\u00B7\u00B7';
-        t.style.pointerEvents = 'none';
-        const { error } = await sb.auth.signInWithPassword({ email, password });
-        t.textContent = 'Sign in';
-        t.style.pointerEvents = '';
-        if(error){
-          if(error.message.includes('Invalid login')){
-            msgEl.textContent = 'Wrong password. Try again or reset it below.';
-          } else if(error.message.includes('not found') || error.message.includes('No user')){
-            msgEl.textContent = 'No account with that email. Create one instead.';
-          } else {
-            msgEl.textContent = 'Something went wrong. Check your connection and try again.';
-          }
-          msgEl.style.color = '#f5a0a0';
-        } else {
-          msgEl.textContent = 'Welcome back!';
-          msgEl.style.color = '#7dffb0';
-        }
-
-      // ── Sign up ──
-      } else if(t.id === 'auth-signup'){
-        const email = document.getElementById('auth-email').value.trim();
-        const password = document.getElementById('auth-pass').value;
-        const displayName = document.getElementById('auth-display-name').value.trim();
-        const is18Plus = document.getElementById('auth-age-check').checked;
-        const msgEl = document.getElementById('auth-status');
-        // Do NOT block under-18 signups — they get practice mode via Plan 03 (AUTH-06)
-        if(password.length < 8){
-          msgEl.textContent = 'Password must be at least 8 characters.';
-          msgEl.style.color = '#f5a0a0';
-          return;
-        }
-        t.textContent = '\u00B7\u00B7\u00B7';
-        t.style.pointerEvents = 'none';
-        const { error } = await sb.auth.signUp({
-          email,
-          password,
-          options: { data: { display_name: displayName, is_18_plus: is18Plus } }
-        });
-        t.textContent = 'Create account';
-        t.style.pointerEvents = '';
-        if(error){
-          if(error.message.includes('already registered') || error.code === 'user_already_exists'){
-            msgEl.textContent = 'That email is already registered. Try signing in instead.';
-          } else {
-            msgEl.textContent = 'Something went wrong. Check your connection and try again.';
-          }
-          msgEl.style.color = '#f5a0a0';
-        } else {
-          msgEl.textContent = "Account created \u2014 you're in!";
-          msgEl.style.color = '#7dffb0';
-        }
-
-      // ── Forgot password — show send-reset UI ──
-      } else if(t.id === 'auth-forgot-pw'){
-        const emailEl = document.getElementById('auth-email');
-        const passEl = document.getElementById('auth-pass');
-        const displayEl = document.getElementById('auth-display-name');
-        const ageLabel = document.getElementById('auth-age-label');
-        const ageSub = document.getElementById('auth-age-sub');
-        const forgotBtn = document.getElementById('auth-forgot-pw');
-        const msgEl = document.getElementById('auth-status');
-        // Hide everything except email
-        if(passEl) passEl.style.display = 'none';
-        if(displayEl) displayEl.style.display = 'none';
-        if(ageLabel) ageLabel.style.display = 'none';
-        if(ageSub) ageSub.style.display = 'none';
-        if(forgotBtn) forgotBtn.style.display = 'none';
-        if(msgEl) msgEl.textContent = '';
-        // Change email placeholder
-        if(emailEl) emailEl.placeholder = 'Your account email';
-        // Replace .fp-auth-row with send-reset + back buttons
-        const row = document.querySelector('#ov-auth .fp-auth-row');
-        if(row){
-          row.innerHTML = '<button type="button" id="auth-send-reset" class="fp-btn-play btn-play" style="padding:12px 16px;min-height:44px;width:100%">Send reset link</button>' +
-            '<button type="button" id="auth-back-signin" style="background:none;border:none;color:var(--teal);font-size:13px;cursor:pointer;padding:4px 0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;">Back to sign in</button>';
-        }
-
-      // ── Send reset link ──
-      } else if(t.id === 'auth-send-reset'){
-        const email = document.getElementById('auth-email').value.trim();
-        const msgEl = document.getElementById('auth-status');
-        const row = document.querySelector('#ov-auth .fp-auth-row');
-        const emailEl = document.getElementById('auth-email');
-        if(!email){ msgEl.textContent = 'Enter your email above.'; msgEl.style.color = '#f5a0a0'; return; }
-        t.textContent = '\u00B7\u00B7\u00B7';
-        t.style.pointerEvents = 'none';
-        const { error } = await sb.auth.resetPasswordForEmail(email);
-        t.textContent = 'Send reset link';
-        t.style.pointerEvents = '';
-        if(error){
-          msgEl.textContent = 'Something went wrong. Check your connection and try again.';
-          msgEl.style.color = '#f5a0a0';
-        } else {
-          // Hide form, show confirmation
-          if(row) row.style.display = 'none';
-          if(emailEl) emailEl.style.display = 'none';
-          msgEl.textContent = 'Reset link sent \u2014 check your email.';
-          msgEl.style.color = '#7dffb0';
-        }
-
-      // ── Back to sign in ──
-      } else if(t.id === 'auth-back-signin'){
-        restoreAuthForm('signin');
-
-      // ── Save new password (after PASSWORD_RECOVERY) ──
-      } else if(t.id === 'auth-set-new-pw'){
-        const password = document.getElementById('auth-pass').value;
-        const msgEl = document.getElementById('auth-status');
-        if(password.length < 8){
-          msgEl.textContent = 'Password must be at least 8 characters.';
-          msgEl.style.color = '#f5a0a0';
-          return;
-        }
-        t.textContent = '\u00B7\u00B7\u00B7';
-        t.style.pointerEvents = 'none';
-        const { error } = await sb.auth.updateUser({ password });
-        t.textContent = 'Save new password';
-        t.style.pointerEvents = '';
-        if(error){
-          msgEl.textContent = 'Something went wrong. Check your connection and try again.';
-          msgEl.style.color = '#f5a0a0';
-        } else {
-          msgEl.textContent = 'Password updated! You are signed in.';
-          msgEl.style.color = '#7dffb0';
-          // Restore auth form after short delay
-          setTimeout(()=> restoreAuthForm('signin'), 2000);
-        }
-      }
-    });
-
   }catch(e){
     console.error(e);
     const msgEl=document.getElementById('auth-status');
     if(msgEl) msgEl.textContent='Auth failed (see console)';
   }
-}
-
-// ═══════════════════════════════════════════════════════════
-//  PASSWORD RECOVERY — shown when user returns from reset link
-// ═══════════════════════════════════════════════════════════
-function showPasswordResetForm(){
-  const authEl = document.getElementById('ov-auth');
-  if(!authEl) return;
-  // Make sure auth panel is visible
-  authEl.style.display = 'block';
-  authEl.dataset.fpOpen = '1';
-
-  // Hide all existing fields except password
-  ['auth-email','auth-display-name','auth-age-label','auth-age-sub','auth-forgot-pw'].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) el.style.display = 'none';
-  });
-
-  const row = authEl.querySelector('.fp-auth-row');
-  const msgEl = document.getElementById('auth-status');
-  if(msgEl){ msgEl.textContent = 'Set your new password below.'; msgEl.style.color = '#7dffb0'; }
-
-  // Show new password field
-  const passEl = document.getElementById('auth-pass');
-  if(passEl){
-    passEl.style.display = '';
-    passEl.value = '';
-    passEl.placeholder = 'New password (8+ characters)';
-    passEl.autocomplete = 'new-password';
-  }
-
-  if(row){
-    row.style.display = '';
-    row.innerHTML = '<button type="button" id="auth-set-new-pw" class="fp-btn-play btn-play" style="padding:12px 16px;min-height:44px;width:100%">Save new password</button>';
-  }
-
-  // Ensure overlay is visible
-  const overlay = document.getElementById('overlay');
-  if(overlay) overlay.style.display = 'flex';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3018,10 +2551,7 @@ async function submitRunToSupabase(){
 // ═══════════════════════════════════════════════════════════
 function startFromOverlay(){
   if(state!=='title'&&state!=='gameover') return;
-  _playStarted = true;
-  const sticker=document.getElementById('welcome-sticker');
-  if(sticker) sticker.style.display='none';
-  resetGame(); hideOverlay(); state='playing';
+  _playStarted = true; resetGame(); hideOverlay(); state='playing';
 }
 
 // Main CTA button — works from both title and gameover screens
@@ -3137,7 +2667,7 @@ async function refreshGspLeaderboard(){
     const { data:{ session } } = await sb.auth.getSession();
     const myId = session?.user?.id || null;
     let { data, error } = await sb.from('leaderboard')
-      .select('rank,best_score,user_id,profiles(display_name,username)')
+      .select('rank,best_score,user_id,profiles(username)')
       .eq('week_id', weekId)
       .order('rank', { ascending: true })
       .limit(30);
@@ -3158,7 +2688,7 @@ async function refreshGspLeaderboard(){
     if(weekPrize) html += `<div class="lb-prize-pill">${gspEscapeHtml(weekPrize)}</div>`;
     html += '</div>';
     data.forEach((row,i)=>{
-      const name = row.profiles?.display_name || row.profiles?.username || 'Player';
+      const name = row.profiles?.username || 'Player';
       const ini = _lbInitials(name, row.user_id);
       const [bg,fg] = _LB_AVATAR_STYLES[i % _LB_AVATAR_STYLES.length];
       const isMe = myId && row.user_id === myId;
@@ -3258,42 +2788,23 @@ async function signOutFromHud(){
 }
 
 function refreshGspAccount(){
-  const body = document.getElementById(‘gsp-account-body’);
+  const body = document.getElementById('gsp-account-body');
   if(!body) return;
   const sb = window._miniGameshowSb;
   if(!sb){
-    body.innerHTML = ‘<p>Copy <code>supabase-config.example.js</code> to <code>supabase-config.js</code> with your project URL and anon key.</p>’;
+    body.innerHTML = '<p>Copy <code>supabase-config.example.js</code> to <code>supabase-config.js</code> with your project URL and anon key.</p>' +
+      '<button type="button" class="gsp-account-cta" id="gsp-account-signin">Sign in (title screen)</button>';
     return;
   }
   sb.auth.getSession().then(({ data:{ session } })=>{
     if(!session?.user){
-      body.innerHTML =
-        ‘<p style="font-size:13px;font-family:-apple-system,BlinkMacSystemFont,\’Segoe UI\’,sans-serif;color:#1a1a1a;">Sign in to see your account and compete for prizes.</p>’ +
-        ‘<button type="button" class="gsp-account-cta" id="gsp-account-signin" style="background:#534AB7;color:#fff;font-size:13px;border:none;border-radius:8px;padding:12px 16px;min-height:44px;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,\’Segoe UI\’,sans-serif;">Sign in</button>’;
+      body.innerHTML = '<p>You’re playing as a guest.</p><p class="gsp-muted">Sign in to save scores and compete. Your session stays in this browser.</p>' +
+        '<button type="button" class="gsp-account-cta" id="gsp-account-signin">Sign in</button>';
       return;
     }
-    const em = session.user.email || ‘’;
-    const name = playerName || em.split(‘@’)[0] || ‘?’;
-    const initial = (name[0] || ‘?’).toUpperCase();
-    const is18 = playerIs18Plus;
-
-    // Age tier badge
-    const badgeHtml = is18
-      ? ‘<span style="display:inline-block;background:#FAEEDA;color:#633806;border-radius:20px;padding:4px 8px;font-size:11px;font-weight:500;font-family:-apple-system,BlinkMacSystemFont,\’Segoe UI\’,sans-serif;">Competitor</span>’
-      : ‘<span style="display:inline-block;background:rgba(83,74,183,0.12);color:#534AB7;border-radius:20px;padding:4px 8px;font-size:11px;font-weight:500;font-family:-apple-system,BlinkMacSystemFont,\’Segoe UI\’,sans-serif;">Practice Mode</span>’;
-
-    body.innerHTML =
-      // User identity block
-      ‘<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">’ +
-        ‘<div style="width:34px;height:34px;border-radius:50%;background:#534AB7;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#CECBF6;font-family:-apple-system,BlinkMacSystemFont,\’Segoe UI\’,sans-serif;flex-shrink:0;">’ + gspEscapeHtml(initial) + ‘</div>’ +
-        ‘<div>’ +
-          ‘<div style="font-size:13px;font-weight:500;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,\’Segoe UI\’,sans-serif;">’ + gspEscapeHtml(name) + ‘ ‘ + badgeHtml + ‘</div>’ +
-        ‘</div>’ +
-      ‘</div>’ +
-      // Email
-      ‘<div style="font-size:11px;color:#888;margin-bottom:16px;font-family:-apple-system,BlinkMacSystemFont,\’Segoe UI\’,sans-serif;">’ + gspEscapeHtml(em) + ‘</div>’ +
-      // Sign out button
-      ‘<button type="button" class="gsp-account-cta secondary" id="gsp-account-signout" style="border:0.5px solid rgba(255,100,100,0.4);color:#f5a0a0;font-size:11px;border-radius:8px;padding:8px 12px;background:none;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,\’Segoe UI\’,sans-serif;">Sign out</button>’;
+    const em = session.user.email || 'Signed in';
+    body.innerHTML = `<p><strong>Signed in</strong></p><p class="gsp-muted">${gspEscapeHtml(em)}</p>` +
+      '<button type="button" class="gsp-account-cta secondary" id="gsp-account-signout">Sign out</button>';
   });
 }
 
@@ -3386,7 +2897,6 @@ updateHUD();
 showModeOverlay('title');
 bootSupabaseAuth().then(()=>{ fetchActiveWeek().catch(()=>{}); });
 loop();
-if(new URLSearchParams(location.search).get('autostart')==='1') startFromOverlay();
 </script>
 </body>
 </html>

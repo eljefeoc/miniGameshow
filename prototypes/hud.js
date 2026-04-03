@@ -35,8 +35,9 @@ const GameshowHud = (() => {
   const HTML = `
 <div id="gameshow-hud">
   <div class="ghud-prize">
-    <div class="ghud-brand-row">
-      <span class="ghud-show-title" id="ghud-show-title">The Mini-Game Show</span>
+    <div class="ghud-prize-row">
+      <span class="ghud-prize-eyebrow">Week / prize</span>
+      <span class="ghud-prize-name" id="ghud-prize-name">···</span>
     </div>
     <div class="ghud-prize-time" id="ghud-schedule">
       Scoring closes <span class="ghud-accent">Sat midnight</span>
@@ -245,7 +246,8 @@ const GameshowHud = (() => {
 
   function setPrize(name) {
     _prizeName = name || '';
-    /* Prize name lives in the title / post-run card only — not in the HUD bar. */
+    const e = el('ghud-prize-name');
+    if (e) e.textContent = _prizeName || '···';
   }
 
   function setShowAt(date) {
