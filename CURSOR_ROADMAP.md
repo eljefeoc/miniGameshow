@@ -1,5 +1,5 @@
 # MiniGameshow — Cursor Roadmap
-*Last updated: 2026-03-30*
+*Last updated: 2026-04-02*
 
 ---
 
@@ -51,6 +51,46 @@ The **L2 contract is reused every week**; **L3 swaps** while Supabase events, at
 | L2 | [`prototypes/hud.js`](prototypes/hud.js), [`prototypes/hud.css`](prototypes/hud.css), overlay / menu markup in [`prototypes/penguin-game.html`](prototypes/penguin-game.html) |
 | L3 | Canvas + loop in [`prototypes/penguin-game.html`](prototypes/penguin-game.html) |
 
+### Target architecture — Pattern B (L2 host) + thin L3 modules
+
+**Choice:** Use **Pattern B** as the **primary player route**: one **L2 host page** loads the correct **L3** for the active week (from Supabase / `weeks`), instead of maintaining a separate full HTML page per game that each duplicates the shell.
+
+**Pattern A still applies inside Pattern B:** each title is a **thin arcade bundle** (one ES module or script under e.g. [`prototypes/games/`](prototypes/games/)) that mounts into a single DOM sink (e.g. `#game-mount`) and implements a small **L3 contract**—no duplicated leaderboard, auth, or title/post-run chrome.
+
+**Why this fits miniGameshow:** Phase 3 expects an admin-selected game per event; L1 “Play” should not hard-code `/penguin-game.html` forever. One URL (e.g. [`prototypes/play.html`](prototypes/play.html) served as `/play.html`) keeps **vanilla + static Vercel** deployment and avoids N copies of [`hud.js`](prototypes/hud.js) wiring.
+
+**L3 contract (sketch — refine when implementing):**
+
+| Responsibility | Owner |
+|----------------|--------|
+| Canvas, input, run loop, local run state | L3 module |
+| Mount/unmount, resize notifications from shell | L3 exposes e.g. `mount(el)`, `destroy()`, optional `onResize({ width, height, scale })` |
+| Score submission payload shape, attempts, auth session | L2 orchestrates; L3 signals `gameOver(summary)` or similar |
+
+**Stage sizing (mixed aspects, desktop vs phone):** L2 owns the **`#game-mount` rectangle** (after HUD/controls). Each L3 declares its **native design size or aspect** (e.g. Pengu today is landscape 2:1). **Never non-uniform stretch**—use one scale `min(availW/nativeW, availH/nativeH)`, **center** in the mount (letterbox or pillarbox). Widescreen and future portrait titles use the **same policy**; only which edges get bars changes. **Desktop:** game draws inside that framed stage (bars are OK), not stretched to the full viewport. **Game 01** stays landscape-native unless a future product decision rebuilds it for portrait-primary.
+
+**Target flow (after migration):**
+
+```mermaid
+flowchart LR
+  index[L1_index] --> play[L2_play_host]
+  play --> fetch[fetchActiveWeek]
+  fetch --> load[import_L3_slug]
+  load --> canvas[L3_canvas]
+```
+
+**Legacy / deep links:** Keep [`prototypes/penguin-game.html`](prototypes/penguin-game.html) as a **stub** after migration: redirect or load the same host with `?game=pengu` (and preserve `autostart`, etc.) so old shares keep working.
+
+**Phased migration (do in order; one PR per phase where possible):**
+
+1. **Scaffold** — Add [`prototypes/play.html`](prototypes/play.html) (or agreed name) + empty `#game-mount`. L3 contract draft: [`prototypes/games/README.md`](prototypes/games/README.md). No behavior change to [`penguin-game.html`](prototypes/penguin-game.html) yet *or* play page is hidden behind a flag until step 2.
+2. **Extract L2** — Move shared shell markup (HUD roots, overlay/menu containers, global styles that are not canvas-specific) from [`penguin-game.html`](prototypes/penguin-game.html) into the host page + a small [`prototypes/gameshow-shell.js`](prototypes/gameshow-shell.js) (name TBD) that owns `GameshowHud.init`, menu panel, and overlay chrome. **Do not** change `resizeCanvas` math in the same PR as unrelated features.
+3. **Extract Pengu L3** — Move the canvas game loop and game-only helpers into [`prototypes/games/pengu.js`](prototypes/games/pengu.js) (ES module); host loads it and calls `mount(#game-mount)`. [`penguin-game.html`](prototypes/penguin-game.html) either redirects to the host or becomes a one-line loader.
+4. **Week-driven slug** — After [`fetchActiveWeek()`](prototypes/penguin-game.html) (or equivalent) returns the live game slug, host uses `import(\`./games/${slug}.js\`)` (with **fallback UI** if the bundle 404s or throws). Point L1 Play to `/play.html?autostart=1` (and add a [`vercel.json`](vercel.json) rewrite if you want a prettier path later).
+5. **Legacy URLs** — Implement redirect stub for [`penguin-game.html`](prototypes/penguin-game.html) → host + `game=pengu`.
+
+**Explicit non-goals for early phases:** No new framework; no bundler required if all `games/*.js` are static files and `import()` paths are literal enough for the browser. If dynamic `import()` with a variable slug is awkward for caching, use a small **registry** object in the host that maps slug → module URL.
+
 ---
 
 ## What This Product Is
@@ -83,6 +123,7 @@ prototypes/supabase-config.js    ← your Supabase URL + anon key (gitignored, n
 supabase/schema.sql              ← full database schema
 supabase/migrations/             ← migration files applied to Supabase
 prototypes/assets/               ← sprites, icons, sticker images
+prototypes/games/README.md       ← L3 arcade module contract (draft); `*.js` games land here
 GAME_BIBLE.md                    ← full creative/design reference (characters, games, tone)
 ```
 
