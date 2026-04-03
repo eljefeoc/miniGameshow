@@ -27,6 +27,8 @@ CREATE TABLE public.games (
 CREATE TABLE public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
   username text UNIQUE,
+  display_name text,
+  is_18_plus boolean NOT NULL DEFAULT false,
   phone text,
   phone_verified boolean NOT NULL DEFAULT false,
   country text,
@@ -148,10 +150,11 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, username)
+  INSERT INTO public.profiles (id, display_name, is_18_plus)
   VALUES (
     NEW.id,
-    NULLIF(trim(NEW.raw_user_meta_data->>'username'), '')
+    NULLIF(trim(NEW.raw_user_meta_data->>'display_name'), ''),
+    COALESCE((NEW.raw_user_meta_data->>'is_18_plus')::boolean, false)
   );
   RETURN NEW;
 END;
