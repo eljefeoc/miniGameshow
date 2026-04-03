@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in-progress
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-04-02T17:18:27.565Z"
+status: Executing Phase 02
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-04-03T18:34:21.198Z"
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
 ---
 
 # Project State
@@ -23,13 +23,13 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-02)
 
 **Core value:** Anyone who sees a link on social media can tap it and be playing within 10 seconds — zero friction from discovery to first play.
-**Current focus:** Phase 01 — phone-first-shell-pwa
+**Current focus:** Phase 02 — auth-player-profiles
 
 ## Current Phase
 
 **Phase 01 — phone-first-shell-pwa** (in progress)
-**Stopped at:** Completed 01-03-PLAN.md
-**Last session:** 2026-04-02T17:18:27.562Z
+**Stopped at:** Completed 02-01-PLAN.md
+**Last session:** 2026-04-03T18:34:21.196Z
 
 ## Phase Status
 
@@ -51,6 +51,8 @@ See: `.planning/PROJECT.md` (updated 2026-04-02)
 - [Phase 01-phone-first-shell-pwa]: Supabase JS pinned to @2.101.1 immutable CDN URL (SRI on dynamic import not browser-supported)
 - [Phase 01-phone-first-shell-pwa]: Font preload URLs fetched live from Google Fonts API — plan's example URLs were stale versions
 - [Phase 01-phone-first-shell-pwa]: Placeholder icons generated via pure Python stdlib (PNG byte construction) since ImageMagick and PIL unavailable
+- [Phase 02-auth-player-profiles]: Signup handler passes is_18_plus as checkbox boolean — under-18 users not blocked (AUTH-06 compatible)
+- [Phase 02-auth-player-profiles]: Password minimum raised from 6 to 8 characters per AUTH-01
 
 ## Planning Artifacts
 

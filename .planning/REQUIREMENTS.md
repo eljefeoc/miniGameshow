@@ -15,11 +15,11 @@
 
 ### Authentication & Profiles
 
-- [ ] **AUTH-01**: User can sign up with email and password (existing — needs polish)
-- [ ] **AUTH-02**: User can sign in and session persists across browser refresh
+- [x] **AUTH-01**: User can sign up with email and password (existing — needs polish)
+- [x] **AUTH-02**: User can sign in and session persists across browser refresh
 - [ ] **AUTH-03**: User can reset password via email link
-- [ ] **AUTH-04**: User sets a display name during signup (shown on leaderboard)
-- [ ] **AUTH-05**: User declares age (18+) during signup; stored on profile; gates prize eligibility
+- [x] **AUTH-04**: User sets a display name during signup (shown on leaderboard)
+- [x] **AUTH-05**: User declares age (18+) during signup; stored on profile; gates prize eligibility
 - [ ] **AUTH-06**: Users under 18 can play but are placed in a separate practice leaderboard, cannot win prizes
 
 ### Event System
