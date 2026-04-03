@@ -2710,80 +2710,9 @@ async function bootSupabaseAuth(){
       });
     });
 
-    document.getElementById('auth-signin').addEventListener('click', async ()=>{
-      const email = document.getElementById('auth-email').value.trim();
-      const password = document.getElementById('auth-pass').value;
-      const msgEl = document.getElementById('auth-status');
-      const btn = document.getElementById('auth-signin');
-
-      btn.textContent = '\u00B7\u00B7\u00B7';
-      btn.style.pointerEvents = 'none';
-
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-
-      btn.textContent = 'Sign in';
-      btn.style.pointerEvents = '';
-
-      if(error){
-        if(error.message.includes('Invalid login')){
-          msgEl.textContent = 'Wrong password. Try again or reset it below.';
-        } else if(error.message.includes('not found') || error.message.includes('No user')){
-          msgEl.textContent = 'No account with that email. Create one instead.';
-        } else {
-          msgEl.textContent = 'Something went wrong. Check your connection and try again.';
-        }
-        msgEl.style.color = '#f5a0a0';
-      } else {
-        msgEl.textContent = 'Welcome back!';
-        msgEl.style.color = '#7dffb0';
-      }
-    });
-    document.getElementById('auth-signup').addEventListener('click', async ()=>{
-      const email = document.getElementById('auth-email').value.trim();
-      const password = document.getElementById('auth-pass').value;
-      const displayName = document.getElementById('auth-display-name').value.trim();
-      const is18Plus = document.getElementById('auth-age-check').checked;
-      const msgEl = document.getElementById('auth-status');
-      const btn = document.getElementById('auth-signup');
-
-      // Do NOT block under-18 signups — they get practice mode via Plan 03 (AUTH-06)
-      if(password.length < 8){
-        msgEl.textContent = 'Password must be at least 8 characters.';
-        msgEl.style.color = '#f5a0a0';
-        return;
-      }
-
-      btn.textContent = '\u00B7\u00B7\u00B7';
-      btn.style.pointerEvents = 'none';
-
-      const { error } = await sb.auth.signUp({
-        email,
-        password,
-        options: { data: { display_name: displayName, is_18_plus: is18Plus } }
-      });
-
-      btn.textContent = 'Create account';
-      btn.style.pointerEvents = '';
-
-      if(error){
-        if(error.message.includes('already registered') || error.code === 'user_already_exists'){
-          msgEl.textContent = 'That email is already registered. Try signing in instead.';
-        } else {
-          msgEl.textContent = 'Something went wrong. Check your connection and try again.';
-        }
-        msgEl.style.color = '#f5a0a0';
-      } else {
-        msgEl.textContent = "Account created \u2014 you're in!";
-        msgEl.style.color = '#7dffb0';
-      }
-    });
     document.getElementById('auth-signout').addEventListener('click', async ()=>{
       await sb.auth.signOut();
     });
-
-    // Forgot password button — enabled in Plan 02
-    const forgotBtn = document.getElementById('auth-forgot-pw');
-    if(forgotBtn) forgotBtn.style.display = 'none'; // Enabled in Plan 02
 
     // Auth mode toggle: hide/show signup-only fields based on form mode
     function setAuthMode(mode){
@@ -2793,23 +2722,231 @@ async function bootSupabaseAuth(){
       const ageLabelEl = document.getElementById('auth-age-label');
       const ageSubEl = document.getElementById('auth-age-sub');
       const passEl = document.getElementById('auth-pass');
+      const forgotBtn2 = document.getElementById('auth-forgot-pw');
       if(mode === 'signin'){
         if(dnEl) dnEl.style.display = 'none';
         if(ageLabelEl) ageLabelEl.style.display = 'none';
         if(ageSubEl) ageSubEl.style.display = 'none';
         if(passEl){ passEl.placeholder = 'Password'; passEl.autocomplete = 'current-password'; }
+        if(forgotBtn2) forgotBtn2.style.display = '';
       } else {
         if(dnEl) dnEl.style.display = '';
         if(ageLabelEl) ageLabelEl.style.display = 'flex';
         if(ageSubEl) ageSubEl.style.display = '';
         if(passEl){ passEl.placeholder = 'Password (8+ characters)'; passEl.autocomplete = 'new-password'; }
+        if(forgotBtn2) forgotBtn2.style.display = 'none';
       }
     }
+
+    // restoreAuthForm — rebuild auth panel to signin or signup mode
+    function restoreAuthForm(mode){
+      const oa = document.getElementById('ov-auth');
+      if(!oa) return;
+      const emailEl = document.getElementById('auth-email');
+      const passEl = document.getElementById('auth-pass');
+      const msgEl = document.getElementById('auth-status');
+      if(emailEl){ emailEl.style.display = ''; emailEl.placeholder = 'Email'; }
+      if(passEl){ passEl.style.display = ''; passEl.value = ''; passEl.autocomplete = 'current-password'; passEl.placeholder = 'Password'; }
+      if(msgEl){ msgEl.textContent = ''; }
+      // Rebuild the .fp-auth-row with original buttons
+      const row = oa.querySelector('.fp-auth-row');
+      if(row){
+        row.style.display = '';
+        row.innerHTML = '<button type="button" id="auth-signin">Sign in</button>' +
+          '<button type="button" id="auth-signup">Create account</button>';
+      }
+      // Apply mode-specific field visibility (also restores forgot-pw button visibility)
+      setAuthMode(mode || 'signin');
+    }
+
+    // Expose for showPasswordResetForm (defined at module scope below)
+    window._authRestoreForm = restoreAuthForm;
+
+    // Event delegation on #ov-auth handles all dynamic button clicks
+    document.getElementById('ov-auth').addEventListener('click', async (e)=>{
+      const t = e.target;
+      if(!(t instanceof HTMLElement)) return;
+
+      // ── Sign in ──
+      if(t.id === 'auth-signin'){
+        const email = document.getElementById('auth-email').value.trim();
+        const password = document.getElementById('auth-pass').value;
+        const msgEl = document.getElementById('auth-status');
+        t.textContent = '\u00B7\u00B7\u00B7';
+        t.style.pointerEvents = 'none';
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        t.textContent = 'Sign in';
+        t.style.pointerEvents = '';
+        if(error){
+          if(error.message.includes('Invalid login')){
+            msgEl.textContent = 'Wrong password. Try again or reset it below.';
+          } else if(error.message.includes('not found') || error.message.includes('No user')){
+            msgEl.textContent = 'No account with that email. Create one instead.';
+          } else {
+            msgEl.textContent = 'Something went wrong. Check your connection and try again.';
+          }
+          msgEl.style.color = '#f5a0a0';
+        } else {
+          msgEl.textContent = 'Welcome back!';
+          msgEl.style.color = '#7dffb0';
+        }
+
+      // ── Sign up ──
+      } else if(t.id === 'auth-signup'){
+        const email = document.getElementById('auth-email').value.trim();
+        const password = document.getElementById('auth-pass').value;
+        const displayName = document.getElementById('auth-display-name').value.trim();
+        const is18Plus = document.getElementById('auth-age-check').checked;
+        const msgEl = document.getElementById('auth-status');
+        // Do NOT block under-18 signups — they get practice mode via Plan 03 (AUTH-06)
+        if(password.length < 8){
+          msgEl.textContent = 'Password must be at least 8 characters.';
+          msgEl.style.color = '#f5a0a0';
+          return;
+        }
+        t.textContent = '\u00B7\u00B7\u00B7';
+        t.style.pointerEvents = 'none';
+        const { error } = await sb.auth.signUp({
+          email,
+          password,
+          options: { data: { display_name: displayName, is_18_plus: is18Plus } }
+        });
+        t.textContent = 'Create account';
+        t.style.pointerEvents = '';
+        if(error){
+          if(error.message.includes('already registered') || error.code === 'user_already_exists'){
+            msgEl.textContent = 'That email is already registered. Try signing in instead.';
+          } else {
+            msgEl.textContent = 'Something went wrong. Check your connection and try again.';
+          }
+          msgEl.style.color = '#f5a0a0';
+        } else {
+          msgEl.textContent = "Account created \u2014 you're in!";
+          msgEl.style.color = '#7dffb0';
+        }
+
+      // ── Forgot password — show send-reset UI ──
+      } else if(t.id === 'auth-forgot-pw'){
+        const emailEl = document.getElementById('auth-email');
+        const passEl = document.getElementById('auth-pass');
+        const displayEl = document.getElementById('auth-display-name');
+        const ageLabel = document.getElementById('auth-age-label');
+        const ageSub = document.getElementById('auth-age-sub');
+        const forgotBtn = document.getElementById('auth-forgot-pw');
+        const msgEl = document.getElementById('auth-status');
+        // Hide everything except email
+        if(passEl) passEl.style.display = 'none';
+        if(displayEl) displayEl.style.display = 'none';
+        if(ageLabel) ageLabel.style.display = 'none';
+        if(ageSub) ageSub.style.display = 'none';
+        if(forgotBtn) forgotBtn.style.display = 'none';
+        if(msgEl) msgEl.textContent = '';
+        // Change email placeholder
+        if(emailEl) emailEl.placeholder = 'Your account email';
+        // Replace .fp-auth-row with send-reset + back buttons
+        const row = document.querySelector('#ov-auth .fp-auth-row');
+        if(row){
+          row.innerHTML = '<button type="button" id="auth-send-reset" class="fp-btn-play btn-play" style="padding:12px 16px;min-height:44px;width:100%">Send reset link</button>' +
+            '<button type="button" id="auth-back-signin" style="background:none;border:none;color:var(--teal);font-size:13px;cursor:pointer;padding:4px 0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;">Back to sign in</button>';
+        }
+
+      // ── Send reset link ──
+      } else if(t.id === 'auth-send-reset'){
+        const email = document.getElementById('auth-email').value.trim();
+        const msgEl = document.getElementById('auth-status');
+        const row = document.querySelector('#ov-auth .fp-auth-row');
+        const emailEl = document.getElementById('auth-email');
+        if(!email){ msgEl.textContent = 'Enter your email above.'; msgEl.style.color = '#f5a0a0'; return; }
+        t.textContent = '\u00B7\u00B7\u00B7';
+        t.style.pointerEvents = 'none';
+        const { error } = await sb.auth.resetPasswordForEmail(email);
+        t.textContent = 'Send reset link';
+        t.style.pointerEvents = '';
+        if(error){
+          msgEl.textContent = 'Something went wrong. Check your connection and try again.';
+          msgEl.style.color = '#f5a0a0';
+        } else {
+          // Hide form, show confirmation
+          if(row) row.style.display = 'none';
+          if(emailEl) emailEl.style.display = 'none';
+          msgEl.textContent = 'Reset link sent \u2014 check your email.';
+          msgEl.style.color = '#7dffb0';
+        }
+
+      // ── Back to sign in ──
+      } else if(t.id === 'auth-back-signin'){
+        restoreAuthForm('signin');
+
+      // ── Save new password (after PASSWORD_RECOVERY) ──
+      } else if(t.id === 'auth-set-new-pw'){
+        const password = document.getElementById('auth-pass').value;
+        const msgEl = document.getElementById('auth-status');
+        if(password.length < 8){
+          msgEl.textContent = 'Password must be at least 8 characters.';
+          msgEl.style.color = '#f5a0a0';
+          return;
+        }
+        t.textContent = '\u00B7\u00B7\u00B7';
+        t.style.pointerEvents = 'none';
+        const { error } = await sb.auth.updateUser({ password });
+        t.textContent = 'Save new password';
+        t.style.pointerEvents = '';
+        if(error){
+          msgEl.textContent = 'Something went wrong. Check your connection and try again.';
+          msgEl.style.color = '#f5a0a0';
+        } else {
+          msgEl.textContent = 'Password updated! You are signed in.';
+          msgEl.style.color = '#7dffb0';
+          // Restore auth form after short delay
+          setTimeout(()=> restoreAuthForm('signin'), 2000);
+        }
+      }
+    });
+
   }catch(e){
     console.error(e);
     const msgEl=document.getElementById('auth-status');
     if(msgEl) msgEl.textContent='Auth failed (see console)';
   }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PASSWORD RECOVERY — shown when user returns from reset link
+// ═══════════════════════════════════════════════════════════
+function showPasswordResetForm(){
+  const authEl = document.getElementById('ov-auth');
+  if(!authEl) return;
+  // Make sure auth panel is visible
+  authEl.style.display = 'block';
+  authEl.dataset.fpOpen = '1';
+
+  // Hide all existing fields except password
+  ['auth-email','auth-display-name','auth-age-label','auth-age-sub','auth-forgot-pw'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
+
+  const row = authEl.querySelector('.fp-auth-row');
+  const msgEl = document.getElementById('auth-status');
+  if(msgEl){ msgEl.textContent = 'Set your new password below.'; msgEl.style.color = '#7dffb0'; }
+
+  // Show new password field
+  const passEl = document.getElementById('auth-pass');
+  if(passEl){
+    passEl.style.display = '';
+    passEl.value = '';
+    passEl.placeholder = 'New password (8+ characters)';
+    passEl.autocomplete = 'new-password';
+  }
+
+  if(row){
+    row.style.display = '';
+    row.innerHTML = '<button type="button" id="auth-set-new-pw" class="fp-btn-play btn-play" style="padding:12px 16px;min-height:44px;width:100%">Save new password</button>';
+  }
+
+  // Ensure overlay is visible
+  const overlay = document.getElementById('overlay');
+  if(overlay) overlay.style.display = 'flex';
 }
 
 // ═══════════════════════════════════════════════════════════
