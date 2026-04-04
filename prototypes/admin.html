@@ -1072,8 +1072,9 @@ async function loadFlaggedCard(){
     return;
   }
   try{
+    // Step 1: fetch unvalidated runs (no join — avoids PostgREST FK ambiguity)
     const { data: flagged, count } = await sb.from('runs')
-      .select('id, user_id, score, created_at, profiles(display_name, username)', {count:'exact'})
+      .select('id, user_id, score, created_at', {count:'exact'})
       .eq('week_id', aw.id).eq('is_validated', false)
       .order('score',{ascending:false}).limit(3);
     const total = count || 0;
@@ -1083,11 +1084,19 @@ async function loadFlaggedCard(){
       bodyEl.innerHTML = '<div class="empty" style="padding:12px;color:var(--ok-t)">✓ No flagged runs</div>';
       return;
     }
+    // Step 2: fetch profiles for those user_ids
+    const uids = [...new Set((flagged||[]).map(r=>r.user_id).filter(Boolean))];
+    const { data: profiles } = uids.length
+      ? await sb.from('profiles').select('id, display_name, username').in('id', uids)
+      : { data: [] };
+    const pMap = Object.fromEntries((profiles||[]).map(p=>[p.id, p]));
+    const label = r => { const p=pMap[r.user_id]; return p?.display_name||p?.username||'Unknown'; };
+
     const warnHtml = `<div class="notice notice-warn" style="margin-bottom:10px">Review before Sunday's live show. Top 3 must be clean to award prize.</div>`;
     const itemsHtml = (flagged||[]).slice(0,2).map(r=>`
       <div class="flag-item">
         <div style="flex:1">
-          <div style="font-size:13px;font-weight:500">${esc(r.profiles?.display_name||r.profiles?.username||'Unknown')}</div>
+          <div style="font-size:13px;font-weight:500">${esc(label(r))}</div>
           <div class="flag-reason">High outlier score</div>
         </div>
         <span class="mono" style="font-size:13px">${(r.score??0).toLocaleString()}</span>
@@ -1099,9 +1108,10 @@ async function loadFlaggedCard(){
            onclick="showSection('users');window._switchUserTab('flagged')">+${total-2} more flagged →</div>`
       : '';
     bodyEl.innerHTML = warnHtml + itemsHtml + moreHtml;
-  }catch{
+  }catch(e){
+    console.error('loadFlaggedCard', e);
     badge.style.display = 'none';
-    bodyEl.innerHTML = '<div class="empty" style="padding:12px;color:var(--muted)">is_validated column not found — flagged runs unavailable.</div>';
+    bodyEl.innerHTML = '<div class="empty" style="padding:12px;color:var(--muted)">Error loading flagged runs — see console.</div>';
   }
 }
 
@@ -1372,17 +1382,26 @@ async function loadFlaggedTab(){
   if(!activeWeek){ tbody.innerHTML='<tr><td colspan="5" class="empty">No active week.</td></tr>'; return; }
   tbody.innerHTML = '<tr><td colspan="5" class="empty">Loading…</td></tr>';
   try{
+    // Step 1: fetch unvalidated runs without join
     const { data: flagged, count } = await sb.from('runs')
-      .select('id, user_id, score, created_at, profiles(display_name, username)',{count:'exact'})
+      .select('id, user_id, score, created_at',{count:'exact'})
       .eq('week_id', activeWeek.id).eq('is_validated', false).order('score',{ascending:false});
     if(notice){
       if(count){ notice.textContent=`${count} run${count!==1?'s':''} flagged this week. Review before Sunday to confirm the winner.`; notice.style.display='block'; }
       else notice.style.display='none';
     }
     if(!flagged?.length){ tbody.innerHTML='<tr><td colspan="5" class="empty">No flagged runs this week.</td></tr>'; return; }
+    // Step 2: fetch profiles for those user_ids
+    const uids = [...new Set(flagged.map(r=>r.user_id).filter(Boolean))];
+    const { data: profiles } = uids.length
+      ? await sb.from('profiles').select('id, display_name, username').in('id', uids)
+      : { data: [] };
+    const pMap = Object.fromEntries((profiles||[]).map(p=>[p.id, p]));
+    const label = r => { const p=pMap[r.user_id]; return p?.display_name||p?.username||'Unknown'; };
+
     tbody.innerHTML = flagged.map(r=>`
       <tr data-run-id="${r.id}" data-user-id="${r.user_id}">
-        <td>${esc(r.profiles?.display_name||r.profiles?.username||'Unknown')}</td>
+        <td>${esc(label(r))}</td>
         <td class="mono">${(r.score??0).toLocaleString()}</td>
         <td style="color:var(--danger);font-size:12px">High outlier</td>
         <td style="font-size:12px;color:var(--muted)">${fmtDate(r.created_at)}</td>
@@ -1392,7 +1411,7 @@ async function loadFlaggedTab(){
           <button class="btn btn-dng btn-xs btn-fl-ban">Ban player</button>
         </td>
       </tr>`).join('');
-  }catch{ tbody.innerHTML='<tr><td colspan="5" class="empty">is_validated column not found.</td></tr>'; }
+  }catch(e){ console.error('loadFlaggedTab', e); tbody.innerHTML='<tr><td colspan="5" class="empty">Error loading — see console.</td></tr>'; }
 }
 
 async function loadBannedTab(){
@@ -1466,7 +1485,7 @@ function exportCsv(){
 
 // ── Auth (preserved) ─────────────────────────────────────────────────────────
 
-function showAuthGate(){ document.getElementById('auth-gate').style.display='flex'; document.getElementById('admin-shell').classList.remove('visible'); }
+function showAuthGate(){ const g=document.getElementById('auth-gate'); if(g) g.style.display='flex'; document.getElementById('admin-shell').classList.remove('visible'); }
 function showAdminPanel(){
   const gate = document.getElementById('auth-gate');
   if(gate) gate.remove(); // remove from DOM so password manager stops watching inputs
@@ -1522,15 +1541,18 @@ async function boot(){
     else onSignedOut();
   });
 
-  // Sign-in form
-  document.getElementById('signin-form').addEventListener('submit', async()=>{
-    const email = document.getElementById('g-email').value.trim();
-    const pass  = document.getElementById('g-pass').value;
-    const errEl = document.getElementById('signin-err');
-    errEl.style.display = 'none';
-    const { error } = await sb.auth.signInWithPassword({email, password:pass});
-    if(error){ errEl.textContent=error.message; errEl.style.display='block'; }
-  });
+  // Sign-in form (may already be removed from DOM if session restored on load)
+  const signinForm = document.getElementById('signin-form');
+  if(signinForm){
+    signinForm.addEventListener('submit', async()=>{
+      const email = document.getElementById('g-email').value.trim();
+      const pass  = document.getElementById('g-pass').value;
+      const errEl = document.getElementById('signin-err');
+      errEl.style.display = 'none';
+      const { error } = await sb.auth.signInWithPassword({email, password:pass});
+      if(error){ errEl.textContent=error.message; errEl.style.display='block'; }
+    });
+  }
 
   // Sidebar nav
   document.querySelectorAll('.nav-item').forEach(btn=>{
