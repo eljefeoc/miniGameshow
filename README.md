@@ -100,7 +100,8 @@ Verify in **Table Editor**: **`runs`**, **`leaderboard`**, **`daily_attempts`**.
 | `supabase/schema.sql` | Full schema — paste in SQL Editor |
 | `supabase/migrations/20250327120000_initial_schema.sql` | Same SQL for `supabase db push` |
 | `supabase/pre_flight_check.sql` | Conflict check queries (step 0) |
-| `supabase/config.toml` | Supabase CLI / local dev |
+| `supabase/config.toml` | Supabase CLI / local dev; Edge `verify_jwt` for admin functions |
+| `scripts/deploy-supabase-functions.sh` | Used by `npm run deploy:functions` |
 | `.env.example` | Template for server-side env vars |
 | `prototypes/supabase-config.example.js` | Template for browser prototype keys |
 
