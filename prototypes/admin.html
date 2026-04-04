@@ -5,298 +5,364 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MiniGameshow — Admin</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --bg:        #0a0614;
-  --surface:   #12092a;
-  --border:    rgba(180,140,255,0.18);
-  --accent:    #ffcc44;
-  --accent2:   #a855f7;
-  --green:     #22c55e;
-  --red:       #ef4444;
-  --amber:     #f59e0b;
-  --muted:     #6b7280;
-  --text:      #e2e8f0;
-  --text-dim:  #94a3b8;
-  --card-bg:   rgba(18,9,42,0.95);
+  --accent:       #7F77DD;
+  --accent-dark:  #534AB7;
+  --page-bg:      #f5f5f3;
+  --sidebar-bg:   #ffffff;
+  --card-bg:      #ffffff;
+  --body:         #1a1a1a;
+  --muted:        #6b7280;
+  --border:       rgba(0,0,0,0.12);
+  --r:            8px;
+  --rc:           12px;
+  --danger:       #A32D2D;
+  --danger-b:     #F09595;
+  --warn-bg:      #FAEEDA;
+  --warn-b:       #FAC775;
+  --warn-t:       #633806;
+  --ok-bg:        #EAF3DE;
+  --ok-t:         #3B6D11;
+  --info-bg:      #E6F1FB;
+  --info-t:       #185FA5;
+  --comp-bg:      #EEEDFE;
+  --comp-t:       #3C3489;
+  --red:          #ef4444;
+  --green:        #22c55e;
 }
 
 html, body {
-  background:var(--bg);
-  color:var(--text);
+  background: var(--page-bg);
+  color: var(--body);
   font-family: system-ui, -apple-system, sans-serif;
-  font-size:14px;
-  min-height:100%;
+  font-size: 14px;
+  min-height: 100%;
 }
 
-/* ── layout ── */
-body { display:flex; flex-direction:column; min-height:100vh; }
-
-header {
-  background:rgba(10,6,20,0.96);
-  border-bottom:1px solid var(--border);
-  padding:14px 24px;
-  display:flex; align-items:center; justify-content:space-between;
-  gap:16px; position:sticky; top:0; z-index:100;
-}
-.header-brand {
-  font-family:'Press Start 2P', monospace;
-  font-size:11px;
-  color:var(--accent);
-  text-shadow:2px 2px 0 #884400;
-  letter-spacing:1px;
-}
-.header-user {
-  display:flex; align-items:center; gap:10px;
-  font-size:12px; color:var(--text-dim);
-}
-
-main { flex:1; padding:28px 24px; max-width:1000px; margin:0 auto; width:100%; }
-
-/* ── auth gate ── */
+/* ── Auth gate ─────────────────────────────────────────────────────── */
 #auth-gate {
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  min-height:60vh; gap:20px; text-align:center;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh; gap: 24px; text-align: center; padding: 24px;
 }
-#auth-gate h2 {
-  font-family:'Press Start 2P', monospace;
-  font-size:14px; color:var(--accent); margin-bottom:8px;
-}
-#auth-gate p { color:var(--text-dim); line-height:1.7; max-width:380px; }
-
-/* ── admin panel ── */
-#admin-panel { display:none; flex-direction:column; gap:28px; }
-
-/* ── cards ── */
-.card {
-  background:var(--card-bg);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:22px 24px;
-}
-.card-header {
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:18px; gap:12px;
-}
-.card-title {
-  font-family:'Press Start 2P', monospace;
-  font-size:10px; color:var(--accent);
-  letter-spacing:1px;
-}
-
-/* ── buttons ── */
-.btn {
-  display:inline-flex; align-items:center; gap:6px;
-  padding:8px 16px; border-radius:8px; border:none;
-  font-size:12px; font-weight:600; cursor:pointer;
-  transition:filter .15s, transform .1s;
-}
-.btn:active { transform:scale(0.96); }
-.btn-primary {
-  background:var(--accent2); color:#fff;
-  box-shadow:0 0 16px rgba(168,85,247,0.3);
-}
-.btn-primary:hover { filter:brightness(1.15); }
-.btn-success {
-  background:var(--green); color:#fff;
-  box-shadow:0 0 14px rgba(34,197,94,0.25);
-}
-.btn-success:hover { filter:brightness(1.15); }
-.btn-danger  { background:var(--red); color:#fff; }
-.btn-danger:hover { filter:brightness(1.15); }
-.btn-ghost {
-  background:transparent; color:var(--text-dim);
-  border:1px solid var(--border);
-}
-.btn-ghost:hover { background:rgba(255,255,255,0.05); color:var(--text); }
-.btn-sm { padding:5px 10px; font-size:11px; border-radius:6px; }
-
-/* ── form ── */
-#week-form { display:none; flex-direction:column; gap:0; }
-#week-form.visible { display:flex; }
-
-.form-grid {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px 20px;
-}
-@media(max-width:600px){ .form-grid { grid-template-columns:1fr; } }
-
-.form-group {
-  display:flex; flex-direction:column; gap:5px;
-}
-.form-group.full { grid-column:1/-1; }
-
-label {
-  font-size:11px; font-weight:600;
-  color:var(--text-dim); letter-spacing:0.5px;
-}
-.label-hint {
-  font-size:10px; color:var(--muted);
-  font-weight:normal; margin-left:6px;
-}
-
-input[type=text], input[type=url], input[type=number],
-input[type=datetime-local], select, textarea {
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(180,140,255,0.22);
-  border-radius:8px;
-  color:var(--text);
-  font-size:13px;
-  padding:9px 12px;
-  width:100%;
-  transition:border-color .15s, box-shadow .15s;
-  font-family:inherit;
-}
-input:focus, select:focus, textarea:focus {
-  outline:none;
-  border-color:var(--accent2);
-  box-shadow:0 0 0 3px rgba(168,85,247,0.18);
-}
-textarea { resize:vertical; min-height:72px; }
-select option { background:#1e1040; }
-
-.form-divider {
-  grid-column:1/-1;
-  border:none; border-top:1px solid var(--border);
-  margin:6px 0 2px;
-}
-.form-section-label {
-  grid-column:1/-1;
-  font-size:10px; font-weight:700;
-  color:var(--accent2); letter-spacing:1.5px;
-  text-transform:uppercase;
-  padding-top:4px;
-}
-.form-actions {
-  display:flex; gap:10px; padding-top:6px; grid-column:1/-1;
-  flex-wrap:wrap;
-}
-
-/* ── hud preview ── */
-#hud-preview {
-  background:linear-gradient(to bottom, rgba(10,4,30,0.92) 0%, rgba(10,4,30,0.75) 100%);
-  border-radius:10px;
-  padding:10px 14px;
-  font-family:'Press Start 2P', monospace;
-  font-size:10px;
-  line-height:2;
-  border:1px solid rgba(255,170,100,0.2);
-}
-.prev-prize { color:#ffe600; }
-.prev-prize span { color:#ffaa55; font-size:8px; margin-right:6px; }
-.prev-sched-normal { color:#ffbb66; font-size:8px; }
-.prev-sched-urgent { color:#ff3333; font-size:8px; }
-.prev-sched-closed { color:#778899; font-size:8px; }
-
-/* ── weeks table ── */
-.weeks-table-wrap { overflow-x:auto; }
-table {
-  width:100%; border-collapse:collapse;
-  font-size:12px;
-}
-th {
-  text-align:left; padding:8px 12px;
-  font-size:10px; font-weight:700;
-  color:var(--text-dim); letter-spacing:0.8px;
-  border-bottom:1px solid var(--border);
-}
-td {
-  padding:11px 12px;
-  border-bottom:1px solid rgba(180,140,255,0.08);
-  vertical-align:middle;
-}
-tr:hover td { background:rgba(255,255,255,0.025); }
-
-/* ── status badges ── */
-.badge {
-  display:inline-block;
-  padding:2px 8px; border-radius:100px;
-  font-size:10px; font-weight:700; letter-spacing:0.5px;
-}
-.badge-active   { background:rgba(34,197,94,0.18); color:#4ade80; border:1px solid rgba(34,197,94,0.35); }
-.badge-upcoming { background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.30); }
-.badge-past     { background:rgba(107,114,128,0.15); color:#9ca3af; border:1px solid rgba(107,114,128,0.25); }
-
-/* ── status/toast ── */
-#status-bar {
-  display:none;
-  position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
-  background:#1e1040; border:1px solid var(--border);
-  border-radius:10px; padding:11px 20px;
-  font-size:12px; color:var(--text);
-  box-shadow:0 4px 24px rgba(0,0,0,0.5);
-  z-index:999; max-width:420px; text-align:center;
-}
-#status-bar.ok  { border-color:rgba(34,197,94,0.5); color:#4ade80; }
-#status-bar.err { border-color:rgba(239,68,68,0.5); color:#f87171; }
-
-/* ── info note ── */
-.note {
-  background:rgba(168,85,247,0.08);
-  border:1px solid rgba(168,85,247,0.25);
-  border-radius:8px; padding:12px 16px;
-  font-size:12px; color:var(--text-dim); line-height:1.7;
-}
-.note strong { color:var(--text); }
-.note code {
-  background:rgba(255,255,255,0.1);
-  padding:1px 5px; border-radius:4px;
-  font-family:monospace; font-size:11px; color:#c4b5fd;
-}
-
-/* ── sign-in form in gate ── */
+#auth-gate h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+#auth-gate p  { color: var(--muted); line-height: 1.7; max-width: 380px; }
 .auth-form {
-  display:flex; flex-direction:column; gap:10px;
-  width:100%; max-width:320px;
+  display: flex; flex-direction: column; gap: 10px;
+  width: 100%; max-width: 320px;
 }
 .auth-form input {
-  padding:10px 14px;
-  background:rgba(255,255,255,0.06);
-  border:1px solid var(--border); border-radius:8px;
-  color:var(--text); font-size:13px; font-family:inherit;
+  padding: 10px 14px; background: #fff;
+  border: 1px solid var(--border); border-radius: var(--r);
+  color: var(--body); font-size: 14px; font-family: inherit;
 }
-.auth-form input:focus {
-  outline:none; border-color:var(--accent2);
-  box-shadow:0 0 0 3px rgba(168,85,247,0.18);
+.auth-form input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(127,119,221,.15); }
+
+/* ── Shell ─────────────────────────────────────────────────────────── */
+#admin-shell { display: none; min-height: 100vh; }
+#admin-shell.visible { display: flex; }
+
+/* ── Sidebar ───────────────────────────────────────────────────────── */
+#sidebar {
+  width: 200px; min-width: 200px;
+  background: var(--sidebar-bg);
+  border-right: 0.5px solid var(--border);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.sidebar-brand {
+  padding: 20px 16px 16px;
+  font-weight: 700; font-size: 13px; letter-spacing: .02em;
+  color: var(--accent);
+  border-bottom: 0.5px solid var(--border);
+}
+.sidebar-nav { padding: 12px 8px; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  display: block; width: 100%; text-align: left;
+  padding: 9px 12px; border: none; border-radius: var(--r);
+  background: transparent; color: var(--muted); font-size: 13px;
+  cursor: pointer; transition: background .12s, color .12s; font-family: inherit;
+}
+.nav-item:hover  { background: var(--page-bg); color: var(--body); }
+.nav-item.active { background: var(--comp-bg); color: var(--accent-dark); font-weight: 600; }
+.sidebar-footer {
+  padding: 14px 16px; border-top: 0.5px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.sidebar-email {
+  font-size: 11px; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* ── users / modal ── */
-#users-card .users-toolbar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
-#users-card .users-toolbar span { font-size:12px; color:var(--text-dim); }
-.user-cb { width:18px; height:18px; cursor:pointer; accent-color:var(--accent2); }
-.user-actions { display:flex; gap:6px; flex-wrap:wrap; }
+/* ── Content ───────────────────────────────────────────────────────── */
+#content { flex: 1; padding: 24px; overflow-y: auto; min-width: 0; }
+.admin-section { display: none; }
+.admin-section.active { display: block; }
+
+/* ── Not-admin note ─────────────────────────────────────────────────── */
+#not-admin-note {
+  display: none;
+  background: var(--warn-bg); border: 1px solid var(--warn-b);
+  border-radius: var(--r); padding: 12px 16px;
+  font-size: 13px; color: var(--warn-t); margin-bottom: 20px;
+}
+
+/* ── Page titles ────────────────────────────────────────────────────── */
+.page-title { font-size: 18px; font-weight: 700; color: var(--body); margin-bottom: 20px; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+
+/* ── Stats row ──────────────────────────────────────────────────────── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 14px; margin-bottom: 20px;
+}
+@media(max-width:900px){ .stats-row { grid-template-columns: repeat(2,1fr); } }
+.stat-tile {
+  background: var(--card-bg); border: 0.5px solid var(--border);
+  border-radius: var(--rc); padding: 18px 20px;
+}
+.stat-value { font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.stat-value.red { color: var(--danger); }
+.stat-label { font-size: 12px; color: var(--muted); }
+.stat-sub   { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+/* ── Two-column ────────────────────────────────────────────────────── */
+.two-col {
+  display: grid; grid-template-columns: 1fr 340px;
+  gap: 16px; margin-bottom: 20px;
+}
+@media(max-width:1000px){ .two-col { grid-template-columns: 1fr; } }
+.right-col { display: flex; flex-direction: column; gap: 14px; }
+
+/* ── Cards ─────────────────────────────────────────────────────────── */
+.card {
+  background: var(--card-bg); border: 0.5px solid var(--border);
+  border-radius: var(--rc); padding: 20px;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; gap: 12px; flex-wrap: wrap;
+}
+.card-title { font-size: 14px; font-weight: 600; }
+
+/* ── Section labels ─────────────────────────────────────────────────── */
+.sec-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--accent); margin-bottom: 8px;
+}
+.sec-rule { border: none; border-top: 0.5px solid var(--border); margin-bottom: 16px; }
+
+/* ── Buttons ────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: var(--r); border: none;
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: filter .12s, opacity .12s; font-family: inherit;
+}
+.btn:active  { opacity: .85; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary  { background: var(--accent); color: #fff; }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-secondary { background: transparent; color: var(--body); border: 0.5px solid var(--border); }
+.btn-secondary:hover { background: var(--page-bg); }
+.btn-dng { background: transparent; color: var(--danger); border: 1px solid var(--danger-b); }
+.btn-dng:hover { background: #fff0f0; }
+.btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+.btn-xs { padding: 3px 8px;  font-size: 11px; border-radius: 5px; }
+
+/* ── Tabs ───────────────────────────────────────────────────────────── */
+.tabs { display: flex; gap: 4px; background: var(--page-bg); border-radius: var(--r); padding: 3px; }
+.tab-btn {
+  padding: 5px 12px; border: none; border-radius: 6px;
+  background: transparent; font-size: 12px; font-weight: 500;
+  color: var(--muted); cursor: pointer; transition: background .1s, color .1s; font-family: inherit;
+}
+.tab-btn.active { background: var(--card-bg); color: var(--body); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+/* ── Tables ─────────────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; padding: 8px 12px;
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  letter-spacing: .03em; border-bottom: 0.5px solid var(--border); white-space: nowrap;
+}
+td {
+  padding: 10px 12px; border-bottom: 0.5px solid rgba(0,0,0,.05);
+  vertical-align: middle;
+}
+tr:last-child td  { border-bottom: none; }
+tr:hover td       { background: rgba(0,0,0,.02); }
+.row-gold td      { background: rgba(250,199,75,.08) !important; }
+.table-wrap       { overflow-x: auto; }
+.table-footer     { font-size: 12px; color: var(--muted); padding: 10px 12px 0; }
+
+/* ── Attempt dots ───────────────────────────────────────────────────── */
+.dots { display: flex; gap: 3px; align-items: center; }
+.dot  { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--accent); }
+.dot.on { background: var(--accent); }
+
+/* ── Badges ─────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 100px;
+  font-size: 11px; font-weight: 600; letter-spacing: .02em;
+}
+.badge-active   { background: var(--ok-bg);   color: var(--ok-t); }
+.badge-upcoming { background: #FEF3C7;         color: #92400E; }
+.badge-past     { background: #F3F4F6;         color: #6B7280; }
+.badge-18       { background: var(--ok-bg);   color: var(--ok-t); }
+.badge-prac     { background: var(--info-bg); color: var(--info-t); }
+.badge-banned   { background: #FEE2E2;         color: #991B1B; }
+.count-dot {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--danger); color: #fff; border-radius: 100px;
+  min-width: 18px; height: 18px; font-size: 10px; font-weight: 700;
+  padding: 0 5px; margin-left: 6px;
+}
+
+/* ── Notices ────────────────────────────────────────────────────────── */
+.notice { padding: 10px 14px; border-radius: var(--r); font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+.notice-warn { background: var(--warn-bg); border: 1px solid var(--warn-b); color: var(--warn-t); }
+.notice-dng  { background: #FEF2F2;       border: 1px solid var(--danger-b); color: var(--danger); }
+.notice-info { background: var(--info-bg); border: 1px solid #B3D0F0;        color: var(--info-t); }
+
+/* ── Progress ───────────────────────────────────────────────────────── */
+.prog-wrap { margin: 10px 0 4px; }
+.prog-bg { height: 6px; background: var(--page-bg); border-radius: 100px; overflow: hidden; border: 0.5px solid var(--border); }
+.prog-fill { height: 100%; background: var(--accent); border-radius: 100px; transition: width .3s; }
+.prog-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── Glance rows ────────────────────────────────────────────────────── */
+.glance-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; padding: 4px 0; }
+.glance-lbl { color: var(--muted); }
+.glance-val { font-weight: 500; }
+.mono       { font-family: monospace; font-size: 12px; }
+
+/* ── Activity ───────────────────────────────────────────────────────── */
+.act-list { display: flex; flex-direction: column; gap: 10px; }
+.act-row  { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+.act-dot  { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+.act-dot.purple { background: var(--accent); }
+.act-dot.green  { background: var(--green); }
+.act-dot.red    { background: var(--red); }
+.act-txt  { flex: 1; line-height: 1.4; }
+.act-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* ── Flagged items ──────────────────────────────────────────────────── */
+.flag-item {
+  padding: 10px 0; border-bottom: 0.5px solid rgba(0,0,0,.06);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.flag-item:last-of-type { border-bottom: none; }
+.flag-reason { font-size: 12px; color: var(--danger); }
+
+/* ── Danger zone ────────────────────────────────────────────────────── */
+.danger-zone {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 14px 16px; background: var(--card-bg);
+  border: 0.5px solid var(--border); border-radius: var(--rc); margin-top: 4px;
+}
+.dng-label {
+  font-size: 11px; color: var(--danger); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; margin-right: 4px;
+}
+
+/* ── Form (section 2) ───────────────────────────────────────────────── */
+.form-sec { margin-bottom: 28px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
+@media(max-width:640px){ .form-grid { grid-template-columns: 1fr; } }
+.fg { display: flex; flex-direction: column; gap: 5px; }
+.fg.full { grid-column: 1 / -1; }
+label   { font-size: 12px; font-weight: 500; color: var(--muted); }
+.lhint  { font-size: 11px; color: var(--muted); font-weight: normal; margin-left: 4px; }
+
+input[type=text],
+input[type=url],
+input[type=number],
+input[type=datetime-local],
+select,
+textarea {
+  background: #fff; border: 1px solid rgba(0,0,0,.15);
+  border-radius: var(--r); color: var(--body);
+  font-size: 13px; padding: 9px 12px; width: 100%;
+  transition: border-color .15s, box-shadow .15s; font-family: inherit;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(127,119,221,.12);
+}
+textarea { resize: vertical; min-height: 64px; }
+.form-actions {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding-top: 8px; border-top: 0.5px solid var(--border); margin-top: 8px;
+}
+
+/* ── HUD preview ────────────────────────────────────────────────────── */
+#hud-preview {
+  background: #13101f; border-radius: var(--r);
+  padding: 10px 14px; font-family: monospace; font-size: 12px; line-height: 2; margin-top: 8px;
+}
+.prev-prize  { color: #ffe600; }
+.prev-sched  { color: #ffbb66; font-size: 11px; }
+
+/* ── User admin ─────────────────────────────────────────────────────── */
+.user-tabs { display: flex; border-bottom: 0.5px solid var(--border); margin-bottom: 16px; }
+.utab-btn {
+  padding: 8px 16px; border: none; border-bottom: 2px solid transparent;
+  background: transparent; font-size: 13px; font-weight: 500; color: var(--muted);
+  cursor: pointer; margin-bottom: -0.5px; font-family: inherit;
+  transition: color .12s, border-color .12s;
+}
+.utab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.search-inp {
+  width: 100%; padding: 9px 14px; border: 1px solid rgba(0,0,0,.15);
+  border-radius: var(--r); font-size: 13px; font-family: inherit;
+  color: var(--body); background: #fff; margin-bottom: 14px;
+}
+.search-inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(127,119,221,.12); }
+.user-cb { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+.u-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Modal ──────────────────────────────────────────────────────────── */
 #modal-add-user {
-  display:none; position:fixed; inset:0; z-index:200;
-  background:rgba(0,0,0,0.65); align-items:center; justify-content:center; padding:20px;
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.4); align-items: center; justify-content: center; padding: 20px;
 }
-#modal-add-user.open { display:flex; }
+#modal-add-user.open { display: flex; }
 .modal-inner {
-  background:var(--card-bg); border:1px solid var(--border); border-radius:14px;
-  padding:22px; max-width:400px; width:100%;
+  background: var(--card-bg); border: 0.5px solid var(--border);
+  border-radius: var(--rc); padding: 24px; max-width: 400px; width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,.12);
 }
-.modal-inner h3 { font-size:14px; margin-bottom:12px; color:var(--accent); font-family:'Press Start 2P',monospace; }
-.modal-inner .form-group { margin-bottom:12px; }
-.modal-backdrop-btns { display:flex; gap:10px; margin-top:16px; justify-content:flex-end; }
+.modal-inner h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+.modal-inner .fg { margin-bottom: 12px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+
+/* ── Toast ──────────────────────────────────────────────────────────── */
+#status-bar {
+  display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--card-bg); border: 0.5px solid var(--border);
+  border-radius: 10px; padding: 11px 20px; font-size: 13px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.12); z-index: 999; max-width: 420px; text-align: center;
+}
+#status-bar.ok  { border-color: #86EFAC; color: var(--ok-t);   background: var(--ok-bg); }
+#status-bar.err { border-color: var(--danger-b); color: var(--danger); background: #FEF2F2; }
+
+/* ── Empty state ────────────────────────────────────────────────────── */
+.empty { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 13px; }
 </style>
 <script src="supabase-config.js"></script>
 <script>window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'', anonKey:'' };</script>
 </head>
 <body>
 
-<header>
-  <div class="header-brand">🎮 MINI GAMESHOW</div>
-  <div class="header-user">
-    <span id="hdr-user">Not signed in</span>
-    <button class="btn btn-ghost btn-sm" id="btn-signout" style="display:none">Sign out</button>
-  </div>
-</header>
-
-<!-- ── Auth gate ── -->
+<!-- ── Auth gate ──────────────────────────────────────────────────────── -->
 <div id="auth-gate">
   <div>
     <h2>Admin Panel</h2>
@@ -305,224 +371,339 @@ tr:hover td { background:rgba(255,255,255,0.025); }
   <form class="auth-form" id="signin-form" onsubmit="return false">
     <input id="g-email" type="email" autocomplete="email" placeholder="Email" required>
     <input id="g-pass"  type="password" autocomplete="current-password" placeholder="Password" required>
-    <button type="submit" class="btn btn-primary" id="btn-signin">Sign in</button>
-    <p id="signin-err" style="color:var(--red);font-size:12px;text-align:center;display:none"></p>
+    <button type="submit" class="btn btn-primary" id="btn-signin" style="width:100%">Sign in</button>
+    <p id="signin-err" style="color:var(--danger);font-size:12px;text-align:center;display:none"></p>
   </form>
 </div>
 
-<!-- ── Admin panel ── -->
-<div id="admin-panel">
-  <main>
+<!-- ── Admin shell ────────────────────────────────────────────────────── -->
+<div id="admin-shell">
 
-    <!-- Not-admin warning -->
-    <div id="not-admin-note" class="note" style="display:none;margin-bottom:20px">
+  <!-- Sidebar -->
+  <nav id="sidebar">
+    <div class="sidebar-brand">miniGameshow</div>
+    <div class="sidebar-nav">
+      <button class="nav-item active" data-section="live">◉ Live competition</button>
+      <button class="nav-item" data-section="new">＋ New competition</button>
+      <button class="nav-item" data-section="users">◻ User admin</button>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-avatar" id="sidebar-avatar">?</div>
+      <span class="sidebar-email" id="sidebar-email"></span>
+    </div>
+  </nav>
+
+  <!-- Content -->
+  <div id="content">
+    <div id="not-admin-note">
       ⚠ <strong>Not an admin account.</strong>
-      Set <code>is_admin = true</code> on your profile in the Supabase Table Editor,
-      then refresh this page.
+      Set <code style="background:var(--page-bg);padding:1px 5px;border-radius:4px;font-size:12px">is_admin = true</code>
+      on your profile in the Supabase Table Editor, then refresh this page.
     </div>
 
-    <!-- ── Weeks management ── -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Competition Weeks</div>
-        <button class="btn btn-primary btn-sm" id="btn-new-week">+ New Week</button>
+    <!-- ── Section 1: Live competition ── -->
+    <section id="section-live" class="admin-section active">
+      <div class="page-title">Live competition</div>
+
+      <div class="stats-row">
+        <div class="stat-tile">
+          <div class="stat-value" id="sv-players">—</div>
+          <div class="stat-label">Players</div>
+          <div class="stat-sub"  id="ss-players"></div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="sv-runs">—</div>
+          <div class="stat-label">Total runs</div>
+          <div class="stat-sub"  id="ss-runs"></div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="sv-flagged">—</div>
+          <div class="stat-label">Flagged</div>
+          <div class="stat-sub"  id="ss-flagged">needs review</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="sv-time">—</div>
+          <div class="stat-label">Until scoring closes</div>
+          <div class="stat-sub"  id="ss-time"></div>
+        </div>
       </div>
 
-      <!-- Create / Edit form -->
-      <form id="week-form">
-        <div class="form-grid">
-
-          <div class="form-section-label">Game &amp; Window</div>
-
-          <div class="form-group">
-            <label for="f-game">Game <span class="label-hint">required</span></label>
-            <select id="f-game" required></select>
-          </div>
-
-          <div class="form-group">
-            <label for="f-week-code">Week code <span class="label-hint">auto-suggested, unique</span></label>
-            <input type="text" id="f-week-code" placeholder="2026-W14" required>
-          </div>
-
-          <div class="form-group">
-            <label for="f-starts">Scoring opens <span class="label-hint">local time</span></label>
-            <input type="datetime-local" id="f-starts" required>
-          </div>
-
-          <div class="form-group">
-            <label for="f-ends">Scoring closes <span class="label-hint">Sat 23:59 local</span></label>
-            <input type="datetime-local" id="f-ends" required>
-          </div>
-
-          <hr class="form-divider">
-          <div class="form-section-label">Live Show</div>
-
-          <div class="form-group">
-            <label for="f-show-at">Show date &amp; time <span class="label-hint">local time</span></label>
-            <input type="datetime-local" id="f-show-at">
-          </div>
-
-          <div class="form-group">
-            <label for="f-show-url">Stream URL <span class="label-hint">optional</span></label>
-            <input type="url" id="f-show-url" placeholder="https://youtube.com/live/…">
-          </div>
-
-          <hr class="form-divider">
-          <div class="form-section-label">Prize</div>
-
-          <div class="form-group">
-            <label for="f-prize">Prize title <span class="label-hint">shown in game HUD</span></label>
-            <input type="text" id="f-prize" placeholder="$250 Amazon Gift Card" required>
-          </div>
-
-          <div class="form-group">
-            <label for="f-sponsor">Sponsor name <span class="label-hint">optional</span></label>
-            <input type="text" id="f-sponsor" placeholder="Acme Co.">
-          </div>
-
-          <div class="form-group full">
-            <label for="f-prize-desc">Prize description <span class="label-hint">share cards / leaderboard</span></label>
-            <textarea id="f-prize-desc" placeholder="Win a $250 Amazon gift card courtesy of Acme Co."></textarea>
-          </div>
-
-          <hr class="form-divider">
-          <div class="form-section-label">Seed (optional)</div>
-
-          <div class="form-group">
-            <label for="f-seed">Competition seed <span class="label-hint">auto from start date</span></label>
-            <input type="number" id="f-seed" placeholder="20260401">
-          </div>
-
-          <div class="form-group full" id="preview-wrap">
-            <label>HUD strip preview</label>
-            <div id="hud-preview">
-              <div><span class="prev-prize"><span>PRIZE</span><span id="prev-prize-val">···</span></span></div>
-              <div id="prev-sched" class="prev-sched-normal">Scoring closes Sat midnight · Live show Sun ···</div>
+      <div class="two-col">
+        <!-- Leaderboard -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Top 10 leaderboard</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <div class="tabs" id="lb-tabs">
+                <button class="tab-btn active" data-tab="competition">Competition</button>
+                <button class="tab-btn" data-tab="arcade">Arcade</button>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-csv">Export CSV</button>
             </div>
           </div>
+          <div class="table-wrap">
+            <table id="lb-table">
+              <thead><tr>
+                <th>#</th>
+                <th>Player</th>
+                <th>Best score</th>
+                <th id="lb-th-dots">Attempts</th>
+                <th>Last run</th>
+                <th></th>
+              </tr></thead>
+              <tbody id="lb-tbody"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="table-footer" id="lb-footer"></div>
+        </div>
 
-          <div class="form-actions">
-            <button type="submit" class="btn btn-success" id="btn-save-week">💾 Save Week</button>
-            <button type="button" class="btn btn-ghost" id="btn-cancel-form">Cancel</button>
-            <button type="button" class="btn btn-danger btn-sm" id="btn-delete-week" style="display:none;margin-left:auto">Delete</button>
+        <!-- Right stacked cards -->
+        <div class="right-col">
+
+          <!-- Week at a glance -->
+          <div class="card">
+            <div class="card-header" style="margin-bottom:12px">
+              <span class="card-title">Week at a glance</span>
+              <span id="glance-status"></span>
+            </div>
+            <div id="glance-body"><div class="empty" style="padding:12px">No active week</div></div>
           </div>
 
-        </div><!-- /form-grid -->
+          <!-- Flagged runs -->
+          <div class="card">
+            <div class="card-header" style="margin-bottom:10px">
+              <span class="card-title">Flagged runs<span class="count-dot" id="flagged-badge" style="display:none"></span></span>
+            </div>
+            <div id="flagged-body"><div class="empty" style="padding:12px">Loading…</div></div>
+          </div>
+
+          <!-- Activity feed -->
+          <div class="card">
+            <div class="card-header" style="margin-bottom:10px">
+              <span class="card-title">Activity</span>
+              <span style="font-size:11px;color:var(--muted)">Live · 30s</span>
+            </div>
+            <div id="activity-body"><div class="empty" style="padding:12px">Loading…</div></div>
+          </div>
+
+        </div><!-- /right-col -->
+      </div><!-- /two-col -->
+
+      <!-- Danger zone -->
+      <div class="danger-zone">
+        <span class="dng-label">Danger zone</span>
+        <button class="btn btn-dng btn-sm" id="btn-close-scoring">Close scoring early</button>
+        <button class="btn btn-dng btn-sm" id="btn-end-week">End week &amp; freeze leaderboard</button>
+      </div>
+    </section>
+
+    <!-- ── Section 2: New competition ── -->
+    <section id="section-new" class="admin-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div class="page-title" style="margin-bottom:0">New competition week</div>
+        <button class="btn btn-secondary btn-sm" id="btn-form-cancel-top">Cancel</button>
+      </div>
+
+      <form id="week-form" onsubmit="return false">
+
+        <div class="form-sec">
+          <div class="sec-label">Game &amp; Scoring Window</div>
+          <hr class="sec-rule">
+          <div class="form-grid">
+            <div class="fg">
+              <label for="f-game">Game <span class="lhint">required</span></label>
+              <select id="f-game" required></select>
+            </div>
+            <div class="fg">
+              <label for="f-week-code">Week code <span class="lhint">auto-suggested, unique</span></label>
+              <input type="text" id="f-week-code" placeholder="2026-W15" required>
+            </div>
+            <div class="fg">
+              <label for="f-starts">Scoring opens <span class="lhint">players' local time</span></label>
+              <input type="datetime-local" id="f-starts" required>
+            </div>
+            <div class="fg">
+              <label for="f-ends">Scoring closes <span class="lhint">Sat 23:59 local — enforced server-side</span></label>
+              <input type="datetime-local" id="f-ends" required>
+            </div>
+            <div class="fg full">
+              <label for="f-seed">Competition seed <span class="lhint">auto from start date, overridable</span></label>
+              <input type="number" id="f-seed" placeholder="20260401">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-sec">
+          <div class="sec-label">Prize &amp; Sponsor</div>
+          <hr class="sec-rule">
+          <div class="form-grid">
+            <div class="fg full">
+              <label for="f-prize">Prize title <span class="lhint">shown in game HUD</span></label>
+              <input type="text" id="f-prize" placeholder="$250 Amazon Gift Card" required>
+              <div id="hud-preview">
+                <div class="prev-prize">PRIZE: <span id="prev-prize-val">···</span></div>
+                <div class="prev-sched" id="prev-sched">Scoring closes Sat midnight · Live show Sun ···</div>
+              </div>
+            </div>
+            <div class="fg">
+              <label for="f-sponsor">Sponsor name <span class="lhint">optional</span></label>
+              <input type="text" id="f-sponsor" placeholder="Acme Co.">
+            </div>
+            <div class="fg full">
+              <label for="f-prize-desc">Prize description <span class="lhint">share cards &amp; leaderboard</span></label>
+              <textarea id="f-prize-desc" rows="2" placeholder="Win a $250 Amazon gift card courtesy of Acme Co."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-sec">
+          <div class="sec-label">Live Show</div>
+          <hr class="sec-rule">
+          <div class="form-grid">
+            <div class="fg">
+              <label for="f-show-at">Show date &amp; time <span class="lhint">your local time — shown as PT in HUD</span></label>
+              <input type="datetime-local" id="f-show-at">
+            </div>
+            <div class="fg">
+              <label for="f-show-url">Stream URL <span class="lhint">optional</span></label>
+              <input type="url" id="f-show-url" placeholder="https://youtube.com/live/...">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-form">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-week">Create competition week</button>
+        </div>
       </form>
-      <!-- /week-form -->
+    </section>
 
-      <!-- Weeks list -->
-      <div class="weeks-table-wrap" id="weeks-list-wrap">
-        <table id="weeks-table">
-          <thead>
-            <tr>
-              <th>Status</th>
-              <th>Week</th>
-              <th>Game</th>
-              <th>Scoring window</th>
-              <th>Live show</th>
-              <th>Prize</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="weeks-tbody">
-            <tr><td colspan="7" style="color:var(--muted);text-align:center;padding:24px">Loading…</td></tr>
-          </tbody>
-        </table>
+    <!-- ── Section 3: User admin ── -->
+    <section id="section-users" class="admin-section">
+      <div class="page-title">User admin</div>
+
+      <div class="user-tabs">
+        <button class="utab-btn active" data-utab="all">All players</button>
+        <button class="utab-btn" data-utab="flagged">Flagged</button>
+        <button class="utab-btn" data-utab="banned">Banned</button>
       </div>
 
-    </div><!-- /card -->
-
-    <div id="week-overlap-warn" class="note" style="display:none;margin-bottom:20px;border-color:var(--amber)"></div>
-
-    <!-- ── Users (admins only; Edge Functions required for list/create/delete) ── -->
-    <div class="card" id="users-card" style="display:none">
-      <div class="card-header">
-        <div class="card-title">Users &amp; testers</div>
-      </div>
-      <p class="note" style="margin-bottom:14px">
-        <strong>List / add / delete Auth users</strong> uses Supabase Edge Functions (service role on server only).
-        Deploy <code>admin-list-users</code>, <code>admin-auth-create-user</code>, <code>admin-auth-delete-user</code>
-        and set <code>SUPABASE_SERVICE_ROLE_KEY</code> for each. See <code>VERCEL.md</code>.
-        <strong>Ban</strong> and <strong>clear scores</strong> use DB RPCs after migration <code>20260330120000_admin_user_mgmt.sql</code>.
-      </p>
-      <div class="users-toolbar">
-        <button type="button" class="btn btn-primary btn-sm" id="btn-users-refresh">Refresh list</button>
-        <button type="button" class="btn btn-success btn-sm" id="btn-user-add">+ Add user</button>
-        <span id="users-fn-status"></span>
-      </div>
-      <div class="weeks-table-wrap">
-        <table>
-          <thead>
-            <tr>
+      <!-- All players -->
+      <div id="utab-all">
+        <input type="search" class="search-inp" id="user-search" placeholder="Search by display name or email…">
+        <div id="users-fn-note" class="notice notice-info" style="display:none">
+          User list requires the <strong>admin-list-users</strong> Edge Function deployed with
+          <code style="font-size:12px;background:var(--page-bg);padding:1px 5px;border-radius:4px">SUPABASE_SERVICE_ROLE_KEY</code>.
+          See <code style="font-size:12px;background:var(--page-bg);padding:1px 5px;border-radius:4px">VERCEL.md</code>.
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" id="btn-users-refresh">Refresh list</button>
+          <button class="btn btn-secondary btn-sm" id="btn-user-add">+ Add user</button>
+          <span id="users-fn-status" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Display name</th>
               <th>Email</th>
-              <th>Display</th>
+              <th>Age</th>
               <th>Admin</th>
-              <th>Banned</th>
               <th>Joined</th>
+              <th>This week</th>
+              <th>Status</th>
               <th></th>
-            </tr>
-          </thead>
-          <tbody id="users-tbody">
-            <tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Sign in as admin, then refresh.</td></tr>
-          </tbody>
-        </table>
+            </tr></thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="8" class="empty">Sign in as admin, then refresh.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer" id="users-footer"></div>
       </div>
-    </div>
 
-    <!-- ── Setup note ── -->
-    <div class="note">
-      <strong>Setup reminder:</strong>
-      After running the <code>20260329120000_admin_weeks.sql</code> migration, go to
-      Supabase → Table Editor → <code>profiles</code>, find your row, and set
-      <code>is_admin = true</code>. Refresh this page. You will then be able to create and
-      edit competition weeks. The game HUD pulls <strong>prize title</strong> and
-      <strong>show time</strong> live from the active week row.
-    </div>
+      <!-- Flagged -->
+      <div id="utab-flagged" style="display:none">
+        <div id="flagged-tab-notice" class="notice notice-dng" style="display:none"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Player</th><th>Score</th><th>Flag reason</th><th>Run date</th><th></th>
+            </tr></thead>
+            <tbody id="flagged-tab-tbody">
+              <tr><td colspan="5" class="empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-  </main>
-</div>
+      <!-- Banned -->
+      <div id="utab-banned" style="display:none">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Display name</th><th>Email</th><th>Banned since</th><th></th>
+            </tr></thead>
+            <tbody id="banned-tbody">
+              <tr><td colspan="4" class="empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
+    </section>
+
+  </div><!-- /content -->
+</div><!-- /admin-shell -->
+
+<!-- Modal: Add user (preserved) -->
 <div id="modal-add-user" aria-hidden="true">
   <div class="modal-inner">
     <h3>Add user</h3>
-    <div class="form-group">
+    <div class="fg">
       <label for="add-email">Email</label>
-      <input type="email" id="add-email" autocomplete="off" />
+      <input type="email" id="add-email" autocomplete="off">
     </div>
-    <div class="form-group">
+    <div class="fg">
       <label for="add-pass">Password</label>
-      <input type="password" id="add-pass" autocomplete="new-password" />
+      <input type="password" id="add-pass" autocomplete="new-password">
     </div>
-    <div class="form-group">
-      <label for="add-dname">Display name <span class="label-hint">optional</span></label>
-      <input type="text" id="add-dname" />
+    <div class="fg">
+      <label for="add-dname">Display name <span class="lhint">optional</span></label>
+      <input type="text" id="add-dname">
     </div>
-    <p id="add-user-err" style="color:var(--red);font-size:12px;display:none"></p>
-    <div class="modal-backdrop-btns">
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-add-user-cancel">Cancel</button>
-      <button type="button" class="btn btn-success btn-sm" id="btn-add-user-save">Create</button>
+    <p id="add-user-err" style="color:var(--danger);font-size:12px;display:none"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-add-user-cancel">Cancel</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btn-add-user-save">Create</button>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
 <div id="status-bar"></div>
 
-<!-- UMD bundle avoids jsdelivr +esm 404s (broken deep imports) on some browsers/CDN paths -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
 
 <script type="module">
-const cfg = window.__MINIGAMESHOW_SUPABASE__ || {};
-const SB_URL = (cfg.url || '').trim();
+const cfg    = window.__MINIGAMESHOW_SUPABASE__ || {};
+const SB_URL = (cfg.url     || '').trim();
 const SB_KEY = (cfg.anonKey || '').trim();
 
-let sb = null;
-let currentUser = null;
-let isAdmin = false;
-let editingWeekId = null; // null = creating, uuid = editing
-let gamesCache = [];
-let weeksDataCache = [];
+let sb                   = null;
+let currentUser          = null;
+let isAdmin              = false;
+let editingWeekId        = null;
+let gamesCache           = [];
+let weeksDataCache       = [];
+let activeWeek           = null;
+let lbMode               = 'competition';
+let lbDataCache          = [];
+let allUsersCache        = [];
+let weekRunCountMap      = {};
+let weekBestMap          = {};
+let activityTimer        = null;
+let countdownTimer       = null;
+
+// ── Edge Function utilities (preserved) ─────────────────────────────────────
 
 function functionsBase(){
   const c = window.__MINIGAMESHOW_SUPABASE__ || {};
@@ -545,70 +726,44 @@ function hasFunctionsUrlOverride(){
 async function edgeFetchGetWithFetch(name, token){
   const res = await fetch(`${functionsBase()}/${name}`, {
     method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      apikey: SB_KEY,
-      'X-User-JWT': token,
-    },
+    headers: { Authorization:`Bearer ${token}`, apikey:SB_KEY, 'X-User-JWT':token },
   });
   const text = await res.text();
-  let j;
-  try{ j = JSON.parse(text); }catch{ j = { error: text }; }
+  let j; try{ j = JSON.parse(text); }catch{ j = { error: text }; }
   if(!res.ok) throw makeEdgeFetchError(j.error || j.message || text || res.statusText, res.status, j);
   return j;
 }
 
 async function edgeFetchGet(name){
-  // Do not call refreshSession() here — it races the GoTrue JS storage lock with getSession / functions.invoke ("lock … was stolen").
   const { data:{ session } } = await sb.auth.getSession();
   if(!session?.access_token) throw new Error('Not signed in');
   const token = session.access_token;
-
   if(hasFunctionsUrlOverride() || typeof sb.functions?.invoke !== 'function'){
     return edgeFetchGetWithFetch(name, token);
   }
-
   const { data, error, response: fnRes } = await sb.functions.invoke(name, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'X-User-JWT': token,
-    },
+    method: 'GET', headers: { Authorization:`Bearer ${token}`, 'X-User-JWT':token },
   });
-
   if(error){
-    let j = {};
-    let status = 0;
+    let j = {}, status = 0;
     const resp = fnRes || error.context;
     if(resp && typeof resp.text === 'function'){
       status = resp.status || 0;
-      try{
-        const text = await resp.text();
-        try{ j = JSON.parse(text); }catch{ j = { error: text }; }
-      }catch{ j = { error: error.message || String(error) }; }
-    }else{
-      j = { error: error.message || String(error) };
-    }
-    throw makeEdgeFetchError(j.error || j.message || error.message || String(status) || 'Edge error', status, j);
+      try{ const t = await resp.text(); try{ j = JSON.parse(t); }catch{ j = { error:t }; } }catch{ j = { error:error.message||String(error) }; }
+    } else { j = { error:error.message||String(error) }; }
+    throw makeEdgeFetchError(j.error||j.message||error.message||String(status)||'Edge error', status, j);
   }
-
   return data;
 }
 
 async function edgeFetchPostWithFetch(name, body, token){
   const res = await fetch(`${functionsBase()}/${name}`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      apikey: SB_KEY,
-      'X-User-JWT': token,
-      'Content-Type': 'application/json',
-    },
+    headers: { Authorization:`Bearer ${token}`, apikey:SB_KEY, 'X-User-JWT':token, 'Content-Type':'application/json' },
     body: JSON.stringify(body || {}),
   });
   const text = await res.text();
-  let j;
-  try{ j = JSON.parse(text); }catch{ j = { error: text }; }
+  let j; try{ j = JSON.parse(text); }catch{ j = { error: text }; }
   if(!res.ok) throw makeEdgeFetchError(j.error || j.message || text || res.statusText, res.status, j);
   return j;
 }
@@ -617,378 +772,744 @@ async function edgeFetchPost(name, body){
   const { data:{ session } } = await sb.auth.getSession();
   if(!session?.access_token) throw new Error('Not signed in');
   const token = session.access_token;
-
   if(hasFunctionsUrlOverride() || typeof sb.functions?.invoke !== 'function'){
     return edgeFetchPostWithFetch(name, body, token);
   }
-
   const { data, error, response: fnRes } = await sb.functions.invoke(name, {
-    method: 'POST',
-    body: body || {},
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'X-User-JWT': token,
-    },
+    method: 'POST', body: body || {},
+    headers: { Authorization:`Bearer ${token}`, 'X-User-JWT':token },
   });
-
   if(error){
-    let j = {};
-    let status = 0;
+    let j = {}, status = 0;
     const resp = fnRes || error.context;
     if(resp && typeof resp.text === 'function'){
       status = resp.status || 0;
-      try{
-        const text = await resp.text();
-        try{ j = JSON.parse(text); }catch{ j = { error: text }; }
-      }catch{ j = { error: error.message || String(error) }; }
-    }else{
-      j = { error: error.message || String(error) };
-    }
-    throw makeEdgeFetchError(j.error || j.message || error.message || String(status) || 'Edge error', status, j);
+      try{ const t = await resp.text(); try{ j = JSON.parse(t); }catch{ j = { error:t }; } }catch{ j = { error:error.message||String(error) }; }
+    } else { j = { error:error.message||String(error) }; }
+    throw makeEdgeFetchError(j.error||j.message||error.message||String(status)||'Edge error', status, j);
   }
-
   return data;
 }
 
+// ── Overlap check (preserved logic) ─────────────────────────────────────────
+
 function updateWeekOverlapWarn(data){
-  const el = document.getElementById('week-overlap-warn');
-  if(!el) return;
   const byGame = {};
-  for(const w of data || []){
-    (byGame[w.game_id] ??= []).push(w);
-  }
+  for(const w of data || []) (byGame[w.game_id] ??= []).push(w);
   const pairs = [];
   for(const gid of Object.keys(byGame)){
     const arr = byGame[gid];
     for(let i = 0; i < arr.length; i++){
-      for(let j = i + 1; j < arr.length; j++){
+      for(let j = i+1; j < arr.length; j++){
         const a = arr[i], b = arr[j];
-        const a0 = new Date(a.starts_at).getTime();
-        const a1 = new Date(a.ends_at).getTime();
-        const b0 = new Date(b.starts_at).getTime();
-        const b1 = new Date(b.ends_at).getTime();
+        const a0 = new Date(a.starts_at).getTime(), a1 = new Date(a.ends_at).getTime();
+        const b0 = new Date(b.starts_at).getTime(), b1 = new Date(b.ends_at).getTime();
         if(a0 <= b1 && b0 <= a1) pairs.push([a.week_code, b.week_code]);
       }
     }
   }
-  if(!pairs.length){
-    el.style.display = 'none';
-    el.textContent = '';
-    return;
-  }
-  el.style.display = 'block';
-  el.innerHTML = '<strong>Overlapping scoring windows</strong> (same game): ' +
-    pairs.map(([x,y]) => `<code>${x}</code> ↔ <code>${y}</code>`).join(' · ') +
-    '. The game picks the latest <code>starts_at</code>; fix dates to avoid ambiguity.';
-}
-
-async function loadUsers(){
-  const tbody = document.getElementById('users-tbody');
-  const st = document.getElementById('users-fn-status');
-  if(!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Loading…</td></tr>';
-  if(st) st.textContent = '';
-  try{
-    const { users } = await edgeFetchGet('admin-list-users');
-    if(!users?.length){
-      tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">No users</td></tr>';
-      return;
-    }
-    tbody.innerHTML = users.map(u=>{
-      const self = currentUser && u.id === currentUser.id;
-      const disAdmin = self ? ' disabled title="Cannot remove your own admin"' : '';
-      const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-      const dname = u.display_name || u.username || '—';
-      return `<tr data-user-id="${u.id}">
-        <td style="font-size:11px;word-break:break-all">${esc(u.email)}</td>
-        <td style="color:var(--text-dim);font-size:11px">${esc(dname)}</td>
-        <td><input type="checkbox" class="user-cb cb-admin" ${u.is_admin ? 'checked' : ''}${disAdmin} aria-label="Admin" /></td>
-        <td><input type="checkbox" class="user-cb cb-ban" ${u.is_banned ? 'checked' : ''} aria-label="Banned" /></td>
-        <td style="font-size:11px;color:var(--text-dim)">${u.created_at ? fmtDate(u.created_at) : '—'}</td>
-        <td class="user-actions">
-          <button type="button" class="btn btn-ghost btn-sm btn-clear-scores">Clear scores</button>
-          ${self ? '' : '<button type="button" class="btn btn-danger btn-sm btn-delete-user">Delete</button>'}
-        </td>
-      </tr>`;
-    }).join('');
-    if(st) st.textContent = 'Loaded via Edge Functions ✓';
-  }catch(e){
-    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red);padding:16px">${escHtml(e.message || String(e))}<br><span style="font-size:11px;color:var(--muted)">Deploy functions or check <code>functionsUrl</code> in supabase-config.</span></td></tr>`;
-    if(st) st.textContent = 'List failed — see row above';
+  if(pairs.length){
+    toast(`Overlapping scoring windows: ${pairs.map(([x,y])=>`${x} ↔ ${y}`).join(', ')}`, 'err', 7000);
   }
 }
 
-function escHtml(s){
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-}
+// ── General helpers ──────────────────────────────────────────────────────────
 
-async function persistUserFlags(tr){
-  const id = tr.dataset.userId;
-  const adm = tr.querySelector('.cb-admin')?.checked === true;
-  const ban = tr.querySelector('.cb-ban')?.checked === true;
-  const { error } = await sb.rpc('admin_set_profile_flags', {
-    target_user_id: id,
-    p_is_admin: adm,
-    p_is_banned: ban,
-  });
-  if(error) throw error;
-}
-
-// ── helpers ──────────────────────────────────────────────────────────────
 function toast(msg, type='ok', ms=3000){
-  const el=document.getElementById('status-bar');
-  el.textContent=msg; el.className=type; el.style.display='block';
+  const el = document.getElementById('status-bar');
+  el.textContent = msg; el.className = type; el.style.display = 'block';
   clearTimeout(el._t);
-  el._t=setTimeout(()=>{ el.style.display='none'; }, ms);
+  el._t = setTimeout(()=>{ el.style.display='none'; }, ms);
 }
 
-function dt(iso){ // ISO → local datetime-local string
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+function dt(iso){
   if(!iso) return '';
-  const d=new Date(iso);
-  const pad=n=>String(n).padStart(2,'0');
+  const d = new Date(iso), pad = n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
-function dtToIso(val){ // datetime-local value → UTC ISO
-  return val ? new Date(val).toISOString() : null;
-}
-
-function weekStatus(row){
-  const now=Date.now();
-  const s=new Date(row.starts_at).getTime();
-  const e=new Date(row.ends_at).getTime();
-  if(now < s)  return 'upcoming';
-  if(now > e)  return 'past';
-  return 'active';
-}
-function statusBadge(row){
-  const st=weekStatus(row);
-  const labels={active:'● Active',upcoming:'⏳ Upcoming',past:'✓ Past'};
-  return `<span class="badge badge-${st}">${labels[st]}</span>`;
-}
+function dtToIso(val){ return val ? new Date(val).toISOString() : null; }
 
 function fmtDate(iso){
   if(!iso) return '—';
   return new Date(iso).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 }
+function fmtDateShort(iso){
+  if(!iso) return '—';
+  return new Date(iso).toLocaleDateString([],{month:'short',day:'numeric'});
+}
+function relTime(iso){
+  if(!iso) return '—';
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff/60000);
+  if(min < 1)  return 'just now';
+  if(min < 60) return `${min}m ago`;
+  const h = Math.floor(min/60);
+  if(h < 24)   return `${h}h ago`;
+  return `${Math.floor(h/24)}d ago`;
+}
+function maskEmail(email){
+  if(!email) return '—';
+  const at = email.indexOf('@');
+  if(at < 1) return email;
+  return email[0] + '***' + email.slice(at);
+}
+function weekStatusOf(row){
+  const now = Date.now(), s = new Date(row.starts_at).getTime(), e = new Date(row.ends_at).getTime();
+  if(now < s) return 'upcoming';
+  if(now > e) return 'past';
+  return 'active';
+}
+function getTodaySeed(){
+  const d = new Date(), pad = n=>String(n).padStart(2,'0');
+  return Number(`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`);
+}
 
-// ── show/hide form ────────────────────────────────────────────────────────
-function openForm(week=null){
-  editingWeekId = week?.id ?? null;
-  document.getElementById('week-form').classList.add('visible');
-  document.getElementById('btn-delete-week').style.display = week ? 'inline-flex':'none';
+// ── Navigation ───────────────────────────────────────────────────────────────
 
-  // populate game dropdown
-  const sel=document.getElementById('f-game');
-  sel.innerHTML = gamesCache.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+function showSection(name){
+  document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  const sec = document.getElementById(`section-${name}`);
+  if(sec) sec.classList.add('active');
+  const btn = document.querySelector(`.nav-item[data-section="${name}"]`);
+  if(btn) btn.classList.add('active');
+  if(name === 'live')  { if(isAdmin) loadLiveSection(); }
+  if(name === 'new')   { if(isAdmin) openFormNew(); }
+  if(name === 'users') { if(isAdmin) loadUserAdminTab('all'); }
+}
 
-  if(week){
-    sel.value                                         = week.game_id;
-    document.getElementById('f-week-code').value     = week.week_code;
-    document.getElementById('f-starts').value        = dt(week.starts_at);
-    document.getElementById('f-ends').value          = dt(week.ends_at);
-    document.getElementById('f-show-at').value       = dt(week.show_at);
-    document.getElementById('f-show-url').value      = week.show_url   || '';
-    document.getElementById('f-prize').value         = week.prize_title || '';
-    document.getElementById('f-prize-desc').value    = week.prize_description || '';
-    document.getElementById('f-sponsor').value       = week.sponsor_name || '';
-    document.getElementById('f-seed').value          = week.seed ?? '';
-  } else {
-    // defaults for new week
-    document.getElementById('f-week-code').value    = suggestWeekCode();
-    document.getElementById('f-starts').value       = suggestStart();
-    document.getElementById('f-ends').value         = suggestEnd();
-    document.getElementById('f-show-at').value      = suggestShow();
-    document.getElementById('f-show-url').value     = '';
-    document.getElementById('f-prize').value        = '';
-    document.getElementById('f-prize-desc').value   = '';
-    document.getElementById('f-sponsor').value      = '';
-    document.getElementById('f-seed').value         = suggestSeed();
+// ── Live stats ────────────────────────────────────────────────────────────────
+
+function getActiveWeek(){
+  const now = Date.now();
+  return weeksDataCache.find(w =>
+    new Date(w.starts_at).getTime() <= now && new Date(w.ends_at).getTime() >= now
+  ) || null;
+}
+
+async function loadLiveSection(){
+  activeWeek = getActiveWeek();
+  await Promise.all([
+    loadLiveStats(),
+    loadLeaderboard(),
+    loadWeekGlance(),
+    loadFlaggedCard(),
+    loadActivityFeed(),
+  ]);
+}
+
+async function loadLiveStats(){
+  const aw = activeWeek;
+
+  // Countdown
+  function updateCountdown(){
+    if(!aw){ document.getElementById('sv-time').textContent = 'No week'; return; }
+    const diff = new Date(aw.ends_at).getTime() - Date.now();
+    if(diff <= 0){ document.getElementById('sv-time').textContent = 'Closed'; document.getElementById('ss-time').textContent = ''; return; }
+    const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000);
+    document.getElementById('sv-time').textContent = `${h}h ${m}m`;
+    document.getElementById('ss-time').textContent = `until ${fmtDateShort(aw.ends_at)}`;
   }
-  updatePreview();
-  document.getElementById('f-prize').scrollIntoView({behavior:'smooth',block:'nearest'});
-}
+  clearInterval(countdownTimer);
+  updateCountdown();
+  countdownTimer = setInterval(updateCountdown, 30000);
 
-function closeForm(){
-  document.getElementById('week-form').classList.remove('visible');
-  editingWeekId=null;
-}
-
-// ── suggest helpers (next ISO Monday) ────────────────────────────────────
-function nextMonday(){
-  const d=new Date(); d.setHours(0,0,0,0);
-  const day=d.getDay(); // 0=Sun
-  const add=day===0?1:(8-day)%7||7;
-  d.setDate(d.getDate()+add);
-  return d;
-}
-function suggestWeekCode(){
-  const d=nextMonday();
-  const jan4=new Date(d.getFullYear(),0,4);
-  const week=Math.ceil(((d-jan4)/86400000+jan4.getDay()+1)/7);
-  return `${d.getFullYear()}-W${String(week).padStart(2,'0')}`;
-}
-function pad2(n){ return String(n).padStart(2,'0'); }
-function toLocal(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
-function suggestStart(){ const d=nextMonday(); d.setHours(0,0,0); return toLocal(d); }
-function suggestEnd(){
-  const d=nextMonday(); d.setDate(d.getDate()+5); d.setHours(23,59,0); return toLocal(d);
-}
-function suggestShow(){
-  const d=nextMonday(); d.setDate(d.getDate()+6); d.setHours(19,0,0); return toLocal(d);
-}
-function suggestSeed(){
-  const d=nextMonday();
-  return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`;
-}
-
-// ── live HUD preview ──────────────────────────────────────────────────────
-function updatePreview(){
-  const prize  = document.getElementById('f-prize').value.trim() || '···';
-  const showAt = document.getElementById('f-show-at').value;
-  const prizeEl = document.getElementById('prev-prize-val');
-  const schedEl = document.getElementById('prev-sched');
-  if(prizeEl) prizeEl.textContent = prize;
-  if(schedEl && showAt){
-    const d=new Date(showAt);
-    const t=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',timeZoneName:'short'}).replace(':00','').toLowerCase();
-    schedEl.textContent=`Scoring closes Sat midnight · Live show Sun ${t}`;
-    schedEl.className='prev-sched-normal';
-  }
-}
-
-// ── load data ──────────────────────────────────────────────────────────────
-async function loadGames(){
-  const {data}=await sb.from('games').select('id,name,slug').order('name');
-  gamesCache=data||[];
-}
-
-async function loadWeeks(){
-  const tbody=document.getElementById('weeks-tbody');
-  const {data,error}=await sb.from('weeks')
-    .select('id,week_code,game_id,starts_at,ends_at,show_at,show_url,prize_title,prize_description,sponsor_name,seed')
-    .order('starts_at',{ascending:false});
-
-  if(error){ tbody.innerHTML=`<tr><td colspan="7" style="color:var(--red)">Error: ${error.message}</td></tr>`; return; }
-  if(!data?.length){
-    weeksDataCache = [];
-    updateWeekOverlapWarn([]);
-    tbody.innerHTML=`<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:24px">No weeks yet. Create one above ↑</td></tr>`;
+  if(!aw){
+    ['sv-players','sv-runs','sv-flagged'].forEach(id=>{ document.getElementById(id).textContent='—'; });
     return;
   }
 
-  weeksDataCache = data;
-  updateWeekOverlapWarn(data);
+  // Players: distinct entries in leaderboard
+  const { count: pCount } = await sb.from('leaderboard')
+    .select('user_id', { count:'exact', head:true }).eq('week_id', aw.id);
+  document.getElementById('sv-players').textContent = pCount ?? '—';
 
-  const gameMap=Object.fromEntries(gamesCache.map(g=>[g.id,g.name]));
-  tbody.innerHTML=data.map(w=>`
-    <tr>
-      <td>${statusBadge(w)}</td>
-      <td style="font-weight:600">${w.week_code}</td>
-      <td style="color:var(--text-dim)">${gameMap[w.game_id]||'—'}</td>
-      <td style="color:var(--text-dim);font-size:11px">${fmtDate(w.starts_at)} → ${fmtDate(w.ends_at)}</td>
-      <td style="font-size:11px">${w.show_at?fmtDate(w.show_at):'<span style="color:var(--muted)">Not set</span>'}</td>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${w.prize_title||''}">${w.prize_title||'<span style="color:var(--muted)">—</span>'}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="window._editWeek('${w.id}')">Edit</button></td>
-    </tr>
-  `).join('');
+  // New today
+  try{
+    const t = new Date(); t.setHours(0,0,0,0);
+    const { count: newT } = await sb.from('profiles')
+      .select('id',{count:'exact',head:true}).gte('created_at', t.toISOString());
+    if(newT != null) document.getElementById('ss-players').textContent = `${newT} new today`;
+  }catch{ /* RLS may block */ }
+
+  // Total runs
+  const { count: rCount } = await sb.from('runs')
+    .select('id',{count:'exact',head:true}).eq('week_id', aw.id);
+  document.getElementById('sv-runs').textContent = rCount ?? '—';
+  if(rCount != null && pCount) document.getElementById('ss-runs').textContent = `avg ${(rCount/pCount).toFixed(1)} per player`;
+
+  // Flagged
+  try{
+    const { count: fCount } = await sb.from('runs')
+      .select('id',{count:'exact',head:true}).eq('week_id', aw.id).eq('is_validated', false);
+    const fEl = document.getElementById('sv-flagged');
+    fEl.textContent = fCount ?? '0';
+    fEl.className = 'stat-value' + (fCount > 0 ? ' red' : '');
+  }catch{ document.getElementById('sv-flagged').textContent = 'N/A'; }
 }
 
-// ── save week ──────────────────────────────────────────────────────────────
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+
+async function loadLeaderboard(mode){
+  if(mode) lbMode = mode;
+  const tbody = document.getElementById('lb-tbody');
+  const footer = document.getElementById('lb-footer');
+  const thDots = document.getElementById('lb-th-dots');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty">Loading…</td></tr>';
+  if(thDots) thDots.style.display = lbMode === 'competition' ? '' : 'none';
+
+  if(lbMode === 'arcade'){
+    const { data: rows, error } = await sb.from('arcade_best')
+      .select('user_id, best_score, profiles(display_name, username)')
+      .order('best_score',{ascending:false}).limit(10);
+    if(error){
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">Arcade board coming soon — run Phase 2b migration.</td></tr>';
+      lbDataCache = [];
+      return;
+    }
+    lbDataCache = rows || [];
+    tbody.innerHTML = (rows||[]).map((r,i)=>`
+      <tr${i===0?' class="row-gold"':''}>
+        <td><strong>${i+1}</strong></td>
+        <td>${esc(r.profiles?.display_name||r.profiles?.username||'Player')}</td>
+        <td class="mono">${(r.best_score??0).toLocaleString()}</td>
+        <td style="display:none"></td>
+        <td>—</td>
+        <td><button class="btn btn-dng btn-xs" onclick="window._banUser('${r.user_id}')">Ban</button></td>
+      </tr>`).join('') || '<tr><td colspan="6" class="empty">No entries yet.</td></tr>';
+    footer.textContent = `Showing ${rows?.length||0} players`;
+    return;
+  }
+
+  if(!activeWeek){
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">No active competition week.</td></tr>';
+    lbDataCache = [];
+    return;
+  }
+
+  const { data: rows, error } = await sb.from('leaderboard')
+    .select('rank, user_id, best_score, profiles(display_name, username)')
+    .eq('week_id', activeWeek.id).order('rank').limit(10);
+  if(error){ tbody.innerHTML = `<tr><td colspan="6" class="empty" style="color:var(--danger)">${esc(error.message)}</td></tr>`; return; }
+  lbDataCache = rows || [];
+
+  // Today's attempts per user
+  const todaySeed = getTodaySeed();
+  const userIds = (rows||[]).map(r=>r.user_id);
+  let attMap = {};
+  if(userIds.length){
+    const { data: atts } = await sb.from('daily_attempts')
+      .select('user_id, attempts_used').in('user_id', userIds).eq('day_seed', todaySeed);
+    for(const a of atts||[]) attMap[a.user_id] = a.attempts_used;
+  }
+
+  // Most recent run per user
+  let lastMap = {};
+  if(userIds.length){
+    const { data: recents } = await sb.from('runs')
+      .select('user_id, created_at').in('user_id', userIds)
+      .eq('week_id', activeWeek.id).order('created_at',{ascending:false}).limit(userIds.length * 5);
+    for(const r of recents||[]){ if(!lastMap[r.user_id]) lastMap[r.user_id] = r.created_at; }
+  }
+
+  const { count: totalCount } = await sb.from('leaderboard')
+    .select('user_id',{count:'exact',head:true}).eq('week_id', activeWeek.id);
+
+  tbody.innerHTML = (rows||[]).map(r=>{
+    const used = attMap[r.user_id] || 0;
+    const dots = Array.from({length:5},(_,i)=>`<span class="dot${i<used?' on':''}"></span>`).join('');
+    return `<tr${r.rank===1?' class="row-gold"':''}>
+      <td><strong>${r.rank}</strong></td>
+      <td>${esc(r.profiles?.display_name||r.profiles?.username||'Player')}</td>
+      <td class="mono">${(r.best_score??0).toLocaleString()}</td>
+      <td><span class="dots">${dots}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${relTime(lastMap[r.user_id])}</td>
+      <td><button class="btn btn-dng btn-xs" onclick="window._banUser('${r.user_id}')">Ban</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="empty">No entries yet.</td></tr>';
+  footer.textContent = `Showing ${rows?.length||0} of ${totalCount||0} players`;
+}
+
+// ── Week at a glance ──────────────────────────────────────────────────────────
+
+async function loadWeekGlance(){
+  const aw = activeWeek;
+  const statusEl = document.getElementById('glance-status');
+  const bodyEl   = document.getElementById('glance-body');
+  if(!aw){
+    if(statusEl) statusEl.innerHTML = '';
+    bodyEl.innerHTML = `<div class="empty" style="padding:12px">No active week.<br>
+      <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="showSection('new')">Create one</button></div>`;
+    return;
+  }
+  const gameMap = Object.fromEntries(gamesCache.map(g=>[g.id,g.name]));
+  const st = weekStatusOf(aw);
+  if(statusEl) statusEl.innerHTML = `<span class="badge badge-${st}">${st.charAt(0).toUpperCase()+st.slice(1)}</span>`;
+  const now = Date.now(), s = new Date(aw.starts_at).getTime(), e = new Date(aw.ends_at).getTime();
+  const pct = Math.max(0, Math.min(100, ((now-s)/(e-s))*100)).toFixed(1);
+  bodyEl.innerHTML = `
+    <div class="glance-row"><span class="glance-lbl">Game</span><span class="glance-val">${esc(gameMap[aw.game_id]||'—')}</span></div>
+    <div class="glance-row"><span class="glance-lbl">Prize</span><span class="glance-val">${esc(aw.prize_title||'—')}</span></div>
+    <div class="glance-row"><span class="glance-lbl">Live show</span><span class="glance-val">${aw.show_at?fmtDate(aw.show_at):'—'}</span></div>
+    <div class="glance-row"><span class="glance-lbl">Seed</span><span class="mono">${aw.seed??'—'}</span></div>
+    <div class="prog-wrap">
+      <div class="prog-bg"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <div class="prog-labels"><span>${fmtDateShort(aw.starts_at)}</span><span>${fmtDateShort(aw.ends_at)}</span></div>
+    </div>`;
+}
+
+// ── Flagged runs card ─────────────────────────────────────────────────────────
+
+async function loadFlaggedCard(){
+  const aw = activeWeek;
+  const bodyEl  = document.getElementById('flagged-body');
+  const badge   = document.getElementById('flagged-badge');
+  if(!aw){
+    badge.style.display = 'none';
+    bodyEl.innerHTML = '<div class="empty" style="padding:12px">No active week.</div>';
+    return;
+  }
+  try{
+    const { data: flagged, count } = await sb.from('runs')
+      .select('id, user_id, score, created_at, profiles(display_name, username)', {count:'exact'})
+      .eq('week_id', aw.id).eq('is_validated', false)
+      .order('score',{ascending:false}).limit(3);
+    const total = count || 0;
+    badge.textContent   = total;
+    badge.style.display = total > 0 ? 'inline-flex' : 'none';
+    if(!total){
+      bodyEl.innerHTML = '<div class="empty" style="padding:12px;color:var(--ok-t)">✓ No flagged runs</div>';
+      return;
+    }
+    const warnHtml = `<div class="notice notice-warn" style="margin-bottom:10px">Review before Sunday's live show. Top 3 must be clean to award prize.</div>`;
+    const itemsHtml = (flagged||[]).slice(0,2).map(r=>`
+      <div class="flag-item">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${esc(r.profiles?.display_name||r.profiles?.username||'Unknown')}</div>
+          <div class="flag-reason">High outlier score</div>
+        </div>
+        <span class="mono" style="font-size:13px">${(r.score??0).toLocaleString()}</span>
+        <button class="btn btn-secondary btn-xs" onclick="window._approveRun('${r.id}')">OK</button>
+        <button class="btn btn-dng btn-xs" onclick="window._deleteRun('${r.id}')">Del</button>
+      </div>`).join('');
+    const moreHtml = total > 2
+      ? `<div style="font-size:12px;color:var(--accent);padding-top:8px;cursor:pointer"
+           onclick="showSection('users');window._switchUserTab('flagged')">+${total-2} more flagged →</div>`
+      : '';
+    bodyEl.innerHTML = warnHtml + itemsHtml + moreHtml;
+  }catch{
+    badge.style.display = 'none';
+    bodyEl.innerHTML = '<div class="empty" style="padding:12px;color:var(--muted)">is_validated column not found — flagged runs unavailable.</div>';
+  }
+}
+
+// ── Activity feed ─────────────────────────────────────────────────────────────
+
+async function loadActivityFeed(){
+  const bodyEl = document.getElementById('activity-body');
+  const { data: events, error } = await sb.from('content_events')
+    .select('event_type, metadata, created_at')
+    .order('created_at',{ascending:false}).limit(5);
+  if(error || !events?.length){
+    bodyEl.innerHTML = '<div class="empty" style="padding:12px">No recent activity.</div>';
+    return;
+  }
+  const rows = events.map(ev=>{
+    let dot = 'purple', text = ev.event_type;
+    const meta = ev.metadata || {};
+    if(ev.event_type === 'new_high_score'){
+      dot = 'purple'; text = `New high score: ${(meta.score??0).toLocaleString()}`;
+    } else if(ev.event_type === 'run_submitted'){
+      dot = 'purple'; text = `Run submitted: ${(meta.score??0).toLocaleString()}`;
+    } else if(ev.event_type === 'player_joined'){
+      dot = 'green'; text = 'New player joined';
+    } else if(ev.event_type === 'run_flagged'){
+      dot = 'red'; text = 'Run flagged for review';
+    }
+    return `<div class="act-row">
+      <span class="act-dot ${dot}"></span>
+      <span class="act-txt">${esc(text)}</span>
+      <span class="act-time">${relTime(ev.created_at)}</span>
+    </div>`;
+  }).join('');
+  bodyEl.innerHTML = `<div class="act-list">${rows}</div>`;
+}
+
+function startActivityPoll(){
+  if(activityTimer) clearInterval(activityTimer);
+  activityTimer = setInterval(()=>{
+    if(document.getElementById('section-live').classList.contains('active')){
+      loadActivityFeed();
+      loadLiveStats();
+    }
+  }, 30000);
+}
+
+// ── New competition form ──────────────────────────────────────────────────────
+
+function openFormNew(){
+  editingWeekId = null;
+  const sel = document.getElementById('f-game');
+  sel.innerHTML = gamesCache.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');
+  document.getElementById('f-week-code').value  = suggestWeekCode();
+  document.getElementById('f-starts').value     = suggestStart();
+  document.getElementById('f-ends').value       = suggestEnd();
+  document.getElementById('f-show-at').value    = suggestShow();
+  document.getElementById('f-show-url').value   = '';
+  document.getElementById('f-prize').value      = '';
+  document.getElementById('f-prize-desc').value = '';
+  document.getElementById('f-sponsor').value    = '';
+  document.getElementById('f-seed').value       = suggestSeed();
+  document.getElementById('btn-save-week').textContent = 'Create competition week';
+  updatePreview();
+}
+
+// ── Suggest helpers (preserved) ──────────────────────────────────────────────
+
+function nextMonday(){
+  const d = new Date(); d.setHours(0,0,0,0);
+  const day = d.getDay(), add = day===0 ? 1 : (8-day)%7||7;
+  d.setDate(d.getDate()+add); return d;
+}
+function suggestWeekCode(){
+  const d = nextMonday(), jan4 = new Date(d.getFullYear(),0,4);
+  const week = Math.ceil(((d-jan4)/86400000+jan4.getDay()+1)/7);
+  return `${d.getFullYear()}-W${String(week).padStart(2,'0')}`;
+}
+function p2(n){ return String(n).padStart(2,'0'); }
+function toLocal(d){ return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}T${p2(d.getHours())}:${p2(d.getMinutes())}`; }
+function suggestStart(){ const d = nextMonday(); d.setHours(0,0,0); return toLocal(d); }
+function suggestEnd(){ const d = nextMonday(); d.setDate(d.getDate()+5); d.setHours(23,59,0); return toLocal(d); }
+function suggestShow(){ const d = nextMonday(); d.setDate(d.getDate()+6); d.setHours(19,0,0); return toLocal(d); }
+function suggestSeed(){ const d = nextMonday(); return `${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}`; }
+
+// ── HUD preview (preserved) ──────────────────────────────────────────────────
+
+function updatePreview(){
+  const prize  = document.getElementById('f-prize')?.value.trim() || '···';
+  const showAt = document.getElementById('f-show-at')?.value;
+  const pEl = document.getElementById('prev-prize-val');
+  const sEl = document.getElementById('prev-sched');
+  if(pEl) pEl.textContent = prize;
+  if(sEl && showAt){
+    const d = new Date(showAt);
+    const t = d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',timeZoneName:'short'}).replace(':00','').toLowerCase();
+    sEl.textContent = `Scoring closes Sat midnight · Live show Sun ${t}`;
+  }
+}
+
+// ── Save week (preserved) ────────────────────────────────────────────────────
+
 async function saveWeek(e){
   e.preventDefault();
-  const row={
+  const row = {
     game_id:           document.getElementById('f-game').value,
     week_code:         document.getElementById('f-week-code').value.trim(),
     starts_at:         dtToIso(document.getElementById('f-starts').value),
     ends_at:           dtToIso(document.getElementById('f-ends').value),
-    show_at:           dtToIso(document.getElementById('f-show-at').value)||null,
-    show_url:          document.getElementById('f-show-url').value.trim()||null,
-    prize_title:       document.getElementById('f-prize').value.trim()||null,
-    prize_description: document.getElementById('f-prize-desc').value.trim()||null,
-    sponsor_name:      document.getElementById('f-sponsor').value.trim()||null,
-    seed:              document.getElementById('f-seed').value?Number(document.getElementById('f-seed').value):null,
+    show_at:           dtToIso(document.getElementById('f-show-at').value) || null,
+    show_url:          document.getElementById('f-show-url').value.trim() || null,
+    prize_title:       document.getElementById('f-prize').value.trim() || null,
+    prize_description: document.getElementById('f-prize-desc').value.trim() || null,
+    sponsor_name:      document.getElementById('f-sponsor').value.trim() || null,
+    seed:              document.getElementById('f-seed').value ? Number(document.getElementById('f-seed').value) : null,
   };
   if(!row.starts_at||!row.ends_at){ toast('Start and end dates are required','err'); return; }
   if(new Date(row.ends_at)<=new Date(row.starts_at)){ toast('End must be after start','err'); return; }
-
-  const btn=document.getElementById('btn-save-week');
-  btn.disabled=true; btn.textContent='Saving…';
-
+  const btn = document.getElementById('btn-save-week');
+  btn.disabled = true; btn.textContent = 'Saving…';
   let error;
   if(editingWeekId){
-    ({error}=await sb.from('weeks').update(row).eq('id',editingWeekId));
+    ({error} = await sb.from('weeks').update(row).eq('id', editingWeekId));
   } else {
-    ({error}=await sb.from('weeks').insert(row));
+    ({error} = await sb.from('weeks').insert(row));
   }
-  btn.disabled=false; btn.textContent='💾 Save Week';
-
+  btn.disabled = false; btn.textContent = editingWeekId ? 'Save changes' : 'Create competition week';
   if(error){ toast('Save failed: '+error.message,'err',5000); return; }
-  toast(editingWeekId?'Week updated ✓':'Week created ✓','ok');
-  closeForm();
-  loadWeeks();
+  toast(editingWeekId ? 'Week updated ✓' : 'Week created ✓','ok');
+  editingWeekId = null;
+  await loadGames();
+  await loadWeeks();
+  showSection('live');
 }
 
-// ── delete week ────────────────────────────────────────────────────────────
-async function deleteWeek(){
-  if(!editingWeekId) return;
-  if(!confirm('Delete this week? This cannot be undone.')) return;
-  const {error}=await sb.from('weeks').delete().eq('id',editingWeekId);
-  if(error){ toast('Delete failed: '+error.message,'err'); return; }
-  toast('Week deleted','ok');
-  closeForm(); loadWeeks();
-}
-
-// expose to onclick
+// expose for console / future use
 window._editWeek = async (id)=>{
-  const {data}=await sb.from('weeks').select('*').eq('id',id).single();
-  if(data) openForm(data);
+  const { data } = await sb.from('weeks').select('*').eq('id',id).single();
+  if(!data) return;
+  editingWeekId = data.id;
+  const sel = document.getElementById('f-game');
+  sel.innerHTML = gamesCache.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');
+  sel.value = data.game_id;
+  document.getElementById('f-week-code').value  = data.week_code;
+  document.getElementById('f-starts').value     = dt(data.starts_at);
+  document.getElementById('f-ends').value       = dt(data.ends_at);
+  document.getElementById('f-show-at').value    = dt(data.show_at);
+  document.getElementById('f-show-url').value   = data.show_url || '';
+  document.getElementById('f-prize').value      = data.prize_title || '';
+  document.getElementById('f-prize-desc').value = data.prize_description || '';
+  document.getElementById('f-sponsor').value    = data.sponsor_name || '';
+  document.getElementById('f-seed').value       = data.seed ?? '';
+  document.getElementById('btn-save-week').textContent = 'Save changes';
+  updatePreview();
+  showSection('new');
 };
 
-// ── auth ───────────────────────────────────────────────────────────────────
-function showAuthGate(){ document.getElementById('auth-gate').style.display='flex'; document.getElementById('admin-panel').style.display='none'; }
-function showAdminPanel(){ document.getElementById('auth-gate').style.display='none'; document.getElementById('admin-panel').style.display='flex'; }
+// ── Load data (preserved) ────────────────────────────────────────────────────
+
+async function loadGames(){
+  const { data } = await sb.from('games').select('id,name,slug').order('name');
+  gamesCache = data || [];
+}
+
+async function loadWeeks(){
+  const { data, error } = await sb.from('weeks')
+    .select('id,week_code,game_id,starts_at,ends_at,show_at,show_url,prize_title,prize_description,sponsor_name,seed')
+    .order('starts_at',{ascending:false});
+  if(error) return;
+  weeksDataCache = data || [];
+  updateWeekOverlapWarn(data);
+  activeWeek = getActiveWeek();
+}
+
+// ── Users (preserved + enhanced) ────────────────────────────────────────────
+
+async function loadUsers(){
+  const tbody  = document.getElementById('users-tbody');
+  const st     = document.getElementById('users-fn-status');
+  const noteEl = document.getElementById('users-fn-note');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="8" class="empty">Loading…</td></tr>';
+  if(st) st.textContent = '';
+  if(noteEl) noteEl.style.display = 'none';
+  try{
+    const { users } = await edgeFetchGet('admin-list-users');
+    allUsersCache = users || [];
+    if(st) st.textContent = 'Loaded via Edge Functions ✓';
+    // Per-user run counts and best for active week
+    if(activeWeek && allUsersCache.length){
+      const { data: runRows } = await sb.from('runs').select('user_id').eq('week_id', activeWeek.id);
+      weekRunCountMap = {};
+      for(const r of runRows||[]) weekRunCountMap[r.user_id] = (weekRunCountMap[r.user_id]||0)+1;
+      const { data: lbRows } = await sb.from('leaderboard').select('user_id,best_score').eq('week_id', activeWeek.id);
+      weekBestMap = {};
+      for(const r of lbRows||[]) weekBestMap[r.user_id] = r.best_score;
+    }
+    renderUsersTable(allUsersCache);
+  }catch(e){
+    if(noteEl && e.status && e.status !== 0) noteEl.style.display = 'block';
+    tbody.innerHTML = `<tr><td colspan="8" class="empty" style="color:var(--danger)">${esc(e.message||String(e))}</td></tr>`;
+    if(st) st.textContent = 'List failed — see notice above';
+  }
+}
+
+function renderUsersTable(users){
+  const tbody  = document.getElementById('users-tbody');
+  const footer = document.getElementById('users-footer');
+  if(!users.length){
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">No users found.</td></tr>';
+    if(footer) footer.textContent = ''; return;
+  }
+  tbody.innerHTML = users.map(u=>{
+    const self = currentUser && u.id === currentUser.id;
+    const dname = esc(u.display_name || u.username || '—');
+    const ageBadge   = u.is_18_plus ? `<span class="badge badge-18">18+</span>` : `<span class="badge badge-prac">Practice</span>`;
+    const statBadge  = u.is_banned  ? `<span class="badge badge-banned">Banned</span>` : `<span class="badge badge-active">Active</span>`;
+    const runs = weekRunCountMap[u.id], best = weekBestMap[u.id];
+    const weekStr = (runs!=null||best!=null) ? `${runs??0} run${runs!==1?'s':''} · best ${best!=null?best.toLocaleString():'—'}` : '—';
+    const banBtn = u.is_banned
+      ? `<button type="button" class="btn btn-secondary btn-xs btn-unban-inline">Unban</button>`
+      : `<button type="button" class="btn btn-dng btn-xs btn-ban-inline">Ban</button>`;
+    return `<tr data-user-id="${u.id}">
+      <td style="font-weight:500">${dname}</td>
+      <td style="font-size:12px;color:var(--muted)">${maskEmail(u.email||'')}</td>
+      <td>${ageBadge}</td>
+      <td><input type="checkbox" class="user-cb cb-admin" ${u.is_admin?'checked':''}${self?' disabled title="Cannot remove your own admin"':''} aria-label="Admin"></td>
+      <td style="font-size:12px;color:var(--muted)">${u.created_at?fmtDateShort(u.created_at):'—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${weekStr}</td>
+      <td>${statBadge}</td>
+      <td class="u-actions">
+        ${banBtn}
+        <button type="button" class="btn btn-secondary btn-xs btn-clear-scores">Clear scores</button>
+        ${self?'':`<button type="button" class="btn btn-dng btn-xs btn-delete-user">Delete</button>`}
+      </td>
+    </tr>`;
+  }).join('');
+  if(footer) footer.textContent = `Showing ${users.length} of ${users.length} players`;
+}
+
+function filterUsers(q){
+  if(!q.trim()){ renderUsersTable(allUsersCache); return; }
+  const lq = q.toLowerCase();
+  renderUsersTable(allUsersCache.filter(u=>
+    (u.display_name||'').toLowerCase().includes(lq) ||
+    (u.username||'').toLowerCase().includes(lq) ||
+    (u.email||'').toLowerCase().includes(lq)
+  ));
+}
+
+// ── User admin tabs ───────────────────────────────────────────────────────────
+
+async function loadUserAdminTab(tab){
+  document.querySelectorAll('[id^="utab-"]').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.utab-btn').forEach(b=>b.classList.remove('active'));
+  const tabEl = document.getElementById(`utab-${tab}`);
+  const tabBtn = document.querySelector(`.utab-btn[data-utab="${tab}"]`);
+  if(tabEl) tabEl.style.display = 'block';
+  if(tabBtn) tabBtn.classList.add('active');
+  if(tab==='all')     await loadUsers();
+  if(tab==='flagged') await loadFlaggedTab();
+  if(tab==='banned')  await loadBannedTab();
+}
+
+window._switchUserTab = (tab) => loadUserAdminTab(tab);
+
+async function loadFlaggedTab(){
+  const tbody  = document.getElementById('flagged-tab-tbody');
+  const notice = document.getElementById('flagged-tab-notice');
+  if(!activeWeek){ tbody.innerHTML='<tr><td colspan="5" class="empty">No active week.</td></tr>'; return; }
+  tbody.innerHTML = '<tr><td colspan="5" class="empty">Loading…</td></tr>';
+  try{
+    const { data: flagged, count } = await sb.from('runs')
+      .select('id, user_id, score, created_at, profiles(display_name, username)',{count:'exact'})
+      .eq('week_id', activeWeek.id).eq('is_validated', false).order('score',{ascending:false});
+    if(notice){
+      if(count){ notice.textContent=`${count} run${count!==1?'s':''} flagged this week. Review before Sunday to confirm the winner.`; notice.style.display='block'; }
+      else notice.style.display='none';
+    }
+    if(!flagged?.length){ tbody.innerHTML='<tr><td colspan="5" class="empty">No flagged runs this week.</td></tr>'; return; }
+    tbody.innerHTML = flagged.map(r=>`
+      <tr data-run-id="${r.id}" data-user-id="${r.user_id}">
+        <td>${esc(r.profiles?.display_name||r.profiles?.username||'Unknown')}</td>
+        <td class="mono">${(r.score??0).toLocaleString()}</td>
+        <td style="color:var(--danger);font-size:12px">High outlier</td>
+        <td style="font-size:12px;color:var(--muted)">${fmtDate(r.created_at)}</td>
+        <td class="u-actions">
+          <button class="btn btn-secondary btn-xs btn-fl-approve" style="color:var(--ok-t)">Approve</button>
+          <button class="btn btn-dng btn-xs btn-fl-remove">Remove run</button>
+          <button class="btn btn-dng btn-xs btn-fl-ban">Ban player</button>
+        </td>
+      </tr>`).join('');
+  }catch{ tbody.innerHTML='<tr><td colspan="5" class="empty">is_validated column not found.</td></tr>'; }
+}
+
+async function loadBannedTab(){
+  const tbody = document.getElementById('banned-tbody');
+  tbody.innerHTML = '<tr><td colspan="4" class="empty">Loading…</td></tr>';
+  const { data: banned, error } = await sb.from('profiles')
+    .select('id, display_name, username, created_at').eq('is_banned', true).order('created_at',{ascending:false});
+  if(error){ tbody.innerHTML=`<tr><td colspan="4" class="empty" style="color:var(--danger)">${esc(error.message)}</td></tr>`; return; }
+  if(!banned?.length){ tbody.innerHTML='<tr><td colspan="4" class="empty">No banned players yet.</td></tr>'; return; }
+  tbody.innerHTML = banned.map(p=>`
+    <tr data-user-id="${p.id}">
+      <td>${esc(p.display_name||p.username||'—')}</td>
+      <td style="font-size:12px;color:var(--muted)">—</td>
+      <td style="font-size:12px;color:var(--muted)">${fmtDateShort(p.created_at)}</td>
+      <td><button class="btn btn-secondary btn-sm btn-unban">Unban</button></td>
+    </tr>`).join('');
+}
+
+// ── persistUserFlags (preserved) ─────────────────────────────────────────────
+
+async function persistUserFlags(tr){
+  const id  = tr.dataset.userId;
+  const adm = tr.querySelector('.cb-admin')?.checked === true;
+  const u   = allUsersCache.find(x=>x.id===id);
+  const ban = u?.is_banned === true;
+  const { error } = await sb.rpc('admin_set_profile_flags', { target_user_id:id, p_is_admin:adm, p_is_banned:ban });
+  if(error) throw error;
+}
+
+// ── Global helpers (ban / approve / delete run) ───────────────────────────────
+
+window._banUser = async (userId)=>{
+  if(!userId) return;
+  if(!confirm('Ban this player? Their score submissions will be blocked.')) return;
+  const u = allUsersCache.find(x=>x.id===userId);
+  const { error } = await sb.rpc('admin_set_profile_flags', { target_user_id:userId, p_is_admin:u?.is_admin===true, p_is_banned:true });
+  if(error){ toast('Ban failed: '+error.message,'err'); return; }
+  toast('Player banned','ok');
+  loadLeaderboard();
+};
+window._approveRun = async (runId)=>{
+  const { error } = await sb.from('runs').update({ is_validated:true }).eq('id', runId);
+  if(error){ toast('Approve failed: '+error.message,'err'); return; }
+  toast('Run approved ✓','ok');
+  loadFlaggedCard(); loadLiveStats();
+};
+window._deleteRun = async (runId)=>{
+  if(!confirm('Remove this run? This cannot be undone.')) return;
+  const { error } = await sb.from('runs').delete().eq('id', runId);
+  if(error){ toast('Delete failed: '+error.message,'err'); return; }
+  toast('Run removed','ok');
+  loadFlaggedCard(); loadLiveStats(); loadLeaderboard();
+};
+
+// ── CSV export ────────────────────────────────────────────────────────────────
+
+function exportCsv(){
+  if(!lbDataCache.length){ toast('No data to export','err'); return; }
+  const header = 'Rank,Player,Best Score\n';
+  const body   = lbDataCache.map((r,i)=>{
+    const rank = r.rank ?? (i+1);
+    const name = (r.profiles?.display_name||r.profiles?.username||'Player').replace(/"/g,'""');
+    return `${rank},"${name}",${r.best_score??0}`;
+  }).join('\n');
+  const blob = new Blob([header+body],{type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `leaderboard-${activeWeek?.week_code||'export'}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ── Auth (preserved) ─────────────────────────────────────────────────────────
+
+function showAuthGate(){ document.getElementById('auth-gate').style.display='flex'; document.getElementById('admin-shell').classList.remove('visible'); }
+function showAdminPanel(){ document.getElementById('auth-gate').style.display='none'; document.getElementById('admin-shell').classList.add('visible'); }
 
 async function onSignedIn(session){
-  currentUser=session.user;
-  document.getElementById('hdr-user').textContent=currentUser.email;
-  document.getElementById('btn-signout').style.display='inline-flex';
+  currentUser = session.user;
+  const email    = currentUser.email || '';
+  const initials = email.substring(0,2).toUpperCase();
+  document.getElementById('sidebar-avatar').textContent = initials;
+  document.getElementById('sidebar-email').textContent  = email;
 
-  // check is_admin
-  const {data:prof}=await sb.from('profiles').select('is_admin').eq('id',currentUser.id).maybeSingle();
-  isAdmin=prof?.is_admin===true;
-  document.getElementById('not-admin-note').style.display=isAdmin?'none':'block';
+  const { data: prof } = await sb.from('profiles').select('is_admin').eq('id', currentUser.id).maybeSingle();
+  isAdmin = prof?.is_admin === true;
+  document.getElementById('not-admin-note').style.display = isAdmin ? 'none' : 'block';
 
   showAdminPanel();
-  const uc = document.getElementById('users-card');
-  if(uc) uc.style.display = isAdmin ? 'block' : 'none';
   if(isAdmin){
     await loadGames();
     await loadWeeks();
-    await loadUsers();
+    loadLiveSection();
+    startActivityPoll();
   }
 }
 
 function onSignedOut(){
-  currentUser=null; isAdmin=false;
-  document.getElementById('hdr-user').textContent='Not signed in';
-  document.getElementById('btn-signout').style.display='none';
+  currentUser = null; isAdmin = false;
+  clearInterval(activityTimer); clearInterval(countdownTimer);
   showAuthGate();
 }
 
-// ── boot ───────────────────────────────────────────────────────────────────
+// ── Boot ──────────────────────────────────────────────────────────────────────
+
 async function boot(){
   if(!SB_URL||!SB_KEY){
-    document.getElementById('auth-gate').innerHTML='<p style="color:var(--red)">⚠ supabase-config.js not configured.<br>Copy supabase-config.example.js → supabase-config.js and add your keys.</p>';
+    document.getElementById('auth-gate').innerHTML='<p style="color:var(--danger)">⚠ supabase-config.js not configured.<br>Copy supabase-config.example.js → supabase-config.js and add your keys.</p>';
     return;
   }
   const Sb = globalThis.supabase;
-  if(!Sb || typeof Sb.createClient !== 'function'){
-    document.getElementById('auth-gate').innerHTML='<p style="color:var(--red)">⚠ Supabase client script failed to load. Check network/adblock or try another browser.</p>';
+  if(!Sb||typeof Sb.createClient!=='function'){
+    document.getElementById('auth-gate').innerHTML='<p style="color:var(--danger)">⚠ Supabase client script failed to load. Check network/adblock or try another browser.</p>';
     return;
   }
-  sb=Sb.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+  sb = Sb.createClient(SB_URL, SB_KEY, {auth:{persistSession:true,autoRefreshToken:true}});
 
-  const {data:{session}}=await sb.auth.getSession();
+  const { data:{ session } } = await sb.auth.getSession();
   if(session?.user) await onSignedIn(session);
   else showAuthGate();
 
@@ -997,26 +1518,81 @@ async function boot(){
     else onSignedOut();
   });
 
-  // sign in button
+  // Sign-in form
   document.getElementById('signin-form').addEventListener('submit', async()=>{
-    const email=document.getElementById('g-email').value.trim();
-    const pass =document.getElementById('g-pass').value;
-    const errEl=document.getElementById('signin-err');
-    errEl.style.display='none';
-    const {error}=await sb.auth.signInWithPassword({email,password:pass});
+    const email = document.getElementById('g-email').value.trim();
+    const pass  = document.getElementById('g-pass').value;
+    const errEl = document.getElementById('signin-err');
+    errEl.style.display = 'none';
+    const { error } = await sb.auth.signInWithPassword({email, password:pass});
     if(error){ errEl.textContent=error.message; errEl.style.display='block'; }
   });
 
-  document.getElementById('btn-signout').addEventListener('click',()=>sb.auth.signOut());
-  document.getElementById('btn-new-week').addEventListener('click',()=>openForm());
-  document.getElementById('btn-cancel-form').addEventListener('click',closeForm);
-  document.getElementById('btn-delete-week').addEventListener('click',deleteWeek);
-  document.getElementById('week-form').addEventListener('submit',saveWeek);
+  // Sidebar nav
+  document.querySelectorAll('.nav-item').forEach(btn=>{
+    btn.addEventListener('click', ()=> showSection(btn.dataset.section));
+  });
 
+  // Leaderboard tabs
+  document.querySelectorAll('#lb-tabs .tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#lb-tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      loadLeaderboard(btn.dataset.tab);
+    });
+  });
+
+  document.getElementById('btn-csv').addEventListener('click', exportCsv);
+
+  // Week form
+  document.getElementById('week-form').addEventListener('submit', saveWeek);
+  document.getElementById('btn-cancel-form').addEventListener('click', ()=>showSection('live'));
+  document.getElementById('btn-form-cancel-top').addEventListener('click', ()=>showSection('live'));
+
+  // HUD preview + seed auto-populate
+  ['f-prize','f-show-at'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('input', updatePreview);
+  });
+  document.getElementById('f-starts')?.addEventListener('change', ()=>{
+    const val = document.getElementById('f-starts').value;
+    if(val){
+      const d = new Date(val);
+      document.getElementById('f-seed').value = `${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}`;
+    }
+  });
+
+  // Danger zone
+  document.getElementById('btn-close-scoring').addEventListener('click', async()=>{
+    if(!activeWeek) return;
+    if(!confirm('Close scoring now? Players will not be able to submit new runs.')) return;
+    const { error } = await sb.from('weeks').update({ends_at: new Date().toISOString()}).eq('id', activeWeek.id);
+    if(error){ toast('Failed: '+error.message,'err'); return; }
+    toast('Scoring closed ✓','ok');
+    await loadWeeks(); activeWeek = getActiveWeek(); loadLiveSection();
+  });
+  document.getElementById('btn-end-week').addEventListener('click', async()=>{
+    if(!activeWeek) return;
+    if(!confirm('End this week and freeze the leaderboard? Scoring closes now.')) return;
+    if(!confirm('Are you sure? This cannot be easily undone.')) return;
+    const { error } = await sb.from('weeks').update({ends_at: new Date().toISOString()}).eq('id', activeWeek.id);
+    if(error){ toast('Failed: '+error.message,'err'); return; }
+    toast('Week ended — leaderboard frozen ✓','ok');
+    await loadWeeks(); activeWeek = getActiveWeek(); loadLiveSection();
+  });
+
+  // User admin tabs
+  document.querySelectorAll('.utab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> loadUserAdminTab(btn.dataset.utab));
+  });
+
+  // User search
+  document.getElementById('user-search')?.addEventListener('input', e=>filterUsers(e.target.value));
+
+  // Users toolbar
   document.getElementById('btn-users-refresh')?.addEventListener('click', ()=> loadUsers());
   document.getElementById('btn-user-add')?.addEventListener('click', ()=>{
     document.getElementById('add-email').value = '';
-    document.getElementById('add-pass').value = '';
+    document.getElementById('add-pass').value  = '';
     document.getElementById('add-dname').value = '';
     document.getElementById('add-user-err').style.display = 'none';
     document.getElementById('modal-add-user').classList.add('open');
@@ -1026,13 +1602,13 @@ async function boot(){
     document.getElementById('modal-add-user').classList.remove('open');
     document.getElementById('modal-add-user').setAttribute('aria-hidden','true');
   });
-  document.getElementById('btn-add-user-save')?.addEventListener('click', async ()=>{
+  document.getElementById('btn-add-user-save')?.addEventListener('click', async()=>{
     const errEl = document.getElementById('add-user-err');
     errEl.style.display = 'none';
     try{
       await edgeFetchPost('admin-auth-create-user', {
-        email: document.getElementById('add-email').value.trim(),
-        password: document.getElementById('add-pass').value,
+        email:        document.getElementById('add-email').value.trim(),
+        password:     document.getElementById('add-pass').value,
         display_name: document.getElementById('add-dname').value.trim() || undefined,
       });
       document.getElementById('modal-add-user').classList.remove('open');
@@ -1040,65 +1616,104 @@ async function boot(){
       toast('User created ✓','ok');
       loadUsers();
     }catch(e){
-      errEl.textContent = e.message || String(e);
-      errEl.style.whiteSpace = '';
+      errEl.textContent = e.message||String(e);
       errEl.style.display = 'block';
     }
   });
 
-  document.getElementById('users-tbody')?.addEventListener('change', async (e)=>{
+  // Users table: admin checkbox (preserved RPC call)
+  document.getElementById('users-tbody')?.addEventListener('change', async(e)=>{
     const t = e.target;
-    if(!t.classList.contains('cb-admin') && !t.classList.contains('cb-ban')) return;
+    if(!t.classList.contains('cb-admin')) return;
     const tr = t.closest('tr');
     if(!tr) return;
     try{
       await persistUserFlags(tr);
       toast('Saved profile flags','ok',2000);
     }catch(err){
-      toast('Save failed: ' + (err.message || err),'err',5000);
+      toast('Save failed: '+(err.message||err),'err',5000);
       loadUsers();
     }
   });
 
-  document.getElementById('users-tbody')?.addEventListener('click', async (e)=>{
+  // Users table: action buttons (preserved + ban/unban)
+  document.getElementById('users-tbody')?.addEventListener('click', async(e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const tr = btn.closest('tr'), uid = tr?.dataset.userId;
+    if(!tr||!uid) return;
+
+    if(btn.classList.contains('btn-ban-inline')){
+      if(!confirm('Ban this player?')) return;
+      const u = allUsersCache.find(x=>x.id===uid);
+      const { error } = await sb.rpc('admin_set_profile_flags', { target_user_id:uid, p_is_admin:u?.is_admin===true, p_is_banned:true });
+      if(error){ toast('Ban failed: '+error.message,'err'); return; }
+      toast('Player banned','ok'); loadUsers();
+    }
+    if(btn.classList.contains('btn-unban-inline')){
+      if(!confirm('Unban this player?')) return;
+      const u = allUsersCache.find(x=>x.id===uid);
+      const { error } = await sb.rpc('admin_set_profile_flags', { target_user_id:uid, p_is_admin:u?.is_admin===true, p_is_banned:false });
+      if(error){ toast('Unban failed: '+error.message,'err'); return; }
+      toast('Player unbanned ✓','ok'); loadUsers();
+    }
+    if(btn.classList.contains('btn-clear-scores')){
+      if(!confirm('Clear all runs, leaderboard rows, and daily attempt counts for this user?')) return;
+      try{
+        const { error } = await sb.rpc('admin_clear_user_competition_data', { target_user_id:uid });
+        if(error) throw error;
+        toast('Competition data cleared','ok');
+      }catch(err){ toast('Clear failed: '+(err.message||err),'err',5000); }
+    }
+    if(btn.classList.contains('btn-delete-user')){
+      if(!confirm('Permanently delete this Auth user and all related data?')) return;
+      try{
+        const out = await edgeFetchPost('admin-auth-delete-user', { user_id:uid });
+        if(!out||out.ok!==true) throw new Error((out&&out.error)||'Server did not confirm delete');
+        toast('User deleted','ok');
+        await loadUsers();
+      }catch(err){ toast('Delete failed: '+(err.message||err),'err',8000); }
+    }
+  });
+
+  // Flagged tab actions
+  document.getElementById('flagged-tab-tbody')?.addEventListener('click', async(e)=>{
     const btn = e.target.closest('button');
     if(!btn) return;
     const tr = btn.closest('tr');
     if(!tr) return;
-    const uid = tr.dataset.userId;
-    if(btn.classList.contains('btn-clear-scores')){
-      if(!confirm('Clear all runs, leaderboard rows, and daily attempt counts for this user?')) return;
-      try{
-        const { error } = await sb.rpc('admin_clear_user_competition_data', { target_user_id: uid });
-        if(error) throw error;
-        toast('Competition data cleared','ok');
-      }catch(err){
-        toast('Clear failed: ' + (err.message || err),'err',5000);
-      }
-      return;
+    const runId = tr.dataset.runId, uid = tr.dataset.userId;
+    if(btn.classList.contains('btn-fl-approve')){
+      const { error } = await sb.from('runs').update({is_validated:true}).eq('id', runId);
+      if(error){ toast('Approve failed: '+error.message,'err'); return; }
+      toast('Run approved ✓','ok'); loadFlaggedTab(); loadLiveStats();
     }
-    if(btn.classList.contains('btn-delete-user')){
-      if(!confirm('Permanently delete this Auth user and all related data?')) return;
-      if(!uid){
-        toast('Delete failed: missing user id on row','err',5000);
-        return;
-      }
-      try{
-        const out = await edgeFetchPost('admin-auth-delete-user', { user_id: uid });
-        if(!out || out.ok !== true){
-          throw new Error((out && out.error) || 'Server did not confirm delete');
-        }
-        toast('User deleted','ok');
-        await loadUsers();
-      }catch(err){
-        toast('Delete failed: ' + (err.message || err),'err',8000);
-      }
+    if(btn.classList.contains('btn-fl-remove')){
+      if(!confirm('Remove this run?')) return;
+      const { error } = await sb.from('runs').delete().eq('id', runId);
+      if(error){ toast('Delete failed: '+error.message,'err'); return; }
+      toast('Run removed','ok'); loadFlaggedTab(); loadLiveStats();
+    }
+    if(btn.classList.contains('btn-fl-ban')){
+      if(!confirm('Ban this player?')) return;
+      const u = allUsersCache.find(x=>x.id===uid);
+      const { error } = await sb.rpc('admin_set_profile_flags', { target_user_id:uid, p_is_admin:u?.is_admin===true, p_is_banned:true });
+      if(error){ toast('Ban failed: '+error.message,'err'); return; }
+      toast('Player banned','ok'); loadFlaggedTab();
     }
   });
 
-  // live preview wiring
-  ['f-prize','f-show-at'].forEach(id=>{
-    document.getElementById(id).addEventListener('input',updatePreview);
+  // Banned tab: unban
+  document.getElementById('banned-tbody')?.addEventListener('click', async(e)=>{
+    const btn = e.target.closest('.btn-unban');
+    if(!btn) return;
+    const tr = btn.closest('tr'), uid = tr?.dataset.userId;
+    if(!uid) return;
+    if(!confirm('Unban this player?')) return;
+    const u = allUsersCache.find(x=>x.id===uid);
+    const { error } = await sb.rpc('admin_set_profile_flags', { target_user_id:uid, p_is_admin:u?.is_admin===true, p_is_banned:false });
+    if(error){ toast('Unban failed: '+error.message,'err'); return; }
+    toast('Player unbanned ✓','ok'); loadBannedTab();
   });
 }
 

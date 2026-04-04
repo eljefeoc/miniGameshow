@@ -95,7 +95,11 @@ flowchart LR
 
 ## What This Product Is
 
-A mobile-first web game show. Players tap a link, play a simple arcade game (5 attempts/day), and compete for a real weekly prize. No app install. A live Sunday stream crowns the weekly champion.
+A mobile-first web game show. Players tap a link, play a simple arcade game, and
+compete for a real weekly prize. No app install. A live Sunday stream crowns the
+weekly champion. Competition players get 5 attempts per day on a shared daily
+seed. Arcade is unlimited with a random seed every run — anyone can play
+as much as they want, no prize pressure.
 
 **The core loop:**
 - Monday: new game drops, link goes live, social posts go out
@@ -104,7 +108,7 @@ A mobile-first web game show. Players tap a link, play a simple arcade game (5 a
 - Sunday: live stream crowns champion, new game goes live immediately after
 
 **The design rules that never change:**
-- 5 attempts per day is a feature, not a restriction
+- 5 Competition attempts per day is a feature, not a restriction — Arcade is always unlimited
 - Zero friction — tap link, playing within 10 seconds, no install
 - Never pay-to-win, never stressful, never dark
 - Phone first — design starts at 375px width
@@ -115,46 +119,50 @@ A mobile-first web game show. Players tap a link, play a simple arcade game (5 a
 ## The Codebase Right Now
 
 ```
-prototypes/penguin-game.html     ← the entire game (~2,900 lines at baseline 4048999, single file)
-prototypes/hud.js                ← the top bar HUD (prize, countdown, rank, avatar, menu)
+prototypes/index.html            ← L1 landing; links /manifest.json
+prototypes/manifest.json         ← Web App Manifest (icons, theme); no service worker yet
+prototypes/penguin-game.html     ← L2/L3: shell + Pengu Fisher (~3k+ lines; layout baseline 4048999)
+prototypes/hud.js                ← Zone 1 HUD (prize, countdown, rank, avatar, menu)
 prototypes/hud.css               ← HUD styles
-prototypes/admin.html            ← operator admin panel (create/manage events)
-prototypes/supabase-config.js    ← your Supabase URL + anon key (gitignored, not in repo)
-supabase/schema.sql              ← full database schema
-supabase/migrations/             ← migration files applied to Supabase
-prototypes/assets/               ← sprites, icons, sticker images
-prototypes/games/README.md       ← L3 arcade module contract (draft); `*.js` games land here
-GAME_BIBLE.md                    ← full creative/design reference (characters, games, tone)
+prototypes/admin.html            ← operator UI: weeks CRUD + users (Edge Functions + RPCs)
+prototypes/supabase-config.js    ← Supabase URL + anon key (+ functions URL when set); gitignored
+supabase/schema.sql              ← full database schema (reference)
+supabase/migrations/             ← ordered migrations for Supabase
+supabase/functions/              ← Edge: admin-list-users, admin-auth-create-user, admin-auth-delete-user
+scripts/deploy-supabase-functions.sh   ← used by npm run deploy:functions
+prototypes/assets/               ← sprites, icons, PWA icons
+prototypes/games/README.md       ← L3 module contract (draft)
+GAME_BIBLE.md                    ← creative/design reference
+vercel.json                      ← outputDirectory prototypes/; / → index.html
+package.json                     ← build (supabase-config) + deploy:functions
 ```
 
-**Supabase tables:**
-- `profiles` — user accounts: id, username, display_name, is_18_plus, is_admin, is_banned
-- `weeks` — competition events: name, prize, start/end times, game selection
-- `runs` — every score submitted with event reference, day seed, gameplay data
-- `daily_attempts` — enforces the 5-attempts-per-day limit per user per seed
-- `leaderboard` — ranked scores view
+**Supabase tables (high level):**
+- `profiles` — id (auth user), username, display_name, is_18_plus, is_admin, is_banned
+- `weeks` — competition windows: game_id, starts_at, ends_at, prize fields, show_at, show_url, seed, …
+- `runs` — score rows: user_id, week_id, day_seed, attempt_num, replay_payload, …
+- `daily_attempts` — 5 attempts per user per day_seed (enforced in `before_run_insert`)
+- `leaderboard` — best score per user per week (+ rank refresh)
 
 ---
 
 ## What's Already Built
 
-### ✅ Phase 1 — Phone Shell & PWA (complete)
+### ✅ Phase 1 — Phone shell (complete); PWA (partial)
 - Game renders full-screen on mobile with no horizontal scroll
 - JUMP and CAST thumb buttons sized for thumbs (44×44px minimum)
 - Safe-area insets for notched phones (iPhone X+)
-- PWA manifest — installable from browser, no app store
-- Supabase JS pinned to specific CDN version
+- **Manifest:** `prototypes/manifest.json` exists and is linked from **`index.html` (L1)** only — “Add to Home Screen” works from the landing page path; **`penguin-game.html` does not reference the manifest**
+- **Service worker:** not implemented — no offline cache
+- Supabase JS loaded from CDN in the HTML pages
 
-### ✅ Phase 2 — Auth & Player Profiles (complete on backend / HUD track; game overlay may lag baseline)
-- Signup with display name + age checkbox (18+)
-- Session persists across browser refreshes
-- Forgot password / email reset flow
-- Account tab: avatar circle, display name, age badge, sign out
-- Under-18 users get `playMode='practice'` with amber indicator — scores save but stay on under-18 leaderboard only
-- Leaderboard shows display name (not email)
-- DB migration: `profiles` table has `display_name` and `is_18_plus` columns
+### ⚠ Phase 2 — Auth & profiles (mixed: DB ready, overlay minimal today)
+- **Implemented today:** Email + password sign-in / sign-up in the title overlay; OAuth (Google / Apple) and phone OTP exist in markup but are **CSS-hidden** (see Known Future Work). Session persists across refreshes. Shell **Account** tab + HUD use **`profiles.username`** (fallback email prefix); in-game leaderboard join uses **`profiles.username`**, not `display_name`.
+- **DB / migrations:** `display_name` and `is_18_plus` on `profiles` (`20260403_add_display_name_is_18_plus.sql`); `handle_new_user` reads signup metadata when present.
+- **Not in current `penguin-game.html` overlay:** Collecting display name or age at sign-up; `playMode` values are **`guest` / `competing` / `freeplay` only** (no under-18 “practice” mode or age-gated leaderboard in the client).
+- **Repair / catch-up:** Reconcile overlay UX with backend when you want Phase-2-complete behavior — see Repair List §3.
 
-**Baseline note:** After rollback commit `4048999`, the **in-game** title/post-run surfaces may not yet expose every Phase 2 UX that existed on pre-baseline `main`. Reconcile with the **Prototype baseline** section above when planning re-adds.
+**Baseline note:** Commit **`4048999`** is still the **layout** reference for `penguin-game.html` + HUD; feature work should stay in small, tested steps (see **Prototype baseline** above).
 
 ---
 
@@ -171,14 +179,15 @@ These are known issues that need fixing or verification before moving forward:
 **Status:** **Not in baseline `4048999`.** Earlier `main` used `assets/PLAY-TO-WIN_1.png` (200×200) with careful card padding so the sticker could sit half above the card. When adding it back, use the small asset—not the 2752×1536 `PLAY-TO-WIN.png`—and avoid mixing sticker work with canvas/control scaling in the same pass.
 
 ### 3. Auth flow — end-to-end test needed
-**Problem:** The entire auth system (signup, signin, forgot password, age gating, account tab) was built by AI agents and never manually tested end-to-end.
-**What to test:**
-- Sign up with display name + email + password + age checkbox checked → account created, display name on leaderboard, shows "Competitor" badge
-- Sign up with age checkbox UNCHECKED → account created, practice mode amber banner appears, account tab shows "Practice Mode" badge
-- Sign out → practice notice hides, state resets to guest
+**Problem:** Auth was largely agent-built; **current overlay** is email/password (+ hidden OAuth/phone). Display name, age checkbox, and practice mode are **not wired** in `penguin-game.html` today even though the DB supports some of it.
+**What to test (as implemented now):**
+- Sign up / sign in with email + password; confirm row in `auth.users` and `profiles`
+- Sign out → guest / competing / freeplay behavior matches `GAME_BIBLE.md`
 - Sign in on a different browser → session restores
-- Forgot password → reset email arrives, link opens new-password form, password updates successfully
-- Leaderboard shows display name not email
+- Forgot password → reset flow (if exposed in UI) end-to-end
+- Leaderboard lists **`username`** from `profiles` (or “Player”) — not `display_name` until the client uses it
+
+**Future tests (when overlay collects metadata):** display name + `is_18_plus` on signup, practice/competitor modes, age-separated boards — align with migrations and `handle_new_user`.
 
 ### 4. Supabase migration — run on your project
 **File:** `supabase/migrations/20260403_add_display_name_is_18_plus.sql`
@@ -191,24 +200,94 @@ These are known issues that need fixing or verification before moving forward:
 **Fix (app):** Sign-up uses `emailRedirectTo` = current page URL so production signups get production links (see `signUp` in [`prototypes/penguin-game.html`](prototypes/penguin-game.html)).
 **Stuck users:** In Supabase → **Authentication** → **Users**, either delete the test user and sign up again after fixing URLs, or manually confirm the email for that user.
 
-**Signup “succeeds” but no email and no row:** (1) Check **Authentication → Users** first — `public.profiles` is filled by a DB trigger; if the user never lands in `auth.users`, nothing appears in `profiles`. (2) **Logs → Auth** in the dashboard for send errors. (3) **Email** rate limits / custom SMTP: built-in mail is limited; configure **SMTP** under Project Settings → Auth if needed. (4) Confirm **Vercel** `SUPABASE_URL` / `SUPABASE_ANON_KEY` match the project you are inspecting. (5) Ensure migrations that create **`on_auth_user_created`** / `handle_new_user` are applied on that project.
+**Signup “succeeds” but no email and no row:** (1) Check **Authentication → Users** first — `public.profiles` is filled by a DB trigger; if the user never lands in `auth.users`, nothing appears in `profiles`. (2) **Logs → Auth** in the dashboard for send errors. (3) **Custom SMTP is configured** (Supabase Project Settings → Auth → SMTP) — rate limits are not a concern. (4) Confirm **Vercel** `SUPABASE_URL` / `SUPABASE_ANON_KEY` match the project you are inspecting. (5) Ensure migrations that create **`on_auth_user_created`** / `handle_new_user` are applied on that project.
+
+**Resend confirmation email — not yet implemented in UI.** After sign-up, if the
+player can't find the confirmation email: the overlay should stay in a "waiting
+for confirmation" state with a visible **Resend** button. Use:
+```javascript
+await supabase.auth.resend({ type: 'signup', email: userEmail })
+```
+If the player closes the app and tries to sign in, catch `error.code ===
+'email_not_confirmed'` and show "Your email isn't confirmed yet — resend
+confirmation?" instead of a generic failure. Add "Check your spam folder" as
+the first line of post-signup copy.
 
 ---
 
 ## What's Next — Remaining Phases
 
+### Phase 2b — Competition / Arcade Mode Separation
+**Goal:** The two-mode system (Competition with shared daily seed + Arcade with
+random per-run seed) is fully implemented in the DB, backend, and frontend.
+This is prerequisite work before Phase 4 leaderboard views can be built correctly.
+
+**What to build:**
+
+1. **DB migration — `runs.mode` column**
+   ```sql
+   ALTER TABLE runs
+     ADD COLUMN mode text NOT NULL DEFAULT 'competition'
+       CHECK (mode IN ('competition', 'arcade'));
+   ALTER TABLE runs ALTER COLUMN week_id DROP NOT NULL;
+   ```
+   Backfill existing rows: existing `freeplay` runs (random seed, no `week_id`)
+   → `mode = 'arcade'`. Existing `competing` runs → `mode = 'competition'`.
+
+2. **Arcade seed generation** — replace `getDailySeed()` for arcade runs with
+   `crypto.getRandomValues()` (returns a random hex string stored in `runs.day_seed`).
+   Competition seed remains `YYYYMMDD` date integer unchanged.
+
+3. **Mode switcher UI** — HUD or pre-game screen shows active mode explicitly.
+   Competition: shows attempt dots, prize, daily seed indicator. Arcade: shows
+   distinct indicator, no attempt counter, "unlimited" copy. Switching is a
+   deliberate tap — never accidental. Player must never burn a Competition attempt
+   thinking they were in Arcade.
+
+4. **Sign-up form updates** — add display name (pre-filled from arcade name if
+   set) and age checkbox ("I confirm I am 18 or older — required to enter the
+   competition and win prizes") to the sign-up overlay. Wire `is_18_plus` to route
+   scores: checked → Competition + Arcade boards; unchecked → Arcade board only.
+   No label or banner shown to the player about age routing.
+
+5. **Arcade name flow** — guest top-10 prompt after each arcade run (every time,
+   no localStorage persistence). Name checked live for uniqueness. After third
+   re-entry, prompt adds: "You've entered X times — save it permanently →" inline.
+   Session-stored name used for that session's arcade board entry only.
+
+6. **Resend confirmation email** — post-signup overlay "waiting for confirmation"
+   state with Resend button (`supabase.auth.resend`). `email_not_confirmed` error
+   handler on sign-in. See `GAME_BIBLE.md` Section 8 for full spec.
+
+7. **Arcade leaderboard query** — all-time personal best per player across all
+   weeks, filtered `WHERE mode = 'arcade'`. Show week tag (e.g. W09) next to
+   each score so players know when their best run was.
+
+**Done when:** A signed-in player can clearly switch between Competition and
+Arcade, scores land in the correct board, the DB `mode` column is populated
+correctly on every insert, and the arcade name loop works for guests.
+
+**See also:** `GAME_BIBLE.md` Section 8 (Competition vs Arcade) and Section 8
+(Sign-up Flow) for full product spec and copy direction.
+
+---
+
 ### Phase 3 — Event System & Admin Controls
 **Goal:** An operator (you) can create and manage a competition event. Everything in the game responds to the active event.
 
-**What to build:**
-1. **Event CRUD in admin panel** — create/edit/delete events with: game selection, event name, optional prize text, start datetime, end datetime, test/internal flag. Admin panel must be behind `is_admin = true` check.
-2. **Server-side cutoff enforcement** — a Postgres trigger rejects any run inserted after `weeks.ends_at`. Player sees "Scoring closed" message.
-3. **One active event at a time** — DB constraint prevents two overlapping active events.
-4. **HUD event awareness** — HUD shows active event name, prize, and countdown to Saturday cutoff. Correct state when no event is active.
-5. **Post-event admin view** — frozen leaderboard after event ends with winner (#1 on 18+ board) highlighted. Manual "new event live" trigger button for post-show.
-6. **Player ban controls** — admin can ban a player; their score submissions are blocked at DB level.
+**Already in repo (partial Phase 3):**
+1. **`prototypes/admin.html`** — `profiles.is_admin` gate; **weeks** list + create/update (fields include prize copy, `show_at`, `show_url`, window dates, seed, game id). **Overlap warning** when two weeks for the same game have intersecting `[starts_at, ends_at]` (UI only — not a DB constraint).
+2. **Users card** — Supabase Edge Functions **`admin-list-users`**, **`admin-auth-create-user`**, **`admin-auth-delete-user`** (JWT + admin guard); RPCs for **`admin_set_profile_flags`** (ban/admin), clearing competition data, etc. (`20260330120000_admin_user_mgmt.sql`). Deploy with **`npm run deploy:functions`**.
+3. **Ban enforcement** — `before_run_insert` raises if `profiles.is_banned` for the runner.
+4. **HUD / submit “active week”** — `fetchActiveWeek` and score submit query `weeks` with `starts_at ≤ now ≤ ends_at` (client-side); ties broken by latest `starts_at`. No Postgres trigger yet that rejects inserts when the week is closed or mismatched.
 
-**Done when:** Admin can create an event, game shows the prize and countdown, scoring closes automatically at the deadline, and admin can see the winner.
+**Still to build:**
+1. **Server-side cutoff on insert** — Postgres (or Edge submit path) validates `week_id` against `now` and `ends_at` / `starts_at` so clients cannot target arbitrary weeks.
+2. **DB constraint for non-overlapping windows** (optional product decision) — currently **warning-only** in admin.
+3. **Post-event admin view** — frozen leaderboard, winner highlight, “new event live” trigger (not in `admin.html` today).
+4. **Full schedule copy vs DB** — HUD time states remain client rules; “Saturday local midnight” server enforcement is still product/DB work (see `GAME_BIBLE.md` §2 vs implementation).
+
+**Done when:** Admin can create an event, game shows the prize and countdown, **scoring is enforced at the database** at the deadline, and admin can see the winner without ad-hoc SQL.
 
 ---
 
@@ -218,10 +297,14 @@ These are known issues that need fixing or verification before moving forward:
 **What to build:**
 1. **Attempt dots accuracy** — HUD attempt dots always match `daily_attempts` in DB, including after page refresh and next-day reset.
 2. **Game-over screen** — shows run score, personal best, remaining attempts today, current leaderboard rank. All within 2 seconds of run ending.
-3. **Leaderboard panel** — two views: 18+ competitors and under-18 practice. Fetch on panel open. Freeze display after event cutoff.
+3. **Leaderboard panel** — two views: **Competition** (weekly, shared seed,
+   18+ verified, prize eligible) and **Arcade** (all-time personal best, all
+   players, random seed per run, never resets). Fetch on panel open. Competition
+   view freezes after Saturday cutoff. Arcade view always live. See Section 8 of
+   `GAME_BIBLE.md` for full mode separation spec.
 4. **Score validation** — each run submission includes a gameplay hash (input count, session duration, day seed match). Runs that don't pass are flagged `is_validated = false` in the DB. Not blocked — flagged for review.
 5. **RLS verification** — confirm a score submitted without a valid auth JWT is rejected by Supabase row-level security.
-6. **Banned player enforcement** — `is_banned = true` on profiles table blocks score inserts at DB level.
+6. **Banned player enforcement** — **`is_banned`** already blocks inserts in **`before_run_insert`**; keep RLS/JWT verification aligned when adding new write paths.
 
 **Done when:** Attempt dots are always right, the game-over screen shows meaningful data, leaderboard has age-separated views, and basic score manipulation is flagged.
 
