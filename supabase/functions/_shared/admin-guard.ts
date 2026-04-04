@@ -14,26 +14,46 @@ function jwtIss(token: string): string | null {
 }
 
 /**
- * Edge `SUPABASE_URL` is sometimes an internal host (e.g. kong). GoTrue must be called on the
- * public `*.supabase.co` origin or `/auth/v1/user` returns "Invalid JWT" for valid access tokens.
+ * Pick the GoTrue/PostgREST origin for this Edge runtime:
+ * - Internal `SUPABASE_URL` (kong, etc.) → use JWT `iss` host (`*.supabase.co`).
+ * - Wrong project ref in env but valid user JWT → `iss` hostname differs from `base`; prefer `iss`.
  */
 function resolveAuthApiOrigin(base: string, bearerToken: string): string {
   const trimmed = base.replace(/\/$/, "");
+  let buHost = "";
   try {
-    const host = new URL(trimmed).hostname;
-    if (host.endsWith("supabase.co") || host === "127.0.0.1" || host === "localhost") {
-      return trimmed;
-    }
+    buHost = new URL(trimmed).hostname;
   } catch {
     return trimmed;
   }
+
   const iss = jwtIss(bearerToken);
-  if (!iss) return trimmed;
-  try {
-    const u = new URL(iss);
-    if (u.hostname.endsWith(".supabase.co")) return u.origin;
-  } catch {
-    /* ignore */
+  if (iss) {
+    try {
+      const iu = new URL(iss);
+      if (
+        iu.protocol === "https:" &&
+        iu.hostname.endsWith(".supabase.co") &&
+        iu.hostname !== buHost
+      ) {
+        return iu.origin;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  if (buHost.endsWith("supabase.co") || buHost === "127.0.0.1" || buHost === "localhost") {
+    return trimmed;
+  }
+
+  if (iss) {
+    try {
+      const u = new URL(iss);
+      if (u.protocol === "https:" && u.hostname.endsWith(".supabase.co")) return u.origin;
+    } catch {
+      /* ignore */
+    }
   }
   return trimmed;
 }
@@ -114,24 +134,42 @@ export async function requireAdmin(req: Request): Promise<
   const apiOrigin = resolveAuthApiOrigin(base, bearerToken);
   const admin = createClient(apiOrigin, serviceKey);
 
-  // 1) Auth REST (must hit public GoTrue origin when env URL is internal)
-  const userRes = await fetch(`${apiOrigin}/auth/v1/user`, {
-    headers: {
-      Authorization: authHeader,
-      apikey: anonKey,
-    },
-  });
-  const raw = await userRes.text();
+  // 1) Auth REST (anon apikey first; retry with service role apikey if GoTrue rejects — anon/env drift)
+  async function fetchAuthUser(apikey: string): Promise<{ res: Response; raw: string }> {
+    const res = await fetch(`${apiOrigin}/auth/v1/user`, {
+      headers: {
+        Authorization: authHeader,
+        apikey,
+      },
+    });
+    const raw = await res.text();
+    return { res, raw };
+  }
+
+  let { res: userRes, raw } = await fetchAuthUser(anonKey);
   let user: User | null = null;
   let errMsg = "Invalid session";
-  try {
-    const body = JSON.parse(raw) as { user?: User; msg?: string; error_description?: string; error?: string };
-    if (userRes.ok && body.user) user = body.user;
-    else {
+  let authUserRetry: "none" | "service_key" = "none";
+
+  function parseUserResponse(res: Response, text: string): User | null {
+    try {
+      const body = JSON.parse(text) as { user?: User; msg?: string; error_description?: string; error?: string };
+      if (res.ok && body.user) return body.user;
       errMsg = body.msg || body.error_description || body.error || errMsg;
+    } catch {
+      if (!res.ok && text) errMsg = text.slice(0, 200);
     }
-  } catch {
-    if (!userRes.ok && raw) errMsg = raw.slice(0, 200);
+    return null;
+  }
+
+  user = parseUserResponse(userRes, raw);
+  if (!user && userRes.status === 401) {
+    const second = await fetchAuthUser(serviceKey);
+    userRes = second.res;
+    raw = second.raw;
+    authUserRetry = "service_key";
+    errMsg = "Invalid session";
+    user = parseUserResponse(userRes, raw);
   }
 
   // 2) Service-role getUser (works when REST path is picky in Edge)
@@ -178,6 +216,7 @@ export async function requireAdmin(req: Request): Promise<
                 return null;
               }
             })(),
+            authUserRetry,
             bearerLen: bearerToken.length,
             anonLen: anonKey.length,
             hadXJwt: Boolean(xJwt),
