@@ -532,6 +532,7 @@ function functionsBase(){
 }
 
 async function edgeFetchGet(name){
+  await sb.auth.refreshSession();
   const { data:{ session } } = await sb.auth.getSession();
   if(!session?.access_token) throw new Error('Not signed in');
   const res = await fetch(`${functionsBase()}/${name}`, {
@@ -550,7 +551,7 @@ async function edgeFetchGet(name){
     let sbH='', fnH='';
     try{ sbH=new URL(SB_URL).hostname; }catch{}
     try{ fnH=new URL(functionsBase()).hostname; }catch{}
-    fetch('http://127.0.0.1:7724/ingest/e5f1dd3d-cbb1-4b56-97f9-2ee3c9d5cc64',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'92c9eb'},body:JSON.stringify({sessionId:'92c9eb',location:'admin.html:edgeFetchGet',message:name+' response',data:{runId:'pre-fix',hypothesisId:'H1-H5',ok:res.ok,status:res.status,err:String(j.error||''),debug:j.debug||null,sbHost:sbH,fnHost:fnH,tokenLen:session.access_token.length,expiresAt:session.expires_at||null},timestamp:Date.now()})}).catch(()=>{});
+    fetch('http://127.0.0.1:7724/ingest/e5f1dd3d-cbb1-4b56-97f9-2ee3c9d5cc64',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'92c9eb'},body:JSON.stringify({sessionId:'92c9eb',location:'admin.html:edgeFetchGet',message:name+' response',data:{runId:'post-fix',hypothesisId:'H1',ok:res.ok,status:res.status,err:String(j.error||''),debug:j.debug||null,sbHost:sbH,fnHost:fnH,tokenLen:session.access_token.length,expiresAt:session.expires_at||null},timestamp:Date.now()})}).catch(()=>{});
   })();
   // #endregion
   if(!res.ok) throw new Error(j.error || j.message || text || res.statusText);
@@ -558,6 +559,7 @@ async function edgeFetchGet(name){
 }
 
 async function edgeFetchPost(name, body){
+  await sb.auth.refreshSession();
   const { data:{ session } } = await sb.auth.getSession();
   if(!session?.access_token) throw new Error('Not signed in');
   const res = await fetch(`${functionsBase()}/${name}`, {

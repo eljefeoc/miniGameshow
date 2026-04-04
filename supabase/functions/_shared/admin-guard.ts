@@ -1,5 +1,43 @@
 import { createClient, type SupabaseClient, type User } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
+/** Decode JWT payload `iss` without verifying (debug + host fix only). */
+function jwtIss(token: string): string | null {
+  const parts = token.split(".");
+  if (parts.length < 2) return null;
+  try {
+    const pad = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const json = JSON.parse(atob(pad)) as { iss?: string };
+    return typeof json.iss === "string" ? json.iss : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Edge `SUPABASE_URL` is sometimes an internal host (e.g. kong). GoTrue must be called on the
+ * public `*.supabase.co` origin or `/auth/v1/user` returns "Invalid JWT" for valid access tokens.
+ */
+function resolveAuthApiOrigin(base: string, bearerToken: string): string {
+  const trimmed = base.replace(/\/$/, "");
+  try {
+    const host = new URL(trimmed).hostname;
+    if (host.endsWith("supabase.co") || host === "127.0.0.1" || host === "localhost") {
+      return trimmed;
+    }
+  } catch {
+    return trimmed;
+  }
+  const iss = jwtIss(bearerToken);
+  if (!iss) return trimmed;
+  try {
+    const u = new URL(iss);
+    if (u.hostname.endsWith(".supabase.co")) return u.origin;
+  } catch {
+    /* ignore */
+  }
+  return trimmed;
+}
+
 export const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -72,11 +110,12 @@ export async function requireAdmin(req: Request): Promise<
   }
 
   const authHeader = `Bearer ${bearerToken}`;
-  const admin = createClient(supabaseUrl, serviceKey);
-
-  // 1) Auth REST
   const base = supabaseUrl.replace(/\/$/, "");
-  const userRes = await fetch(`${base}/auth/v1/user`, {
+  const apiOrigin = resolveAuthApiOrigin(base, bearerToken);
+  const admin = createClient(apiOrigin, serviceKey);
+
+  // 1) Auth REST (must hit public GoTrue origin when env URL is internal)
+  const userRes = await fetch(`${apiOrigin}/auth/v1/user`, {
     headers: {
       Authorization: authHeader,
       apikey: anonKey,
@@ -108,10 +147,16 @@ export async function requireAdmin(req: Request): Promise<
 
   if (!user) {
     let baseHost = "";
+    let apiHost = "";
     try {
       baseHost = new URL(base).hostname;
     } catch {
       baseHost = "invalid_supabase_url";
+    }
+    try {
+      apiHost = new URL(apiOrigin).hostname;
+    } catch {
+      apiHost = "invalid_api_origin";
     }
     return {
       error: new Response(
@@ -123,6 +168,16 @@ export async function requireAdmin(req: Request): Promise<
             restErrSnippet: raw.slice(0, 120),
             getUserErr,
             baseHost,
+            apiHost,
+            accessTokenIssHost: (() => {
+              const iss = jwtIss(bearerToken);
+              if (!iss) return null;
+              try {
+                return new URL(iss).hostname;
+              } catch {
+                return null;
+              }
+            })(),
             bearerLen: bearerToken.length,
             anonLen: anonKey.length,
             hadXJwt: Boolean(xJwt),
