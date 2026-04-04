@@ -1,5 +1,5 @@
 # MiniGameshow — Cursor Roadmap
-*Last updated: 2026-04-04*
+*Last updated: 2026-03-29*
 
 ---
 
@@ -269,6 +269,8 @@ These are known issues that need fixing or verification before moving forward:
 ## Known Future Work (Not Scheduled Yet)
 
 - **OAuth sign-in (Google / Apple)** — Wired in [`prototypes/penguin-game.html`](prototypes/penguin-game.html) (`auth-google`, `auth-apple`, `startOAuth`) but **hidden** for now: remove the CSS rule **`.fp-auth-oauth-block { display:none !important; }`** to show the buttons again. Before launch: enable providers in Supabase, set Google/Apple redirect URIs to `https://<project-ref>.supabase.co/auth/v1/callback`, and follow [`VERCEL.md`](VERCEL.md) → *Supabase — Google, Apple, and phone*. Test OAuth return to `/penguin-game.html` on the canonical domain.
+- **Phone (SMS) sign-in** — Also **hidden**: remove **`.fp-auth-phone-block { display:none !important; }`** to show the number + OTP flow again (Twilio / provider setup per Supabase).
+- **Auth hardening** — The page uses a **honeypot** field and a **short minimum delay** after opening the form before email sign-in / sign-up runs; that only blocks naive bots. For real abuse resistance, turn on **Supabase Auth CAPTCHA** (or similar) and rate limits in the project dashboard.
 - **Game 03: Deep Dive** — Narwhal, underwater world, breath mechanic (fully designed in Game Bible)
 - **Character voiceover** — Babs' lines get actual voice acting
 - **Geo/age restriction framework** — structure for legal compliance in different regions

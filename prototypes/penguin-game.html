@@ -316,6 +316,107 @@ html, body {
 }
 /* Hidden until Google/Apple are enabled in Supabase; remove this rule to show OAuth */
 .fp-auth-oauth-block { display:none !important; }
+/* Hidden until SMS sign-in is re-enabled; remove this rule to show phone (OTP) */
+.fp-auth-phone-block { display:none !important; }
+.fp-auth-card {
+  position:relative;
+  margin-top:4px;
+  padding:14px 14px 12px;
+  border-radius:12px;
+  border:0.5px solid rgba(255,255,255,0.12);
+  background:rgba(0,0,0,0.22);
+  box-shadow:0 8px 28px rgba(0,0,0,0.35);
+}
+.fp-auth-title {
+  margin:0 0 6px;
+  font-size:15px;
+  font-weight:600;
+  color:rgba(255,255,255,0.95);
+  letter-spacing:-0.02em;
+}
+.fp-auth-sub {
+  margin:0 0 14px;
+  font-size:12px;
+  line-height:1.45;
+  color:rgba(255,255,255,0.45);
+}
+.fp-auth-hp {
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
+.fp-auth-hp label { position:absolute; left:-9999px; }
+.fp-auth-seg {
+  display:flex;
+  gap:2px;
+  padding:3px;
+  margin-bottom:12px;
+  border-radius:10px;
+  background:rgba(0,0,0,0.35);
+  border:0.5px solid rgba(255,255,255,0.08);
+}
+.fp-auth-seg-btn {
+  flex:1;
+  margin:0;
+  padding:9px 10px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-family:inherit;
+  font-size:12px;
+  font-weight:500;
+  color:rgba(255,255,255,0.45);
+  background:transparent;
+  transition:color 0.15s ease, background 0.15s ease;
+}
+.fp-auth-seg-btn:hover { color:rgba(255,255,255,0.75); }
+.fp-auth-seg-btn.fp-auth-seg-btn-active {
+  background:rgba(255,255,255,0.11);
+  color:#fff;
+  font-weight:600;
+  box-shadow:0 1px 0 rgba(255,255,255,0.06);
+}
+.fp-auth-fields { position:relative; }
+.fp-auth-field { margin-bottom:10px; }
+.fp-auth-label {
+  display:block;
+  margin-bottom:4px;
+  font-size:11px;
+  font-weight:500;
+  color:rgba(255,255,255,0.42);
+}
+.fp-auth-submit {
+  width:100%;
+  margin-top:4px;
+  padding:12px 14px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-family:inherit;
+  font-size:14px;
+  font-weight:600;
+  color:#412402;
+  background:#EF9F27;
+  box-shadow:0 2px 12px rgba(239,159,39,0.25);
+}
+.fp-auth-submit:active { opacity:0.92; }
+.fp-auth-submit:disabled { opacity:0.45; cursor:not-allowed; box-shadow:none; }
+.fp-auth-status {
+  display:block;
+  margin-top:10px;
+  min-height:1.2em;
+  font-size:12px;
+  line-height:1.4;
+  color:rgba(255,255,255,0.38);
+}
+.fp-auth-status.fp-auth-status-warn { color:#e8a0a0; }
+.fp-auth-status.fp-auth-status-ok { color:#7dcea0; }
 .fp-auth-oauth-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
 .fp-auth-oauth {
   flex:1; min-width:120px; padding:10px 12px; border-radius:8px; cursor:pointer;
@@ -884,7 +985,7 @@ html, body {
               </div>
             </div>
 
-            <div id="ov-auth" class="fp-auth-embed" style="display:none" data-fp-open="0">
+            <div id="ov-auth" class="fp-auth-embed" style="display:none" data-fp-open="0" data-fp-auth-mode="signin">
               <div class="fp-auth-oauth-block">
                 <p class="fp-auth-divider">Continue with</p>
                 <div class="fp-auth-oauth-row">
@@ -892,22 +993,40 @@ html, body {
                   <button type="button" class="fp-auth-oauth fp-auth-oauth-apple" id="auth-apple" aria-label="Sign in with Apple">Apple</button>
                 </div>
               </div>
-              <p class="fp-auth-divider">Or phone (SMS)</p>
-              <p class="fp-auth-phone-hint">Use international format with country code, e.g. +1 415 555 1234</p>
-              <input id="auth-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+1…" />
-              <button type="button" class="fp-auth-phone-btn" id="auth-phone-send">Send code</button>
-              <div class="fp-auth-phone-verify" id="auth-phone-verify-box">
-                <input id="auth-phone-otp" type="text" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="Code from SMS" />
-                <button type="button" class="fp-auth-phone-btn" id="auth-phone-verify" style="margin-top:0">Verify code</button>
+              <div class="fp-auth-phone-block">
+                <p class="fp-auth-divider">Or phone (SMS)</p>
+                <p class="fp-auth-phone-hint">Use international format with country code, e.g. +1 415 555 1234</p>
+                <input id="auth-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+1…" />
+                <button type="button" class="fp-auth-phone-btn" id="auth-phone-send">Send code</button>
+                <div class="fp-auth-phone-verify" id="auth-phone-verify-box">
+                  <input id="auth-phone-otp" type="text" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="Code from SMS" />
+                  <button type="button" class="fp-auth-phone-btn" id="auth-phone-verify" style="margin-top:0">Verify code</button>
+                </div>
               </div>
-              <p class="fp-auth-divider">Or email</p>
-              <input id="auth-email" type="email" autocomplete="email" placeholder="Email" />
-              <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Password" />
-              <div class="fp-auth-row">
-                <button type="button" id="auth-signin">Sign in</button>
-                <button type="button" id="auth-signup">Create account</button>
+              <div class="fp-auth-card">
+                <h2 class="fp-auth-title">Save scores on the leaderboard</h2>
+                <p class="fp-auth-sub">Use a real email you check. New accounts get a confirmation link (check spam). This is the same account each week.</p>
+                <div class="fp-auth-hp" aria-hidden="true">
+                  <label for="auth-honeypot">Leave blank</label>
+                  <input type="text" id="auth-honeypot" name="website" tabindex="-1" autocomplete="off" />
+                </div>
+                <div class="fp-auth-seg" role="tablist" aria-label="Sign in or create account">
+                  <button type="button" role="tab" id="auth-tab-signin" class="fp-auth-seg-btn fp-auth-seg-btn-active" aria-selected="true" aria-controls="auth-fields-panel">Sign in</button>
+                  <button type="button" role="tab" id="auth-tab-signup" class="fp-auth-seg-btn" aria-selected="false" aria-controls="auth-fields-panel">Create account</button>
+                </div>
+                <div id="auth-fields-panel" role="tabpanel" class="fp-auth-fields" aria-labelledby="auth-tab-signin">
+                  <div class="fp-auth-field">
+                    <label class="fp-auth-label" for="auth-email">Email</label>
+                    <input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com" />
+                  </div>
+                  <div class="fp-auth-field">
+                    <label class="fp-auth-label" for="auth-pass">Password</label>
+                    <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Your password" />
+                  </div>
+                  <button type="button" id="auth-submit" class="fp-auth-submit">Sign in</button>
+                  <span id="auth-status" class="fp-auth-status" role="status"></span>
+                </div>
               </div>
-              <span id="auth-status"></span>
             </div>
 
             <div class="fp-actions">
@@ -2397,7 +2516,51 @@ function draw(){
 
 // ═══════════════════════════════════════════════════════════
 //  SUPABASE AUTH — keys in prototypes/supabase-config.js; providers in Supabase + VERCEL.md
+//  Client friction only (honeypot + min time open). For production, enable Supabase Auth CAPTCHA / rate limits.
 // ═══════════════════════════════════════════════════════════
+const AUTH_MIN_PANEL_MS = 1400;
+let _authPanelOpenedAt = 0;
+
+function authAntiBotAllow(statusEl){
+  const hp = document.getElementById('auth-honeypot');
+  if(hp && hp.value.trim()){
+    console.warn('[auth] blocked submission (bot check)');
+    return false;
+  }
+  if(_authPanelOpenedAt && (Date.now() - _authPanelOpenedAt) < AUTH_MIN_PANEL_MS){
+    if(statusEl){
+      statusEl.textContent = 'Please wait a moment before continuing.';
+      statusEl.classList.add('fp-auth-status-warn');
+      statusEl.classList.remove('fp-auth-status-ok');
+    }
+    return false;
+  }
+  return true;
+}
+
+function setAuthFormMode(mode){
+  const o = document.getElementById('ov-auth');
+  if(o) o.dataset.fpAuthMode = mode === 'signup' ? 'signup' : 'signin';
+  const isUp = mode === 'signup';
+  const tabIn = document.getElementById('auth-tab-signin');
+  const tabUp = document.getElementById('auth-tab-signup');
+  const sub = document.getElementById('auth-submit');
+  const pass = document.getElementById('auth-pass');
+  tabIn?.classList.toggle('fp-auth-seg-btn-active', !isUp);
+  tabUp?.classList.toggle('fp-auth-seg-btn-active', isUp);
+  tabIn?.setAttribute('aria-selected', String(!isUp));
+  tabUp?.setAttribute('aria-selected', String(isUp));
+  if(sub) sub.textContent = isUp ? 'Create account' : 'Sign in';
+  if(pass){
+    pass.setAttribute('autocomplete', isUp ? 'new-password' : 'current-password');
+    pass.placeholder = isUp ? 'Choose a password (6+ characters)' : 'Your password';
+  }
+}
+
+function getAuthFormMode(){
+  return document.getElementById('ov-auth')?.dataset.fpAuthMode === 'signup' ? 'signup' : 'signin';
+}
+
 function getAuthReturnUrl(){
   const cfg0 = window.__MINIGAMESHOW_SUPABASE__ || {};
   if(cfg0.appOrigin && String(cfg0.appOrigin).trim())
@@ -2430,11 +2593,17 @@ function updateAuthUI(session){
   const signoutBtn = document.getElementById('auth-signout');
   if(session?.user){
     const em = userAuthLabel(session.user);
-    if(statusEl)  statusEl.textContent  = '';
+    if(statusEl){
+      statusEl.textContent = '';
+      statusEl.classList.remove('fp-auth-status-warn','fp-auth-status-ok');
+    }
     if(userLabel){ userLabel.textContent = em; userLabel.title = em; }
     if(signoutBtn) signoutBtn.style.display = 'inline-block';
   } else {
-    if(statusEl)  statusEl.textContent  = '';
+    if(statusEl){
+      statusEl.textContent = '';
+      statusEl.classList.remove('fp-auth-status-warn','fp-auth-status-ok');
+    }
     if(userLabel) userLabel.textContent  = '';
     if(signoutBtn) signoutBtn.style.display = 'none';
   }
@@ -2497,14 +2666,12 @@ async function bootSupabaseAuth(){
     if(msgEl){
       msgEl.textContent='Supabase isn’t configured (no URL/key). Local: copy supabase-config.example.js → supabase-config.js. Hosted: set SUPABASE_URL + SUPABASE_ANON_KEY on the host.';
     }
-    ['auth-signin','auth-signup'].forEach(id=>{
-      const b=document.getElementById(id);
-      if(b){
-        b.disabled=true;
-        b.setAttribute('aria-disabled','true');
-        b.title='Configure Supabase before sign-in works';
-      }
-    });
+    const submitCfg = document.getElementById('auth-submit');
+    if(submitCfg){
+      submitCfg.disabled = true;
+      submitCfg.setAttribute('aria-disabled','true');
+      submitCfg.title = 'Configure Supabase before sign-in works';
+    }
     return;
   }
   try{
@@ -2523,6 +2690,7 @@ async function bootSupabaseAuth(){
     });
     const sb=supabase.createClient(url,key,{ auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
     window._miniGameshowSb=sb;
+    setAuthFormMode(getAuthFormMode());
     const { data:{ session } } = await sb.auth.getSession();
     if(session?.user) await onSignedIn(session);
     else updateAuthUI(null);
@@ -2539,32 +2707,64 @@ async function bootSupabaseAuth(){
       });
     });
 
-    document.getElementById('auth-signin').addEventListener('click', async ()=>{
-      const email=document.getElementById('auth-email').value.trim();
-      const password=document.getElementById('auth-pass').value;
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      if(error) alert(error.message);
+    document.getElementById('auth-tab-signin')?.addEventListener('click', ()=>{
+      setAuthFormMode('signin');
+      const st = document.getElementById('auth-status');
+      if(st){ st.textContent = ''; st.classList.remove('fp-auth-status-warn','fp-auth-status-ok'); }
     });
-    document.getElementById('auth-signup').addEventListener('click', async ()=>{
-      const email=document.getElementById('auth-email').value.trim();
-      const password=document.getElementById('auth-pass').value;
-      if(password.length<6){ alert('Password: at least 6 characters'); return; }
-      const emailRedirectTo = getAuthReturnUrl();
-      const { data, error } = await sb.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo },
-      });
-      if(error){
-        alert(error.message);
+    document.getElementById('auth-tab-signup')?.addEventListener('click', ()=>{
+      setAuthFormMode('signup');
+      const st = document.getElementById('auth-status');
+      if(st){ st.textContent = ''; st.classList.remove('fp-auth-status-warn','fp-auth-status-ok'); }
+    });
+
+    document.getElementById('auth-submit').addEventListener('click', async ()=>{
+      const st = document.getElementById('auth-status');
+      if(!authAntiBotAllow(st)) return;
+      st?.classList.remove('fp-auth-status-warn','fp-auth-status-ok');
+      const mode = getAuthFormMode();
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-pass').value;
+      if(!email){
+        if(st){ st.textContent = 'Enter your email.'; st.classList.add('fp-auth-status-warn'); }
         return;
       }
-      // With "Confirm email" on, Supabase often returns data.user === null until the link is used; the row still appears under Dashboard → Authentication → Users.
-      console.info('[auth signUp]', { userId: data.user?.id ?? null, session: !!data.session });
-      if(data.user){
-        alert('Account created. You are signed in.');
+      if(!password){
+        if(st){ st.textContent = 'Enter your password.'; st.classList.add('fp-auth-status-warn'); }
+        return;
+      }
+      if(st) st.textContent = '';
+      if(mode === 'signin'){
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if(error){
+          if(st){ st.textContent = error.message; st.classList.add('fp-auth-status-warn'); }
+          return;
+        }
       } else {
-        alert('If email confirmation is enabled, check your inbox and spam for a link from Supabase. Until you confirm, sign-in may fail. In the dashboard, look under Authentication → Users (not only Table Editor → profiles).');
+        if(password.length < 6){
+          if(st){ st.textContent = 'Password must be at least 6 characters.'; st.classList.add('fp-auth-status-warn'); }
+          return;
+        }
+        const emailRedirectTo = getAuthReturnUrl();
+        const { data, error } = await sb.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo },
+        });
+        if(error){
+          if(st){ st.textContent = error.message; st.classList.add('fp-auth-status-warn'); }
+          return;
+        }
+        console.info('[auth signUp]', { userId: data.user?.id ?? null, session: !!data.session });
+        if(data.user){
+          if(st){
+            st.textContent = 'You’re signed in. Your scores will save to this account.';
+            st.classList.add('fp-auth-status-ok');
+          }
+        } else if(st){
+          st.textContent = 'Check your inbox (and spam) for a confirmation link. You must confirm before sign-in works.';
+          st.classList.add('fp-auth-status-ok');
+        }
       }
     });
     document.getElementById('auth-signout').addEventListener('click', async ()=>{
@@ -2880,6 +3080,11 @@ function revealAuthPanel(){
   o.dataset.fpOpen = '1';
   o.style.display = 'flex';
   o.style.flexDirection = 'column';
+  _authPanelOpenedAt = Date.now();
+  const hp = document.getElementById('auth-honeypot');
+  if(hp) hp.value = '';
+  const st = document.getElementById('auth-status');
+  if(st){ st.textContent = ''; st.classList.remove('fp-auth-status-warn','fp-auth-status-ok'); }
   document.getElementById('auth-phone-verify-box')?.classList.remove('fp-auth-phone-verify-open');
   const otp = document.getElementById('auth-phone-otp');
   if(otp) otp.value = '';
