@@ -73,6 +73,12 @@ function jwtPayloadRef(supabaseKey: string): string | null {
   return ref;
 }
 
+/** `xyz.supabase.co` → lowercase project ref; null for bare `supabase.co`, pooler-style hosts, etc. */
+function projectRefFromSupabaseCoHost(host: string): string | null {
+  const m = /^([a-z0-9]{15,40})\.supabase\.co$/i.exec(host.trim());
+  return m ? m[1].toLowerCase() : null;
+}
+
 /**
  * Public PostgREST/GoTrue origin for this function:
  * - Local dev (`127.0.0.1` / `localhost`): use `SUPABASE_URL` as-is.
@@ -220,25 +226,25 @@ export async function requireAdmin(req: Request): Promise<
       tokenIssHost = null;
     }
   }
-  if (svcRef && tokenIssHost && tokenIssHost.endsWith(".supabase.co")) {
+  const refFromToken = tokenIssHost ? projectRefFromSupabaseCoHost(tokenIssHost) : null;
+  if (svcRef && refFromToken && refFromToken !== svcRef.toLowerCase()) {
     const expectedHost = `${svcRef}.supabase.co`;
-    if (tokenIssHost !== expectedHost) {
-      return {
-        error: new Response(
-          JSON.stringify({
-            error:
-              "User session is for a different Supabase project than this function. Align `url` and `functionsUrl` in admin config with the same project.",
-            debug: {
-              branch: "jwt_project_mismatch",
-              hypothesisId: "H7",
-              tokenIssHost,
-              functionProjectHost: expectedHost,
-            },
-          }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        ),
-      };
-    }
+    return {
+      error: new Response(
+        JSON.stringify({
+          error:
+            "User session is for a different Supabase project than this function. Align `url` and `functionsUrl` in admin config with the same project.",
+          debug: {
+            branch: "jwt_project_mismatch",
+            hypothesisId: "H7",
+            tokenIssHost,
+            tokenProjectRef: refFromToken,
+            functionProjectHost: expectedHost,
+          },
+        }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      ),
+    };
   }
 
   const authHeader = `Bearer ${bearerToken}`;
