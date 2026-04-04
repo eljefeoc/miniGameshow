@@ -264,6 +264,24 @@ tr:hover td { background:rgba(255,255,255,0.025); }
   outline:none; border-color:var(--accent2);
   box-shadow:0 0 0 3px rgba(168,85,247,0.18);
 }
+
+/* ── users / modal ── */
+#users-card .users-toolbar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
+#users-card .users-toolbar span { font-size:12px; color:var(--text-dim); }
+.user-cb { width:18px; height:18px; cursor:pointer; accent-color:var(--accent2); }
+.user-actions { display:flex; gap:6px; flex-wrap:wrap; }
+#modal-add-user {
+  display:none; position:fixed; inset:0; z-index:200;
+  background:rgba(0,0,0,0.65); align-items:center; justify-content:center; padding:20px;
+}
+#modal-add-user.open { display:flex; }
+.modal-inner {
+  background:var(--card-bg); border:1px solid var(--border); border-radius:14px;
+  padding:22px; max-width:400px; width:100%;
+}
+.modal-inner h3 { font-size:14px; margin-bottom:12px; color:var(--accent); font-family:'Press Start 2P',monospace; }
+.modal-inner .form-group { margin-bottom:12px; }
+.modal-backdrop-btns { display:flex; gap:10px; margin-top:16px; justify-content:flex-end; }
 </style>
 <script src="supabase-config.js"></script>
 <script>window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'', anonKey:'' };</script>
@@ -415,6 +433,43 @@ tr:hover td { background:rgba(255,255,255,0.025); }
 
     </div><!-- /card -->
 
+    <div id="week-overlap-warn" class="note" style="display:none;margin-bottom:20px;border-color:var(--amber)"></div>
+
+    <!-- ── Users (admins only; Edge Functions required for list/create/delete) ── -->
+    <div class="card" id="users-card" style="display:none">
+      <div class="card-header">
+        <div class="card-title">Users &amp; testers</div>
+      </div>
+      <p class="note" style="margin-bottom:14px">
+        <strong>List / add / delete Auth users</strong> uses Supabase Edge Functions (service role on server only).
+        Deploy <code>admin-list-users</code>, <code>admin-auth-create-user</code>, <code>admin-auth-delete-user</code>
+        and set <code>SUPABASE_SERVICE_ROLE_KEY</code> for each. See <code>VERCEL.md</code>.
+        <strong>Ban</strong> and <strong>clear scores</strong> use DB RPCs after migration <code>20260330120000_admin_user_mgmt.sql</code>.
+      </p>
+      <div class="users-toolbar">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-users-refresh">Refresh list</button>
+        <button type="button" class="btn btn-success btn-sm" id="btn-user-add">+ Add user</button>
+        <span id="users-fn-status"></span>
+      </div>
+      <div class="weeks-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Display</th>
+              <th>Admin</th>
+              <th>Banned</th>
+              <th>Joined</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Sign in as admin, then refresh.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ── Setup note ── -->
     <div class="note">
       <strong>Setup reminder:</strong>
@@ -426,6 +481,29 @@ tr:hover td { background:rgba(255,255,255,0.025); }
     </div>
 
   </main>
+</div>
+
+<div id="modal-add-user" aria-hidden="true">
+  <div class="modal-inner">
+    <h3>Add user</h3>
+    <div class="form-group">
+      <label for="add-email">Email</label>
+      <input type="email" id="add-email" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label for="add-pass">Password</label>
+      <input type="password" id="add-pass" autocomplete="new-password" />
+    </div>
+    <div class="form-group">
+      <label for="add-dname">Display name <span class="label-hint">optional</span></label>
+      <input type="text" id="add-dname" />
+    </div>
+    <p id="add-user-err" style="color:var(--red);font-size:12px;display:none"></p>
+    <div class="modal-backdrop-btns">
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-add-user-cancel">Cancel</button>
+      <button type="button" class="btn btn-success btn-sm" id="btn-add-user-save">Create</button>
+    </div>
+  </div>
 </div>
 
 <!-- Toast -->
@@ -441,6 +519,135 @@ let currentUser = null;
 let isAdmin = false;
 let editingWeekId = null; // null = creating, uuid = editing
 let gamesCache = [];
+let weeksDataCache = [];
+
+function functionsBase(){
+  const c = window.__MINIGAMESHOW_SUPABASE__ || {};
+  const u = String(c.functionsUrl || '').trim();
+  if(u) return u.replace(/\/$/,'');
+  return SB_URL.replace(/\/$/,'') + '/functions/v1';
+}
+
+async function edgeFetchGet(name){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session?.access_token) throw new Error('Not signed in');
+  const res = await fetch(`${functionsBase()}/${name}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: SB_KEY,
+    },
+  });
+  const text = await res.text();
+  let j;
+  try{ j = JSON.parse(text); }catch{ j = { error: text }; }
+  if(!res.ok) throw new Error(j.error || j.message || text || res.statusText);
+  return j;
+}
+
+async function edgeFetchPost(name, body){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session?.access_token) throw new Error('Not signed in');
+  const res = await fetch(`${functionsBase()}/${name}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: SB_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body || {}),
+  });
+  const text = await res.text();
+  let j;
+  try{ j = JSON.parse(text); }catch{ j = { error: text }; }
+  if(!res.ok) throw new Error(j.error || j.message || text || res.statusText);
+  return j;
+}
+
+function updateWeekOverlapWarn(data){
+  const el = document.getElementById('week-overlap-warn');
+  if(!el) return;
+  const byGame = {};
+  for(const w of data || []){
+    (byGame[w.game_id] ??= []).push(w);
+  }
+  const pairs = [];
+  for(const gid of Object.keys(byGame)){
+    const arr = byGame[gid];
+    for(let i = 0; i < arr.length; i++){
+      for(let j = i + 1; j < arr.length; j++){
+        const a = arr[i], b = arr[j];
+        const a0 = new Date(a.starts_at).getTime();
+        const a1 = new Date(a.ends_at).getTime();
+        const b0 = new Date(b.starts_at).getTime();
+        const b1 = new Date(b.ends_at).getTime();
+        if(a0 <= b1 && b0 <= a1) pairs.push([a.week_code, b.week_code]);
+      }
+    }
+  }
+  if(!pairs.length){
+    el.style.display = 'none';
+    el.textContent = '';
+    return;
+  }
+  el.style.display = 'block';
+  el.innerHTML = '<strong>Overlapping scoring windows</strong> (same game): ' +
+    pairs.map(([x,y]) => `<code>${x}</code> ↔ <code>${y}</code>`).join(' · ') +
+    '. The game picks the latest <code>starts_at</code>; fix dates to avoid ambiguity.';
+}
+
+async function loadUsers(){
+  const tbody = document.getElementById('users-tbody');
+  const st = document.getElementById('users-fn-status');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Loading…</td></tr>';
+  if(st) st.textContent = '';
+  try{
+    const { users } = await edgeFetchGet('admin-list-users');
+    if(!users?.length){
+      tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">No users</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map(u=>{
+      const self = currentUser && u.id === currentUser.id;
+      const disAdmin = self ? ' disabled title="Cannot remove your own admin"' : '';
+      const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+      const dname = u.display_name || u.username || '—';
+      return `<tr data-user-id="${u.id}">
+        <td style="font-size:11px;word-break:break-all">${esc(u.email)}</td>
+        <td style="color:var(--text-dim);font-size:11px">${esc(dname)}</td>
+        <td><input type="checkbox" class="user-cb cb-admin" ${u.is_admin ? 'checked' : ''}${disAdmin} aria-label="Admin" /></td>
+        <td><input type="checkbox" class="user-cb cb-ban" ${u.is_banned ? 'checked' : ''} aria-label="Banned" /></td>
+        <td style="font-size:11px;color:var(--text-dim)">${u.created_at ? fmtDate(u.created_at) : '—'}</td>
+        <td class="user-actions">
+          <button type="button" class="btn btn-ghost btn-sm btn-clear-scores">Clear scores</button>
+          ${self ? '' : '<button type="button" class="btn btn-danger btn-sm btn-delete-user">Delete</button>'}
+        </td>
+      </tr>`;
+    }).join('');
+    if(st) st.textContent = 'Loaded via Edge Functions ✓';
+  }catch(e){
+    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red);padding:16px">${escHtml(e.message || String(e))}<br><span style="font-size:11px;color:var(--muted)">Deploy functions or check functionsUrl in supabase-config.</span></td></tr>`;
+    if(st) st.textContent = 'List failed — see row above';
+  }
+}
+
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+}
+
+async function persistUserFlags(tr){
+  const id = tr.dataset.userId;
+  const adm = tr.querySelector('.cb-admin')?.checked === true;
+  const ban = tr.querySelector('.cb-ban')?.checked === true;
+  const { error } = await sb.rpc('admin_set_profile_flags', {
+    target_user_id: id,
+    p_is_admin: adm,
+    p_is_banned: ban,
+  });
+  if(error) throw error;
+}
 
 // ── helpers ──────────────────────────────────────────────────────────────
 function toast(msg, type='ok', ms=3000){
@@ -577,7 +784,15 @@ async function loadWeeks(){
     .order('starts_at',{ascending:false});
 
   if(error){ tbody.innerHTML=`<tr><td colspan="7" style="color:var(--red)">Error: ${error.message}</td></tr>`; return; }
-  if(!data?.length){ tbody.innerHTML=`<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:24px">No weeks yet. Create one above ↑</td></tr>`; return; }
+  if(!data?.length){
+    weeksDataCache = [];
+    updateWeekOverlapWarn([]);
+    tbody.innerHTML=`<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:24px">No weeks yet. Create one above ↑</td></tr>`;
+    return;
+  }
+
+  weeksDataCache = data;
+  updateWeekOverlapWarn(data);
 
   const gameMap=Object.fromEntries(gamesCache.map(g=>[g.id,g.name]));
   tbody.innerHTML=data.map(w=>`
@@ -659,9 +874,12 @@ async function onSignedIn(session){
   document.getElementById('not-admin-note').style.display=isAdmin?'none':'block';
 
   showAdminPanel();
+  const uc = document.getElementById('users-card');
+  if(uc) uc.style.display = isAdmin ? 'block' : 'none';
   if(isAdmin){
     await loadGames();
-    loadWeeks();
+    await loadWeeks();
+    loadUsers();
   }
 }
 
@@ -705,6 +923,81 @@ async function boot(){
   document.getElementById('btn-cancel-form').addEventListener('click',closeForm);
   document.getElementById('btn-delete-week').addEventListener('click',deleteWeek);
   document.getElementById('week-form').addEventListener('submit',saveWeek);
+
+  document.getElementById('btn-users-refresh')?.addEventListener('click', ()=> loadUsers());
+  document.getElementById('btn-user-add')?.addEventListener('click', ()=>{
+    document.getElementById('add-email').value = '';
+    document.getElementById('add-pass').value = '';
+    document.getElementById('add-dname').value = '';
+    document.getElementById('add-user-err').style.display = 'none';
+    document.getElementById('modal-add-user').classList.add('open');
+    document.getElementById('modal-add-user').setAttribute('aria-hidden','false');
+  });
+  document.getElementById('btn-add-user-cancel')?.addEventListener('click', ()=>{
+    document.getElementById('modal-add-user').classList.remove('open');
+    document.getElementById('modal-add-user').setAttribute('aria-hidden','true');
+  });
+  document.getElementById('btn-add-user-save')?.addEventListener('click', async ()=>{
+    const errEl = document.getElementById('add-user-err');
+    errEl.style.display = 'none';
+    try{
+      await edgeFetchPost('admin-auth-create-user', {
+        email: document.getElementById('add-email').value.trim(),
+        password: document.getElementById('add-pass').value,
+        display_name: document.getElementById('add-dname').value.trim() || undefined,
+      });
+      document.getElementById('modal-add-user').classList.remove('open');
+      document.getElementById('modal-add-user').setAttribute('aria-hidden','true');
+      toast('User created ✓','ok');
+      loadUsers();
+    }catch(e){
+      errEl.textContent = e.message || String(e);
+      errEl.style.display = 'block';
+    }
+  });
+
+  document.getElementById('users-tbody')?.addEventListener('change', async (e)=>{
+    const t = e.target;
+    if(!t.classList.contains('cb-admin') && !t.classList.contains('cb-ban')) return;
+    const tr = t.closest('tr');
+    if(!tr) return;
+    try{
+      await persistUserFlags(tr);
+      toast('Saved profile flags','ok',2000);
+    }catch(err){
+      toast('Save failed: ' + (err.message || err),'err',5000);
+      loadUsers();
+    }
+  });
+
+  document.getElementById('users-tbody')?.addEventListener('click', async (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const tr = btn.closest('tr');
+    if(!tr) return;
+    const uid = tr.dataset.userId;
+    if(btn.classList.contains('btn-clear-scores')){
+      if(!confirm('Clear all runs, leaderboard rows, and daily attempt counts for this user?')) return;
+      try{
+        const { error } = await sb.rpc('admin_clear_user_competition_data', { target_user_id: uid });
+        if(error) throw error;
+        toast('Competition data cleared','ok');
+      }catch(err){
+        toast('Clear failed: ' + (err.message || err),'err',5000);
+      }
+      return;
+    }
+    if(btn.classList.contains('btn-delete-user')){
+      if(!confirm('Permanently delete this Auth user and all related data?')) return;
+      try{
+        await edgeFetchPost('admin-auth-delete-user', { user_id: uid });
+        toast('User deleted','ok');
+        loadUsers();
+      }catch(err){
+        toast('Delete failed: ' + (err.message || err),'err',5000);
+      }
+    }
+  });
 
   // live preview wiring
   ['f-prize','f-show-at'].forEach(id=>{

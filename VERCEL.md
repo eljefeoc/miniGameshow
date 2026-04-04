@@ -27,6 +27,24 @@ You can also run **`__MINIGAMESHOW_CONFIRM_REDIRECT__`** in the console — it i
 - **`/penguin-game.html`** → game (L2/L3)
 - **`/admin.html`** → Admin panel
 
+## Admin panel — database migration and Edge Functions
+
+**SQL (required for bans, clear-scores, week delete, profile flags):** Run migration [`supabase/migrations/20260330120000_admin_user_mgmt.sql`](supabase/migrations/20260330120000_admin_user_mgmt.sql) on your Supabase project (SQL Editor or `supabase db push`).
+
+**Edge Functions (required for user list, create user, delete Auth user):** Deploy from the repo root with the [Supabase CLI](https://supabase.com/docs/guides/functions):
+
+```bash
+supabase link   # once per project
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your_service_role_key   # Dashboard → Settings → API
+supabase functions deploy admin-list-users
+supabase functions deploy admin-auth-create-user
+supabase functions deploy admin-auth-delete-user
+```
+
+The functions read `SUPABASE_URL` and `SUPABASE_ANON_KEY` automatically when deployed on Supabase; you must set **`SUPABASE_SERVICE_ROLE_KEY`** as a function secret. **Never** put the service role key in `supabase-config.js` or static HTML — the browser only uses the anon key; admin actions verify your JWT then use the service role on the server.
+
+Optional local override: in `supabase-config.js`, set `functionsUrl` if your functions base URL is not `{SUPABASE_URL}/functions/v1`.
+
 ## Custom domain: Namecheap → Vercel (`theminigameshow.com`)
 
 Use **DNS records** (Advanced DNS), not Namecheap’s **URL Redirect** for the same hostnames you want Vercel to serve—redirect records can fight HTTPS routing.

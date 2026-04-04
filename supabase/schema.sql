@@ -260,10 +260,19 @@ AS $$
 DECLARE
   v_used smallint;
   v_next smallint;
+  v_banned boolean;
 BEGIN
   -- Direct client inserts: JWT must match. Service role (Edge) bypasses RLS; trust server-side validation.
   IF auth.uid() IS NOT NULL AND NEW.user_id IS DISTINCT FROM auth.uid() THEN
     RAISE EXCEPTION 'user_id must match authenticated user';
+  END IF;
+
+  SELECT COALESCE(is_banned, false) INTO v_banned
+  FROM public.profiles
+  WHERE id = NEW.user_id;
+
+  IF v_banned THEN
+    RAISE EXCEPTION 'account is banned from competition';
   END IF;
 
   INSERT INTO public.daily_attempts (user_id, day_seed, attempts_used)
