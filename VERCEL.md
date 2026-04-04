@@ -15,6 +15,12 @@ The build runs `npm run build`, which writes `prototypes/supabase-config.js` fro
 
 **Supabase Auth (confirmation links):** In the dashboard, set **Authentication → URL Configuration → Site URL** to the same canonical URL (`https://theminigameshow.com`). If **Site URL** stays `http://localhost:…`, some email templates still lean on that. **`MINIGAMESHOW_SITE_URL`** on Vercel fixes the in-app `emailRedirectTo`; **Site URL** fixes the server-side default.
 
+**Canonical = pick one host and use it everywhere:** either **`https://theminigameshow.com`** (apex) **or** **`https://www.theminigameshow.com`** (www). Mixing them (Site URL apex but `MINIGAMESHOW_SITE_URL` with www, or the reverse) causes confusing redirects and extra SSL/domain config. Match Vercel’s **primary** domain.
+
+**Verify what the live game uses:** Open the deployed `/penguin-game.html` → browser **DevTools → Console**. After load you should see  
+`[MiniGameshow] Sign-up confirmation link redirect_to → https://…`  
+You can also run **`__MINIGAMESHOW_CONFIRM_REDIRECT__`** in the console — it is the exact URL passed to Supabase on sign-up.
+
 ## URLs
 
 - **`/`** → L1 home shell ([`index.html`](prototypes/index.html))

@@ -8,6 +8,7 @@
 window.__MINIGAMESHOW_SUPABASE__ = {
   url: '',
   anonKey: '',
-  // Optional: force confirmation-email redirect to production (signups from localhost still get prod links)
-  // appOrigin: 'https://theminigameshow.com',
+  // Optional: same host everywhere (Vercel MINIGAMESHOW_SITE_URL, Supabase Site URL, primary domain).
+  // Use www OR apex — not both. After load, DevTools console: __MINIGAMESHOW_CONFIRM_REDIRECT__
+  // appOrigin: 'https://www.theminigameshow.com',
 };
