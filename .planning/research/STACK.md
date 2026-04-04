@@ -212,19 +212,19 @@ Returns a 1200×630 PNG with:
 - Arctic/game art background (embedded as base64 or fetched from static URL)
 - Score and rank prominently displayed
 - Player display name
-- "Play at minigameshow.com" CTA
+- "Play at theminigameshow.com" CTA
 - Arctic character art
 
 **In-game share flow:**
 ```js
 // After run completion, build share URL
-const shareUrl = `https://minigameshow.com/api/og?score=${score}&rank=${rank}&name=${displayName}`;
+const shareUrl = `https://theminigameshow.com/api/og?score=${score}&rank=${rank}&name=${displayName}`;
 // Use Web Share API if available (iOS Safari, Android Chrome)
 if (navigator.share) {
   navigator.share({
     title: `I scored ${score} in Pengu Fisher!`,
     text: `Rank #${rank} this week. Can you beat me?`,
-    url: 'https://minigameshow.com',
+    url: 'https://theminigameshow.com',
   });
 } else {
   // Fallback: copy link to clipboard + show toast

@@ -8,4 +8,6 @@
 window.__MINIGAMESHOW_SUPABASE__ = {
   url: '',
   anonKey: '',
+  // Optional: force confirmation-email redirect to production (signups from localhost still get prod links)
+  // appOrigin: 'https://theminigameshow.com',
 };

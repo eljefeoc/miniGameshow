@@ -191,6 +191,8 @@ These are known issues that need fixing or verification before moving forward:
 **Fix (app):** Sign-up uses `emailRedirectTo` = current page URL so production signups get production links (see `signUp` in [`prototypes/penguin-game.html`](prototypes/penguin-game.html)).
 **Stuck users:** In Supabase → **Authentication** → **Users**, either delete the test user and sign up again after fixing URLs, or manually confirm the email for that user.
 
+**Signup “succeeds” but no email and no row:** (1) Check **Authentication → Users** first — `public.profiles` is filled by a DB trigger; if the user never lands in `auth.users`, nothing appears in `profiles`. (2) **Logs → Auth** in the dashboard for send errors. (3) **Email** rate limits / custom SMTP: built-in mail is limited; configure **SMTP** under Project Settings → Auth if needed. (4) Confirm **Vercel** `SUPABASE_URL` / `SUPABASE_ANON_KEY` match the project you are inspecting. (5) Ensure migrations that create **`on_auth_user_created`** / `handle_new_user` are applied on that project.
+
 ---
 
 ## What's Next — Remaining Phases
