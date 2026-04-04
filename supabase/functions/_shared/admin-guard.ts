@@ -58,6 +58,26 @@ function resolveAuthApiOrigin(base: string, bearerToken: string): string {
   return trimmed;
 }
 
+// #region agent log
+function debugIngest(payload: Record<string, unknown>): void {
+  const url = Deno.env.get("DEBUG_INGEST_URL")?.trim();
+  if (!url) return;
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "92c9eb" },
+    body: JSON.stringify({
+      sessionId: "92c9eb",
+      timestamp: Date.now(),
+      hypothesisId: payload.hypothesisId,
+      location: payload.location,
+      message: payload.message,
+      data: payload.data,
+      runId: payload.runId ?? "edge",
+    }),
+  }).catch(() => {});
+}
+// #endregion
+
 export const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -147,6 +167,8 @@ export async function requireAdmin(req: Request): Promise<
   }
 
   let { res: userRes, raw } = await fetchAuthUser(anonKey);
+  const firstUserResStatus = userRes.status;
+  const firstRawSnippet = raw.slice(0, 120);
   let user: User | null = null;
   let errMsg = "Invalid session";
   let authUserRetry: "none" | "service_key" = "none";
@@ -196,26 +218,50 @@ export async function requireAdmin(req: Request): Promise<
     } catch {
       apiHost = "invalid_api_origin";
     }
+    const accessTokenIssHost = (() => {
+      const iss = jwtIss(bearerToken);
+      if (!iss) return null;
+      try {
+        return new URL(iss).hostname;
+      } catch {
+        return null;
+      }
+    })();
+    // #region agent log
+    debugIngest({
+      hypothesisId: "H1-H4",
+      location: "admin-guard.ts:requireAdmin:401",
+      message: "auth resolution failed",
+      data: {
+        firstUserResStatus,
+        finalUserResStatus: userRes.status,
+        authUserRetry,
+        baseHost,
+        apiHost,
+        accessTokenIssHost,
+        getUserErr,
+        firstRestSnippet: firstRawSnippet,
+        finalRestSnippet: raw.slice(0, 120),
+        bearerLen: bearerToken.length,
+        anonLen: anonKey.length,
+        hadXJwt: Boolean(xJwt),
+      },
+    });
+    // #endregion
     return {
       error: new Response(
         JSON.stringify({
           error: errMsg,
           debug: {
-            hypothesisId: "H1-H3",
+            hypothesisId: "H1-H4",
+            firstUserResStatus,
             userResStatus: userRes.status,
             restErrSnippet: raw.slice(0, 120),
+            firstRestSnippet: firstRawSnippet,
             getUserErr,
             baseHost,
             apiHost,
-            accessTokenIssHost: (() => {
-              const iss = jwtIss(bearerToken);
-              if (!iss) return null;
-              try {
-                return new URL(iss).hostname;
-              } catch {
-                return null;
-              }
-            })(),
+            accessTokenIssHost,
             authUserRetry,
             bearerLen: bearerToken.length,
             anonLen: anonKey.length,
