@@ -38,20 +38,32 @@ export async function requireAdmin(req: Request): Promise<
     };
   }
 
-  // Validate the user JWT with the anon client + Authorization header (avoids service-role getUser(jwt) "Invalid JWT" issues).
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
+  // Validate JWT via Auth REST (same as PostgREST). supabase-js getUser() from Edge often returns "Invalid JWT" even when the token is valid.
+  const base = supabaseUrl.replace(/\/$/, "");
+  const userRes = await fetch(`${base}/auth/v1/user`, {
+    headers: {
+      Authorization: authHeader,
+      apikey: anonKey,
+    },
   });
-  const { data: { user }, error: uerr } = await userClient.auth.getUser();
-  if (uerr || !user) {
+  const raw = await userRes.text();
+  let user: User | null = null;
+  let errMsg = "Invalid session";
+  try {
+    const body = JSON.parse(raw) as { user?: User; msg?: string; error_description?: string; error?: string };
+    if (userRes.ok && body.user) user = body.user;
+    else {
+      errMsg = body.msg || body.error_description || body.error || errMsg;
+    }
+  } catch {
+    if (!userRes.ok && raw) errMsg = raw.slice(0, 200);
+  }
+  if (!user) {
     return {
-      error: new Response(
-        JSON.stringify({ error: uerr?.message || "Invalid session" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      ),
+      error: new Response(JSON.stringify({ error: errMsg }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }),
     };
   }
 
