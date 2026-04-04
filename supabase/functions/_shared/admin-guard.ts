@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient, type User } from "https://esm.sh/@su
 export const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-user-jwt",
 };
 
 export type AdminContext = {
@@ -42,7 +42,11 @@ export async function requireAdmin(req: Request): Promise<
     };
   }
 
-  const authHeader = req.headers.get("Authorization");
+  // Prefer X-User-JWT: admin.html sends Authorization: Bearer <anon> for the API gateway and the real access token here.
+  const userToken = req.headers.get("x-user-jwt")?.trim();
+  const authHeader = userToken
+    ? `Bearer ${userToken}`
+    : req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return {
       error: new Response(JSON.stringify({ error: "Unauthorized" }), {
