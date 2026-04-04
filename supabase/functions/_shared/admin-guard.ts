@@ -60,6 +60,54 @@ function resolveAuthApiOrigin(base: string, bearerToken: string): string {
   return trimmed;
 }
 
+/** Supabase API keys are JWTs; payload includes `ref` (project id) for hosted projects. */
+function jwtPayloadRef(supabaseKey: string): string | null {
+  const parts = supabaseKey.split(".");
+  if (parts.length < 2) return null;
+  try {
+    let b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const rem = b64.length % 4;
+    if (rem) b64 += "=".repeat(4 - rem);
+    const json = JSON.parse(atob(b64)) as { ref?: string };
+    const ref = typeof json.ref === "string" ? json.ref.trim() : "";
+    if (!ref || !/^[a-z0-9]{15,40}$/.test(ref)) return null;
+    return ref;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Public PostgREST/GoTrue origin for this function:
+ * - Local dev (`127.0.0.1` / `localhost`): use `SUPABASE_URL` as-is.
+ * - Already `*.supabase.co`: use iss-based resolver (wrong subdomain vs token).
+ * - Internal/other host (kong, docker): `https://<ref>.supabase.co` from service JWT (matches injected keys).
+ */
+function pickApiOrigin(
+  base: string,
+  serviceKey: string,
+  bearerToken: string,
+): { origin: string; source: string } {
+  const trimmed = base.replace(/\/$/, "");
+  let buHost = "";
+  try {
+    buHost = new URL(trimmed).hostname;
+  } catch {
+    return { origin: resolveAuthApiOrigin(trimmed, bearerToken), source: "resolve_iss_invalid_base" };
+  }
+  if (buHost === "127.0.0.1" || buHost === "localhost") {
+    return { origin: trimmed, source: "local_base" };
+  }
+  if (buHost.endsWith(".supabase.co")) {
+    return { origin: resolveAuthApiOrigin(trimmed, bearerToken), source: "resolve_iss_public_base" };
+  }
+  const ref = jwtPayloadRef(serviceKey);
+  if (ref) {
+    return { origin: `https://${ref}.supabase.co`, source: "service_jwt_ref" };
+  }
+  return { origin: resolveAuthApiOrigin(trimmed, bearerToken), source: "resolve_iss_fallback" };
+}
+
 // #region agent log
 function debugIngest(payload: Record<string, unknown>): void {
   const url = Deno.env.get("DEBUG_INGEST_URL")?.trim();
@@ -153,7 +201,7 @@ export async function requireAdmin(req: Request): Promise<
 
   const authHeader = `Bearer ${bearerToken}`;
   const base = supabaseUrl.replace(/\/$/, "");
-  const apiOrigin = resolveAuthApiOrigin(base, bearerToken);
+  const { origin: apiOrigin, source: apiOriginSource } = pickApiOrigin(base, serviceKey, bearerToken);
   const admin = createClient(apiOrigin, serviceKey);
 
   // 1) Auth REST (anon apikey first; retry with service role apikey if GoTrue rejects — anon/env drift)
@@ -235,6 +283,7 @@ export async function requireAdmin(req: Request): Promise<
       location: "admin-guard.ts:requireAdmin:401",
       message: "auth resolution failed",
       data: {
+        apiOriginSource,
         firstUserResStatus,
         finalUserResStatus: userRes.status,
         authUserRetry,
@@ -256,6 +305,7 @@ export async function requireAdmin(req: Request): Promise<
           error: errMsg,
           debug: {
             hypothesisId: "H1-H4",
+            apiOriginSource,
             firstUserResStatus,
             userResStatus: userRes.status,
             restErrSnippet: raw.slice(0, 120),
