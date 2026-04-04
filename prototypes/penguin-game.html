@@ -2449,8 +2449,17 @@ async function bootSupabaseAuth(){
       : window.location.origin + window.location.pathname;
     console.info('[MiniGameshow] Sign-up confirmation link redirect_to →', confirmRedirect);
     window.__MINIGAMESHOW_CONFIRM_REDIRECT__ = confirmRedirect;
-    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-    const sb=createClient(url,key,{ auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
+    // UMD bundle (one script) avoids ESM + modulepreload noise on Safari (bogus /npm/... preloads on your own origin).
+    await new Promise((resolve, reject)=>{
+      if(typeof supabase !== 'undefined' && typeof supabase.createClient === 'function'){ resolve(); return; }
+      const sc=document.createElement('script');
+      sc.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+      sc.crossOrigin='anonymous';
+      sc.onload=()=>resolve();
+      sc.onerror=()=>reject(new Error('Supabase script failed to load'));
+      document.head.appendChild(sc);
+    });
+    const sb=supabase.createClient(url,key,{ auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
     window._miniGameshowSb=sb;
     const { data:{ session } } = await sb.auth.getSession();
     if(session?.user) await onSignedIn(session);
