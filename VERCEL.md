@@ -87,6 +87,41 @@ In Supabase → **Authentication** → **URL configuration** (before custom doma
 - **Site URL:** `https://<your-project>.vercel.app` — switch to `https://theminigameshow.com` when the domain is live.
 - **Redirect URLs:** add `https://<your-project>.vercel.app/**` and, after cutover, `https://theminigameshow.com/**` (and `www` if used).
 
+## Supabase — Google, Apple, and phone (SMS)
+
+The game ([`prototypes/penguin-game.html`](prototypes/penguin-game.html)) includes **Google**, **Apple**, and **SMS** sign-in. Each must be turned on and configured in the **Supabase Dashboard**; no extra API keys in the game repo.
+
+### Redirect URL (all OAuth providers)
+
+Supabase redirects to:  
+`https://<your-project-ref>.supabase.co/auth/v1/callback`  
+
+In **Google** / **Apple** developer consoles you register **that** callback URL (not your Vercel URL). Your **Site URL** and **Redirect URLs** in Supabase (see above) must still include your live game origin so users return to `https://www.theminigameshow.com/penguin-game.html` (or your canonical URL) after OAuth.
+
+### Google
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → **Credentials** → **Create credentials** → **OAuth client ID** (type **Web application**).
+2. **Authorized redirect URIs:** add  
+   `https://<project-ref>.supabase.co/auth/v1/callback`  
+   (`project-ref` is in Supabase **Project Settings → API**.)
+3. Supabase → **Authentication** → **Providers** → **Google** → enable, paste **Client ID** and **Client secret**.
+
+### Apple
+
+1. [Apple Developer](https://developer.apple.com/) → **Certificates, Identifiers & Profiles** → **Identifiers** → create a **Services ID** for “Sign in with Apple” (web).
+2. Configure **Return URLs** with the same Supabase callback:  
+   `https://<project-ref>.supabase.co/auth/v1/callback`
+3. Create a **Key** for Sign in with Apple and note **Key ID**, **Team ID**, **private key**.
+4. Supabase → **Authentication** → **Providers** → **Apple** → enable, paste **Services ID** (client ID), **Secret** (JWT / key per [Supabase Apple guide](https://supabase.com/docs/guides/auth/social-login/auth-apple)).
+
+### Phone (SMS)
+
+1. Supabase → **Authentication** → **Providers** → **Phone** → enable.
+2. Connect an SMS provider (**Twilio** is common): account SID, auth token, message service SID (or from number) per Supabase’s phone docs.
+3. SMS costs and rate limits are billed by the provider; add **CAPTCHA** (Supabase **Auth → Attack protection**) if you see SMS abuse.
+
+Phone users may have **no email**; the UI shows **phone** in the account strip and HUD where relevant.
+
 ## Local vs Vercel
 
 Local dev still uses `prototypes/supabase-config.js` you create from `supabase-config.example.js`; Vercel does not use that file from git — it regenerates it on build.

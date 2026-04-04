@@ -310,6 +310,28 @@ html, body {
   color:rgba(255,255,255,0.85);
 }
 .fp-auth-row button:active { filter:brightness(1.15); }
+.fp-auth-divider {
+  text-align:center; font-size:10px; color:rgba(255,255,255,0.35);
+  text-transform:uppercase; letter-spacing:0.12em; margin:12px 0 8px;
+}
+.fp-auth-oauth-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+.fp-auth-oauth {
+  flex:1; min-width:120px; padding:10px 12px; border-radius:8px; cursor:pointer;
+  font-family:inherit; font-size:12px; font-weight:600; border:0.5px solid rgba(255,255,255,0.2);
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.fp-auth-oauth:active { filter:brightness(1.12); }
+.fp-auth-oauth-google { background:#fff; color:#1f1f1f; border-color:rgba(0,0,0,0.12); }
+.fp-auth-oauth-apple { background:#000; color:#fff; border-color:#333; }
+.fp-auth-phone-hint { font-size:10px; color:rgba(255,255,255,0.4); margin:10px 0 4px; line-height:1.35; }
+.fp-auth-phone-btn {
+  width:100%; margin-top:6px; padding:10px 12px; border-radius:8px; cursor:pointer;
+  font-family:inherit; font-size:12px; font-weight:500;
+  border:0.5px solid rgba(255,255,255,0.2); background:rgba(104,199,193,0.25); color:#b8fff8;
+}
+.fp-auth-phone-btn:active { filter:brightness(1.15); }
+.fp-auth-phone-verify { display:none; margin-top:8px; gap:8px; flex-direction:column; }
+.fp-auth-phone-verify.fp-auth-phone-verify-open { display:flex; }
 .fp-user-bar-foot {
   display:flex; align-items:center; justify-content:space-between;
   gap:10px; margin-top:14px; padding-top:12px;
@@ -861,6 +883,20 @@ html, body {
             </div>
 
             <div id="ov-auth" class="fp-auth-embed" style="display:none" data-fp-open="0">
+              <p class="fp-auth-divider">Continue with</p>
+              <div class="fp-auth-oauth-row">
+                <button type="button" class="fp-auth-oauth fp-auth-oauth-google" id="auth-google" aria-label="Sign in with Google">Google</button>
+                <button type="button" class="fp-auth-oauth fp-auth-oauth-apple" id="auth-apple" aria-label="Sign in with Apple">Apple</button>
+              </div>
+              <p class="fp-auth-divider">Or phone (SMS)</p>
+              <p class="fp-auth-phone-hint">Use international format with country code, e.g. +1 415 555 1234</p>
+              <input id="auth-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+1…" />
+              <button type="button" class="fp-auth-phone-btn" id="auth-phone-send">Send code</button>
+              <div class="fp-auth-phone-verify" id="auth-phone-verify-box">
+                <input id="auth-phone-otp" type="text" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="Code from SMS" />
+                <button type="button" class="fp-auth-phone-btn" id="auth-phone-verify" style="margin-top:0">Verify code</button>
+              </div>
+              <p class="fp-auth-divider">Or email</p>
               <input id="auth-email" type="email" autocomplete="email" placeholder="Email" />
               <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Password" />
               <div class="fp-auth-row">
@@ -2356,14 +2392,40 @@ function draw(){
 }
 
 // ═══════════════════════════════════════════════════════════
-//  SUPABASE AUTH (email) — step 2; keys in prototypes/supabase-config.js
+//  SUPABASE AUTH — keys in prototypes/supabase-config.js; providers in Supabase + VERCEL.md
 // ═══════════════════════════════════════════════════════════
+function getAuthReturnUrl(){
+  const cfg0 = window.__MINIGAMESHOW_SUPABASE__ || {};
+  if(cfg0.appOrigin && String(cfg0.appOrigin).trim())
+    return String(cfg0.appOrigin).replace(/\/$/,'') + '/penguin-game.html';
+  return window.location.origin + window.location.pathname;
+}
+
+function userAuthLabel(user){
+  if(!user) return '';
+  return user.email || user.phone || 'Signed in';
+}
+
+function userAuthShortName(user){
+  if(!user) return '';
+  if(user.email) return user.email.split('@')[0];
+  if(user.phone) return user.phone;
+  return '';
+}
+
+function normalizePhoneE164(raw){
+  let t = String(raw || '').trim().replace(/[\s()-]/g, '');
+  if(!t) return '';
+  if(t.startsWith('+')) return '+' + t.slice(1).replace(/\D/g, '');
+  return '+' + t.replace(/\D/g, '');
+}
+
 function updateAuthUI(session){
   const statusEl  = document.getElementById('auth-status');
   const userLabel = document.getElementById('ov-user-label');
   const signoutBtn = document.getElementById('auth-signout');
   if(session?.user){
-    const em = session.user.email || 'Signed in';
+    const em = userAuthLabel(session.user);
     if(statusEl)  statusEl.textContent  = '';
     if(userLabel){ userLabel.textContent = em; userLabel.title = em; }
     if(signoutBtn) signoutBtn.style.display = 'inline-block';
@@ -2399,12 +2461,13 @@ async function onSignedIn(session){
       .select('username')
       .eq('id',session.user.id)
       .maybeSingle();
-    playerName = prof?.username || session.user.email?.split('@')[0] || '';
-  }catch{ playerName=session.user.email?.split('@')[0]||''; }
+    playerName = prof?.username || userAuthShortName(session.user) || '';
+  }catch{ playerName = userAuthShortName(session.user) || ''; }
   // Update gameshow HUD avatar
+  const disp = playerName || userAuthLabel(session.user);
   window.GameshowHud.setPlayer({
-    initials: (playerName||session.user.email||'?').slice(0,2),
-    name: playerName || session.user.email || ''
+    initials: (disp || '?').slice(0, 2),
+    name: disp || ''
   });
   await refreshSignedInCompetitionState(session);
 }
@@ -2441,12 +2504,7 @@ async function bootSupabaseAuth(){
     return;
   }
   try{
-    const appOriginConfigured = (cfg.appOrigin && String(cfg.appOrigin).trim())
-      ? String(cfg.appOrigin).replace(/\/$/, '')
-      : '';
-    const confirmRedirect = appOriginConfigured
-      ? appOriginConfigured + '/penguin-game.html'
-      : window.location.origin + window.location.pathname;
+    const confirmRedirect = getAuthReturnUrl();
     console.info('[MiniGameshow] Sign-up confirmation link redirect_to →', confirmRedirect);
     window.__MINIGAMESHOW_CONFIRM_REDIRECT__ = confirmRedirect;
     // UMD bundle (one script) avoids ESM + modulepreload noise on Safari (bogus /npm/... preloads on your own origin).
@@ -2487,11 +2545,7 @@ async function bootSupabaseAuth(){
       const email=document.getElementById('auth-email').value.trim();
       const password=document.getElementById('auth-pass').value;
       if(password.length<6){ alert('Password: at least 6 characters'); return; }
-      // Confirmation link redirect: use canonical prod URL from config when set (Vercel MINIGAMESHOW_SITE_URL), else current page.
-      const cfg0 = window.__MINIGAMESHOW_SUPABASE__ || {};
-      const emailRedirectTo = (cfg0.appOrigin && String(cfg0.appOrigin).trim())
-        ? String(cfg0.appOrigin).replace(/\/$/, '') + '/penguin-game.html'
-        : window.location.origin + window.location.pathname;
+      const emailRedirectTo = getAuthReturnUrl();
       const { data, error } = await sb.auth.signUp({
         email,
         password,
@@ -2511,6 +2565,38 @@ async function bootSupabaseAuth(){
     });
     document.getElementById('auth-signout').addEventListener('click', async ()=>{
       await sb.auth.signOut();
+    });
+
+    async function startOAuth(provider){
+      const redirectTo = getAuthReturnUrl();
+      const { data, error } = await sb.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+      if(error){ alert(error.message); return; }
+      if(data?.url) window.location.href = data.url;
+    }
+    document.getElementById('auth-google')?.addEventListener('click', ()=> startOAuth('google'));
+    document.getElementById('auth-apple')?.addEventListener('click', ()=> startOAuth('apple'));
+
+    const phoneVerifyBox = document.getElementById('auth-phone-verify-box');
+    document.getElementById('auth-phone-send')?.addEventListener('click', async ()=>{
+      const phone = normalizePhoneE164(document.getElementById('auth-phone')?.value || '');
+      if(phone.length < 8){ alert('Enter a full phone number with country code (E.164), e.g. +14155551234'); return; }
+      const { error } = await sb.auth.signInWithOtp({ phone, options: { channel: 'sms' } });
+      if(error){ alert(error.message); return; }
+      phoneVerifyBox?.classList.add('fp-auth-phone-verify-open');
+      document.getElementById('auth-phone-otp')?.focus();
+      const st = document.getElementById('auth-status');
+      if(st) st.textContent = 'Code sent — check your phone.';
+    });
+    document.getElementById('auth-phone-verify')?.addEventListener('click', async ()=>{
+      const phone = normalizePhoneE164(document.getElementById('auth-phone')?.value || '');
+      const token = (document.getElementById('auth-phone-otp')?.value || '').trim().replace(/\s/g, '');
+      if(!token){ alert('Enter the code from SMS'); return; }
+      const { error } = await sb.auth.verifyOtp({ phone, token, type: 'sms' });
+      if(error){ alert(error.message); return; }
+      phoneVerifyBox?.classList.remove('fp-auth-phone-verify-open');
     });
   }catch(e){
     console.error(e);
@@ -2790,6 +2876,9 @@ function revealAuthPanel(){
   o.dataset.fpOpen = '1';
   o.style.display = 'flex';
   o.style.flexDirection = 'column';
+  document.getElementById('auth-phone-verify-box')?.classList.remove('fp-auth-phone-verify-open');
+  const otp = document.getElementById('auth-phone-otp');
+  if(otp) otp.value = '';
   document.getElementById('auth-email')?.focus();
 }
 
@@ -2837,7 +2926,7 @@ function refreshGspAccount(){
         '<button type="button" class="gsp-account-cta" id="gsp-account-signin">Sign in</button>';
       return;
     }
-    const em = session.user.email || 'Signed in';
+    const em = userAuthLabel(session.user);
     body.innerHTML = `<p><strong>Signed in</strong></p><p class="gsp-muted">${gspEscapeHtml(em)}</p>` +
       '<button type="button" class="gsp-account-cta secondary" id="gsp-account-signout">Sign out</button>';
   });
