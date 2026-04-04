@@ -1,5 +1,26 @@
 # MiniGameshow — Cursor Roadmap
-*Last updated: 2026-03-29*
+*Last updated: 2026-04-05*
+
+---
+
+## Start here next session (legal compliance)
+
+When you pick up **legal / sweepstakes / consent** work:
+
+1. Read **[`LEGAL_IMPLEMENTATION_BRIEF.md`](LEGAL_IMPLEMENTATION_BRIEF.md)** end to end (tiers, pages, DB, flows, cookie banner, copy placement).
+2. Read **`GAME_BIBLE.md` → Section 8 → “Legal, consent & sweepstakes”** for product-aligned framing (Tier 1 vs Tier 2, silent Arcade routing for under-18).
+3. **Before applying DB changes:** confirm with counsel; then apply
+   [`supabase/migrations/20260405120000_legal_consent_and_audit_tables.sql`](supabase/migrations/20260405120000_legal_consent_and_audit_tables.sql)
+   to the Supabase project (CLI or SQL editor). Until then the file is **spec only**.
+4. **Build order (suggested):** (a) static `/legal/*` pages + `vercel.json` rewrites,
+   (b) L1 + HUD “no purchase necessary” line, (c) sign-up TOS/Privacy checkbox +
+   `user_legal_consent` row for `tos_general`, (d) cookie banner gating analytics,
+   (e) Competition-entry modal: DOB + rules + checkboxes + two consent rows,
+   (f) server-side enforcement on Competition `runs` insert, (g) admin
+   disqualification logging UI → `disqualifications`.
+
+Nothing in this list is required for day-to-day gameplay prototyping until you
+are preparing for **prize-eligible production**.
 
 ---
 
@@ -124,15 +145,16 @@ prototypes/manifest.json         ← Web App Manifest (icons, theme); no service
 prototypes/penguin-game.html     ← L2/L3: shell + Pengu Fisher (~3k+ lines; layout baseline 4048999)
 prototypes/hud.js                ← Zone 1 HUD (prize, countdown, rank, avatar, menu)
 prototypes/hud.css               ← HUD styles
-prototypes/admin.html            ← operator UI: weeks CRUD + users (Edge Functions + RPCs)
+prototypes/admin.html            ← operator UI: light-theme sidebar (live dashboard / new week / user admin); Edge Functions + RPCs
 prototypes/supabase-config.js    ← Supabase URL + anon key (+ functions URL when set); gitignored
 supabase/schema.sql              ← full database schema (reference)
-supabase/migrations/             ← ordered migrations for Supabase
+supabase/migrations/             ← ordered migrations (see list below)
 supabase/functions/              ← Edge: admin-list-users, admin-auth-create-user, admin-auth-delete-user
 scripts/deploy-supabase-functions.sh   ← used by npm run deploy:functions
 prototypes/assets/               ← sprites, icons, PWA icons
 prototypes/games/README.md       ← L3 module contract (draft)
 GAME_BIBLE.md                    ← creative/design reference
+LEGAL_IMPLEMENTATION_BRIEF.md      ← legal/compliance engineering checklist (see “Start here next session”)
 vercel.json                      ← outputDirectory prototypes/; / → index.html
 package.json                     ← build (supabase-config) + deploy:functions
 ```
@@ -189,10 +211,9 @@ These are known issues that need fixing or verification before moving forward:
 
 **Future tests (when overlay collects metadata):** display name + `is_18_plus` on signup, practice/competitor modes, age-separated boards — align with migrations and `handle_new_user`.
 
-### 4. Supabase migration — run on your project
+### 4. ~~Supabase migration — `display_name` / `is_18_plus`~~ ✅ Applied (April 4, 2026)
 **File:** `supabase/migrations/20260403_add_display_name_is_18_plus.sql`
-**Problem:** The migration file exists locally but may not have been applied to your Supabase project yet.
-**Fix:** Run it via Supabase CLI (`supabase db push`) or paste it in the SQL editor in the Supabase dashboard.
+**Status:** Applied to live Supabase project. `profiles.display_name` and `profiles.is_18_plus` columns now exist. Admin panel and game client can reference `display_name` safely.
 
 ### 5. Supabase Auth — Site URL and redirect allow list
 **Problem:** Signup confirmation emails can contain **`http://localhost:…`** links. Mobile Safari cannot open that host, so the user never confirms. **Sign-in then fails** with “Invalid login credentials” while **Confirm email** is still required for that account.
@@ -212,6 +233,25 @@ If the player closes the app and tries to sign in, catch `error.code ===
 'email_not_confirmed'` and show "Your email isn't confirmed yet — resend
 confirmation?" instead of a generic failure. Add "Check your spam folder" as
 the first line of post-signup copy.
+
+### 6. Admin: `runs_select_admin` RLS policy ✅ Applied (April 4, 2026)
+**File:** `supabase/migrations/20260404_admin_runs_select_policy.sql`
+**Problem:** The only SELECT policy on `runs` was `runs_select_own` (`user_id = auth.uid()`). Admins querying `runs` through the anon-key client could only see their own rows — other players' runs were silently filtered out, so the admin flagged-runs card was showing the admin's own test runs instead of real player data.
+**Fix:** New policy `runs_select_admin` allows any authenticated user with `profiles.is_admin = true` to SELECT all rows. The two policies OR together: admins see everything, regular users see only their own.
+**Status:** Applied to live Supabase project April 4, 2026.
+
+### 7. Admin: password manager triggering on every button click ✅ Fixed (April 4, 2026)
+**Root cause:** `showAdminPanel()` was hiding `#auth-gate` with `display:none` but leaving the `<input type="password">` in the DOM. Password managers watch any live password field and fire on nearby clicks.
+**Fix:** `showAdminPanel()` now calls `gate.remove()` — the entire auth gate node (including the password input) is removed from the DOM on successful login. `autocomplete="off"` added to the sign-in form as belt-and-suspenders.
+
+### 8. Admin: nav broken on load when already signed in ✅ Fixed (April 4, 2026)
+**Root cause:** Boot code called `showAdminPanel()` (which removed `#auth-gate`), then unconditionally tried to attach a submit listener to `#signin-form` (now gone) — the null dereference crashed the boot sequence before sidebar nav listeners were wired.
+**Fix:** Signin-form listener is now guarded: `const f = document.getElementById('signin-form'); if(f) f.addEventListener(...)`. `showAuthGate()` similarly guarded against the gate already being gone.
+
+### 9. Admin: flagged runs player names showing "Unknown" ⚠ Partially fixed (April 4, 2026)
+**Root cause:** The PostgREST embedded join `profiles(display_name, username)` in `runs` queries was returning null silently — likely a join-resolution issue under the admin JWT context. Combined with the missing `runs_select_admin` policy (§6), the admin could only see their own test runs, which had no `username` set.
+**Fix deployed:** Both `loadFlaggedCard` and `loadFlaggedTab` now use a two-step fetch: fetch runs without join, extract unique `user_id`s, then `profiles.select().in('id', uids)` separately, merge into a map. Policy (§6) also applied.
+**Status:** Code pushed (`d70e4a8`). Player names not yet confirmed working — user had to leave before verification. If names still show "Unknown" on next session, check that `profiles` rows exist for the flagged users: `SELECT id, username, display_name FROM profiles` in the SQL editor.
 
 ---
 
@@ -356,7 +396,7 @@ correctly on every insert, and the arcade name loop works for guests.
 - **Auth hardening** — The page uses a **honeypot** field and a **short minimum delay** after opening the form before email sign-in / sign-up runs; that only blocks naive bots. For real abuse resistance, turn on **Supabase Auth CAPTCHA** (or similar) and rate limits in the project dashboard.
 - **Game 03: Deep Dive** — Narwhal, underwater world, breath mechanic (fully designed in Game Bible)
 - **Character voiceover** — Babs' lines get actual voice acting
-- **Geo/age restriction framework** — structure for legal compliance in different regions
+- **Legal / compliance (full implementation)** — tracked in **[`LEGAL_IMPLEMENTATION_BRIEF.md`](LEGAL_IMPLEMENTATION_BRIEF.md)** and **`GAME_BIBLE.md` §8 (Legal…)**; see **Start here next session (legal compliance)** at the top of this file
 - **Winner announcement flow** — post-show UX for the champion reveal
 - **Score card OG image generation** — server-side image for richer social previews
 - **Naming/design session** — finalize character names before public launch
@@ -366,6 +406,8 @@ correctly on every insert, and the arcade name loop works for guests.
 ## How to Use This Doc in Cursor
 
 Paste the relevant section at the start of your Cursor session. Read **Prototype baseline & GSD rollback** first so agents do not “restore” pre-baseline layout refactors by accident. Use the **Repair List** for verification and migrations; plan **incremental re-adds** from GSD against baseline `4048999`. After repairs are done and tested on a real phone + a wide desktop browser, move to Phase 3.
+
+For **legal, consent, sweepstakes, or prize compliance** work, start at **Start here next session (legal compliance)** above, then [`LEGAL_IMPLEMENTATION_BRIEF.md`](LEGAL_IMPLEMENTATION_BRIEF.md).
 
 For creative/design questions (character behavior, tone, game mechanics) → refer to `GAME_BIBLE.md`.
 For code structure questions → **L1** is [`prototypes/index.html`](prototypes/index.html); **L2** and **L3** live in [`prototypes/penguin-game.html`](prototypes/penguin-game.html) plus [`prototypes/hud.js`](prototypes/hud.js) / [`prototypes/hud.css`](prototypes/hud.css).

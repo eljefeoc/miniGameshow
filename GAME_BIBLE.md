@@ -2,7 +2,7 @@
 
 ### [WORLD NAME — TBD] — Working Title
 
-*Last updated: April 4, 2026 | Version 1.9*
+*Last updated: April 5, 2026 | Version 1.10*
 
 ---
 
@@ -881,6 +881,47 @@ migration note in the Competition vs Arcade subsection above.
 If `url` / `anon key` are empty, the UI explains **local file** vs **hosted env**
 setup and disables auth buttons until configured.
 
+### Legal, consent & sweepstakes (pre-launch — requirements only)
+
+**Status:** Documented for implementation; **not wired in the product yet.** Full
+checklist, flows, and jurisdiction table live in **[`LEGAL_IMPLEMENTATION_BRIEF.md`](LEGAL_IMPLEMENTATION_BRIEF.md)**.
+Attorney review is required before launch copy and Official Rules go live.
+
+**Product split (must stay separate in UX and in consent logging):**
+
+- **Tier 1 — General site use:** Terms of Service, Privacy Policy, cookie/tracking
+  notice, acceptable use (anti-cheat), DMCA — for all visitors including guests
+  and under-18 players. Sign-up must include visible links + **unchecked**
+  “I agree to the Terms of Service and Privacy Policy” before account creation;
+  log acceptance in `user_legal_consent` (`consent_type: tos_general`). Do **not**
+  bundle competition consent into sign-up.
+- **Tier 2 — Competition entry:** Fires only when a signed-in user opts into
+  Competition (not at account creation): date of birth (server-side age check),
+  link to Official Competition Rules, eligibility checkbox, void-state copy
+  (AZ, MD, ND, VT; FL/NY caveats). On acceptance, log **`age_declaration`** and
+  **`competition_rules`** in `user_legal_consent`. Under-18: route silently to
+  Arcade — no “too young” messaging (same product framing as elsewhere in this
+  bible). **Never trust client-only age checks** for prize eligibility; enforce
+  on insert (RLS / Edge Function) when Competition runs are saved.
+
+**Public legal pages (to create under static root, e.g. `prototypes/legal/`, with
+clean URLs via `vercel.json` rewrites when ready):** `/legal/tos`, `/legal/privacy`,
+`/legal/cookies`, `/legal/acceptable-use`, `/legal/dmca`, `/legal/competition-rules`.
+Each page carries **`effective_date`** and **`version`** in the document.
+
+**Required sweepstakes copy:** “No purchase necessary” (or equivalent) near prize
+mentions on **L1**, in the **HUD** prize area, and at the top of Official Rules.
+Suggested HUD line: *Free to play · No purchase necessary · Void where prohibited.*
+
+**Backend (migration SQL exists in repo — apply only when starting this work):**
+`user_legal_consent` (audit trail), `prize_awards` (tax-year / $600 tracking),
+`disqualifications` (human-reviewed, references `runs.id`). Flagged-run review in
+admin must eventually write disqualifications with reason codes — never
+auto-disqualify for prize.
+
+**Where to begin next session:** Read **`LEGAL_IMPLEMENTATION_BRIEF.md`** top to
+bottom, then **`CURSOR_ROADMAP.md` → “Start here next session (legal compliance)”**.
+
 ---
 
 ## 9. MONETIZATION
@@ -1082,8 +1123,15 @@ Nightly job → checks content_events
   `is_18_plus` routing to Competition vs Arcade board not wired in client
 - [ ] **Resend confirmation email** — button on post-signup waiting state and
   `email_not_confirmed` error handler not yet implemented
+- [ ] **Legal / compliance (full stack)** — public `/legal/*` pages; sign-up TOS +
+  Privacy checkbox + `user_legal_consent` insert; Competition-only age gate +
+  rules acceptance + server enforcement; cookie banner (`localStorage`
+  `cookie_consent_v1`); HUD + L1 “no purchase necessary” copy; wire
+  `prize_awards` / `disqualifications` when prize ops go live. **Spec:**
+  [`LEGAL_IMPLEMENTATION_BRIEF.md`](LEGAL_IMPLEMENTATION_BRIEF.md). **Roadmap
+  entrypoint:** `CURSOR_ROADMAP.md` → “Start here next session (legal compliance)”.
 
-### Repository Structure (Actual, as of v1.9)
+### Repository Structure (Actual, as of v1.10)
 
 ```
 /
@@ -1115,8 +1163,8 @@ Nightly job → checks content_events
     ├── functions/            ← Edge: admin-list-users, admin-auth-create-user, admin-auth-delete-user
     ├── seed_week.sql         ← example active week + game linkage
     ├── pre_flight_check.sql
-    └── migrations/           ← e.g. initial_schema, admin_weeks (20260329120000),
-                              admin_user_mgmt (20260330120000), display_name/is_18_plus (20260403), …
+    └── migrations/           ← … display_name/is_18_plus (20260403); admin runs_select (20260404);
+                              legal consent / prize_awards / disqualifications (20260405120000 — not applied until legal build)
 ```
 
 *Target structure (src/, audio/, pwa/ dirs) to be created when prototype is promoted to production build.*
@@ -1197,6 +1245,7 @@ Never delete entries — cross them out if reversed and note why.*
 | Apr 2026 | Custom SMTP configured in Supabase | Built-in mail rate limits not a concern; resend confirmation email path needed in UI |
 | Apr 2026 | Admin panel redesigned: three sections (live dashboard / create week / user admin) | Dark theme was hard to read; new week form opens inline not as page expansion; live competition section shows top-10 leaderboard + stats + flagged runs at a glance |
 | Apr 2026 | Admin live competition view: top-10 with attempt dots, flagged runs inline, activity feed | Pre-Sunday review of flagged runs is critical path for prize award; all needed info in one view |
+| Apr 2026 | Legal implementation captured in repo docs only | [`LEGAL_IMPLEMENTATION_BRIEF.md`](LEGAL_IMPLEMENTATION_BRIEF.md) is the engineering checklist; Game Bible §8 + Roadmap point to it; SQL migration exists but is **not** applied until counsel-approved build starts |
 
 ---
 
@@ -1269,5 +1318,5 @@ Don't waste them." / "Your score has been submitted. Hmph."
 
 ---
 
-*End of Game Bible v1.9*
-*Next review: after week-window DB enforcement or L2 host (`play.html`) milestone*
+*End of Game Bible v1.10*
+*Next review: after week-window DB enforcement, legal/compliance build, or L2 host (`play.html`) milestone*
