@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient, type User } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-/** Decode JWT payload (no verify) — used for `iss`, `ref`, `role` only. */
+/** Decode JWT payload (no verify) for `iss`, `ref`, `role`. */
 function jwtPayloadJson(token: string): Record<string, unknown> | null {
   const parts = token.split(".");
   if (parts.length < 2) return null;
@@ -21,9 +21,9 @@ function jwtIss(token: string): string | null {
 }
 
 /**
- * Pick the GoTrue/PostgREST origin for this Edge runtime:
- * - Internal `SUPABASE_URL` (kong, etc.) → use JWT `iss` host (`*.supabase.co`).
- * - Wrong project ref in env but valid user JWT → `iss` hostname differs from `base`; prefer `iss`.
+ * Pick the GoTrue/PostgREST origin:
+ * - Internal `SUPABASE_URL` → JWT `iss` host (`*.supabase.co`) when it differs from base.
+ * - Wrong project ref in env → prefer `iss` when hostname differs from base.
  */
 function resolveAuthApiOrigin(base: string, bearerToken: string): string {
   const trimmed = base.replace(/\/$/, "");
@@ -110,26 +110,6 @@ function pickApiOrigin(
   return { origin: resolveAuthApiOrigin(trimmed, bearerToken), source: "resolve_iss_fallback" };
 }
 
-// #region agent log
-function debugIngest(payload: Record<string, unknown>): void {
-  const url = Deno.env.get("DEBUG_INGEST_URL")?.trim();
-  if (!url) return;
-  fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "92c9eb" },
-    body: JSON.stringify({
-      sessionId: "92c9eb",
-      timestamp: Date.now(),
-      hypothesisId: payload.hypothesisId,
-      location: payload.location,
-      message: payload.message,
-      data: payload.data,
-      runId: payload.runId ?? "edge",
-    }),
-  }).catch(() => {});
-}
-// #endregion
-
 export const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -180,10 +160,7 @@ export async function requireAdmin(req: Request): Promise<
   if (!bearerToken) {
     return {
       error: new Response(
-        JSON.stringify({
-          error: "Unauthorized",
-          debug: { branch: "no_bearer", hypothesisId: "H5", hasXJwt: Boolean(xJwt), authValLen: authVal.length },
-        }),
+        JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       ),
     };
@@ -194,7 +171,6 @@ export async function requireAdmin(req: Request): Promise<
         JSON.stringify({
           error:
             "No user session on this request (only anon key). Hard-refresh admin, sign out/in, or check adblock stripping the X-User-JWT header.",
-          debug: { branch: "bearer_is_anon", hypothesisId: "H5" },
         }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       ),
@@ -209,7 +185,6 @@ export async function requireAdmin(req: Request): Promise<
         JSON.stringify({
           error:
             "Authorization carried a service key instead of a user access token. Ensure X-User-JWT is sent and not stripped by a proxy.",
-          debug: { branch: "bearer_is_service_role", hypothesisId: "H6" },
         }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       ),
@@ -234,13 +209,6 @@ export async function requireAdmin(req: Request): Promise<
         JSON.stringify({
           error:
             "User session is for a different Supabase project than this function. Align `url` and `functionsUrl` in admin config with the same project.",
-          debug: {
-            branch: "jwt_project_mismatch",
-            hypothesisId: "H7",
-            tokenIssHost,
-            tokenProjectRef: refFromToken,
-            functionProjectHost: expectedHost,
-          },
         }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       ),
@@ -249,7 +217,7 @@ export async function requireAdmin(req: Request): Promise<
 
   const authHeader = `Bearer ${bearerToken}`;
   const base = supabaseUrl.replace(/\/$/, "");
-  const { origin: apiOrigin, source: apiOriginSource } = pickApiOrigin(base, serviceKey, bearerToken);
+  const { origin: apiOrigin } = pickApiOrigin(base, serviceKey, bearerToken);
   const admin = createClient(apiOrigin, serviceKey);
 
   // 1) Auth REST (anon apikey first; retry with service role apikey if GoTrue rejects — anon/env drift)
@@ -265,11 +233,8 @@ export async function requireAdmin(req: Request): Promise<
   }
 
   let { res: userRes, raw } = await fetchAuthUser(anonKey);
-  const firstUserResStatus = userRes.status;
-  const firstRawSnippet = raw.slice(0, 120);
   let user: User | null = null;
   let errMsg = "Invalid session";
-  let authUserRetry: "none" | "service_key" = "none";
 
   function parseUserResponse(res: Response, text: string): User | null {
     try {
@@ -287,87 +252,21 @@ export async function requireAdmin(req: Request): Promise<
     const second = await fetchAuthUser(serviceKey);
     userRes = second.res;
     raw = second.raw;
-    authUserRetry = "service_key";
     errMsg = "Invalid session";
     user = parseUserResponse(userRes, raw);
   }
 
   // 2) Service-role getUser (works when REST path is picky in Edge)
-  let getUserErr: string | null = null;
   if (!user) {
     const { data: gu, error: ge } = await admin.auth.getUser(bearerToken);
     if (!ge && gu.user) user = gu.user;
-    else if (ge?.message) {
-      getUserErr = ge.message;
-      errMsg = `${errMsg} / ${ge.message}`;
-    }
+    else if (ge?.message) errMsg = `${errMsg} / ${ge.message}`;
   }
 
   if (!user) {
-    let baseHost = "";
-    let apiHost = "";
-    try {
-      baseHost = new URL(base).hostname;
-    } catch {
-      baseHost = "invalid_supabase_url";
-    }
-    try {
-      apiHost = new URL(apiOrigin).hostname;
-    } catch {
-      apiHost = "invalid_api_origin";
-    }
-    const accessTokenIssHost = (() => {
-      const iss = jwtIss(bearerToken);
-      if (!iss) return null;
-      try {
-        return new URL(iss).hostname;
-      } catch {
-        return null;
-      }
-    })();
-    // #region agent log
-    debugIngest({
-      hypothesisId: "H1-H4",
-      location: "admin-guard.ts:requireAdmin:401",
-      message: "auth resolution failed",
-      data: {
-        apiOriginSource,
-        firstUserResStatus,
-        finalUserResStatus: userRes.status,
-        authUserRetry,
-        baseHost,
-        apiHost,
-        accessTokenIssHost,
-        getUserErr,
-        firstRestSnippet: firstRawSnippet,
-        finalRestSnippet: raw.slice(0, 120),
-        bearerLen: bearerToken.length,
-        anonLen: anonKey.length,
-        hadXJwt: Boolean(xJwt),
-      },
-    });
-    // #endregion
     return {
       error: new Response(
-        JSON.stringify({
-          error: errMsg,
-          debug: {
-            hypothesisId: "H1-H4",
-            apiOriginSource,
-            firstUserResStatus,
-            userResStatus: userRes.status,
-            restErrSnippet: raw.slice(0, 120),
-            firstRestSnippet: firstRawSnippet,
-            getUserErr,
-            baseHost,
-            apiHost,
-            accessTokenIssHost,
-            authUserRetry,
-            bearerLen: bearerToken.length,
-            anonLen: anonKey.length,
-            hadXJwt: Boolean(xJwt),
-          },
-        }),
+        JSON.stringify({ error: errMsg }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       ),
     };
@@ -382,15 +281,7 @@ export async function requireAdmin(req: Request): Promise<
   if (perr || !prof?.is_admin) {
     return {
       error: new Response(
-        JSON.stringify({
-          error: "Forbidden",
-          debug: {
-            branch: "forbidden_not_admin",
-            hypothesisId: "H8",
-            profileFetchError: perr?.message ?? null,
-            isAdminFlag: prof?.is_admin ?? null,
-          },
-        }),
+        JSON.stringify({ error: "Forbidden" }),
         {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

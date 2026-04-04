@@ -451,13 +451,6 @@ tr:hover td { background:rgba(255,255,255,0.025); }
         <button type="button" class="btn btn-success btn-sm" id="btn-user-add">+ Add user</button>
         <span id="users-fn-status"></span>
       </div>
-      <div id="users-edge-debug-wrap" style="display:none;margin-top:10px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
-          <span style="font-size:11px;color:var(--text-dim)">Edge diagnostic (no tokens)</span>
-          <button type="button" class="btn btn-ghost btn-sm" id="btn-users-copy-debug">Copy JSON</button>
-        </div>
-        <pre id="users-edge-debug" class="note" style="white-space:pre-wrap;word-break:break-word;font-size:11px;max-height:220px;overflow:auto;margin:0" aria-live="polite"></pre>
-      </div>
       <div class="weeks-table-wrap">
         <table>
           <thead>
@@ -538,7 +531,6 @@ function functionsBase(){
   return SB_URL.replace(/\/$/,'') + '/functions/v1';
 }
 
-/** Preserves Edge JSON body (`debug`, etc.) for UI + support — no tokens in `json` from our functions. */
 function makeEdgeFetchError(message, status, json){
   const e = new Error(message);
   e.status = status;
@@ -550,8 +542,7 @@ function hasFunctionsUrlOverride(){
   return Boolean(String((window.__MINIGAMESHOW_SUPABASE__ || {}).functionsUrl || '').trim());
 }
 
-/** Raw fetch (used when `functionsUrl` overrides default, or if invoke is unavailable). */
-async function edgeFetchGetWithFetch(name, token, session){
+async function edgeFetchGetWithFetch(name, token){
   const res = await fetch(`${functionsBase()}/${name}`, {
     method: 'GET',
     headers: {
@@ -563,16 +554,6 @@ async function edgeFetchGetWithFetch(name, token, session){
   const text = await res.text();
   let j;
   try{ j = JSON.parse(text); }catch{ j = { error: text }; }
-  // #region agent log
-  (function(){
-    let sbH='', fnH='';
-    try{ sbH=new URL(SB_URL).hostname; }catch{}
-    try{ fnH=new URL(functionsBase()).hostname; }catch{}
-    const payload={sessionId:'92c9eb',location:'admin.html:edgeFetchGet:fetch',message:name+' response',data:{runId:'post-fix',hypothesisId:'H1',ok:res.ok,status:res.status,err:String(j.error||''),debug:j.debug||null,sbHost:sbH,fnHost:fnH,tokenLen:token.length,expiresAt:session.expires_at||null,via:'fetch'},timestamp:Date.now()};
-    fetch('http://127.0.0.1:7724/ingest/e5f1dd3d-cbb1-4b56-97f9-2ee3c9d5cc64',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'92c9eb'},body:JSON.stringify(payload)}).catch(()=>{});
-    if(!res.ok) console.error('[miniGameshow-admin] edge GET failed',name,payload.data);
-  })();
-  // #endregion
   if(!res.ok) throw makeEdgeFetchError(j.error || j.message || text || res.statusText, res.status, j);
   return j;
 }
@@ -584,7 +565,7 @@ async function edgeFetchGet(name){
   const token = session.access_token;
 
   if(hasFunctionsUrlOverride() || typeof sb.functions?.invoke !== 'function'){
-    return edgeFetchGetWithFetch(name, token, session);
+    return edgeFetchGetWithFetch(name, token);
   }
 
   const { data, error, response: fnRes } = await sb.functions.invoke(name, {
@@ -594,10 +575,6 @@ async function edgeFetchGet(name){
       'X-User-JWT': token,
     },
   });
-
-  let sbH='', fnH='';
-  try{ sbH=new URL(SB_URL).hostname; }catch{}
-  try{ fnH=new URL(functionsBase()).hostname; }catch{}
 
   if(error){
     let j = {};
@@ -612,20 +589,9 @@ async function edgeFetchGet(name){
     }else{
       j = { error: error.message || String(error) };
     }
-    // #region agent log
-    const payload={sessionId:'92c9eb',location:'admin.html:edgeFetchGet:invoke',message:name+' response',data:{runId:'post-fix',hypothesisId:'H1',ok:false,status,err:String(j.error||''),debug:j.debug||null,sbHost:sbH,fnHost:fnH,tokenLen:token.length,expiresAt:session.expires_at||null,via:'invoke'},timestamp:Date.now()};
-    fetch('http://127.0.0.1:7724/ingest/e5f1dd3d-cbb1-4b56-97f9-2ee3c9d5cc64',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'92c9eb'},body:JSON.stringify(payload)}).catch(()=>{});
-    console.error('[miniGameshow-admin] edge GET failed',name,payload.data);
-    // #endregion
     throw makeEdgeFetchError(j.error || j.message || error.message || String(status) || 'Edge error', status, j);
   }
 
-  // #region agent log
-  (function(){
-    const payload={sessionId:'92c9eb',location:'admin.html:edgeFetchGet:invoke',message:name+' response',data:{runId:'post-fix',hypothesisId:'H1',ok:true,status:200,err:'',debug:null,sbHost:sbH,fnHost:fnH,tokenLen:token.length,expiresAt:session.expires_at||null,via:'invoke'},timestamp:Date.now()};
-    fetch('http://127.0.0.1:7724/ingest/e5f1dd3d-cbb1-4b56-97f9-2ee3c9d5cc64',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'92c9eb'},body:JSON.stringify(payload)}).catch(()=>{});
-  })();
-  // #endregion
   return data;
 }
 
@@ -643,16 +609,6 @@ async function edgeFetchPostWithFetch(name, body, token){
   const text = await res.text();
   let j;
   try{ j = JSON.parse(text); }catch{ j = { error: text }; }
-  // #region agent log
-  if(!res.ok){
-    let sbH='', fnH='';
-    try{ sbH=new URL(SB_URL).hostname; }catch{}
-    try{ fnH=new URL(functionsBase()).hostname; }catch{}
-    const payload={sessionId:'92c9eb',location:'admin.html:edgeFetchPost:fetch',message:name+' response',data:{runId:'post-fix',hypothesisId:'H2',status:res.status,err:String(j.error||''),debug:j.debug||null,sbHost:sbH,fnHost:fnH,via:'fetch'},timestamp:Date.now()};
-    fetch('http://127.0.0.1:7724/ingest/e5f1dd3d-cbb1-4b56-97f9-2ee3c9d5cc64',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'92c9eb'},body:JSON.stringify(payload)}).catch(()=>{});
-    console.error('[miniGameshow-admin] edge POST failed',name,payload.data);
-  }
-  // #endregion
   if(!res.ok) throw makeEdgeFetchError(j.error || j.message || text || res.statusText, res.status, j);
   return j;
 }
@@ -675,10 +631,6 @@ async function edgeFetchPost(name, body){
     },
   });
 
-  let sbH='', fnH='';
-  try{ sbH=new URL(SB_URL).hostname; }catch{}
-  try{ fnH=new URL(functionsBase()).hostname; }catch{}
-
   if(error){
     let j = {};
     let status = 0;
@@ -692,11 +644,6 @@ async function edgeFetchPost(name, body){
     }else{
       j = { error: error.message || String(error) };
     }
-    // #region agent log
-    const payload={sessionId:'92c9eb',location:'admin.html:edgeFetchPost:invoke',message:name+' response',data:{runId:'post-fix',hypothesisId:'H2',status,err:String(j.error||''),debug:j.debug||null,sbHost:sbH,fnHost:fnH,via:'invoke'},timestamp:Date.now()};
-    fetch('http://127.0.0.1:7724/ingest/e5f1dd3d-cbb1-4b56-97f9-2ee3c9d5cc64',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'92c9eb'},body:JSON.stringify(payload)}).catch(()=>{});
-    console.error('[miniGameshow-admin] edge POST failed',name,payload.data);
-    // #endregion
     throw makeEdgeFetchError(j.error || j.message || error.message || String(status) || 'Edge error', status, j);
   }
 
@@ -765,28 +712,8 @@ async function loadUsers(){
       </tr>`;
     }).join('');
     if(st) st.textContent = 'Loaded via Edge Functions ✓';
-    const dbgWrapOk = document.getElementById('users-edge-debug-wrap');
-    const dbgOk = document.getElementById('users-edge-debug');
-    if(dbgWrapOk) dbgWrapOk.style.display = 'none';
-    if(dbgOk) dbgOk.textContent = '';
-    window.__MG_USERS_EDGE_LAST__ = null;
   }catch(e){
-    console.error(e);
-    const dbgWrap = document.getElementById('users-edge-debug-wrap');
-    const dbgEl = document.getElementById('users-edge-debug');
-    const pack = {
-      function: 'admin-list-users',
-      message: e.message || String(e),
-      httpStatus: e.status != null ? e.status : null,
-      body: e.edgeJson && typeof e.edgeJson === 'object' ? e.edgeJson : null,
-    };
-    window.__MG_USERS_EDGE_LAST__ = pack;
-    if(dbgEl){
-      const show = pack.body?.debug ?? pack.body ?? { message: pack.message, httpStatus: pack.httpStatus };
-      dbgEl.textContent = JSON.stringify(show, null, 2);
-    }
-    if(dbgWrap) dbgWrap.style.display = 'block';
-    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red);padding:16px">${escHtml(e.message || String(e))}<br><span style="font-size:11px;color:var(--muted)">Use <strong>Copy JSON</strong> below and paste in chat if you need help. <code>branch: forbidden_not_admin</code> means JWT was OK but <code>profiles.is_admin</code> is false or missing.</span></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red);padding:16px">${escHtml(e.message || String(e))}<br><span style="font-size:11px;color:var(--muted)">Deploy functions or check <code>functionsUrl</code> in supabase-config.</span></td></tr>`;
     if(st) st.textContent = 'List failed — see row above';
   }
 }
@@ -1087,16 +1014,6 @@ async function boot(){
   document.getElementById('week-form').addEventListener('submit',saveWeek);
 
   document.getElementById('btn-users-refresh')?.addEventListener('click', ()=> loadUsers());
-  document.getElementById('btn-users-copy-debug')?.addEventListener('click', async ()=>{
-    const o = window.__MG_USERS_EDGE_LAST__;
-    const text = o ? JSON.stringify(o, null, 2) : '{}';
-    try{
-      await navigator.clipboard.writeText(text);
-      toast('Copied debug JSON','ok',2000);
-    }catch{
-      toast('Copy blocked — select the gray box and copy manually','err',4500);
-    }
-  });
   document.getElementById('btn-user-add')?.addEventListener('click', ()=>{
     document.getElementById('add-email').value = '';
     document.getElementById('add-pass').value = '';
@@ -1123,10 +1040,8 @@ async function boot(){
       toast('User created ✓','ok');
       loadUsers();
     }catch(e){
-      let t = e.message || String(e);
-      if(e.edgeJson?.debug) t += '\n\n' + JSON.stringify(e.edgeJson.debug, null, 2);
-      errEl.textContent = t;
-      errEl.style.whiteSpace = 'pre-wrap';
+      errEl.textContent = e.message || String(e);
+      errEl.style.whiteSpace = '';
       errEl.style.display = 'block';
     }
   });
@@ -1176,7 +1091,6 @@ async function boot(){
         toast('User deleted','ok');
         await loadUsers();
       }catch(err){
-        console.error(err);
         toast('Delete failed: ' + (err.message || err),'err',8000);
       }
     }
