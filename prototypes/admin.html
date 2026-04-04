@@ -451,6 +451,7 @@ tr:hover td { background:rgba(255,255,255,0.025); }
         <button type="button" class="btn btn-success btn-sm" id="btn-user-add">+ Add user</button>
         <span id="users-fn-status"></span>
       </div>
+      <pre id="users-edge-debug" class="note" style="display:none;white-space:pre-wrap;word-break:break-word;font-size:11px;max-height:220px;overflow:auto;margin-top:10px" aria-live="polite"></pre>
       <div class="weeks-table-wrap">
         <table>
           <thead>
@@ -531,6 +532,14 @@ function functionsBase(){
   return SB_URL.replace(/\/$/,'') + '/functions/v1';
 }
 
+/** Preserves Edge JSON body (`debug`, etc.) for UI + support — no tokens in `json` from our functions. */
+function makeEdgeFetchError(message, status, json){
+  const e = new Error(message);
+  e.status = status;
+  e.edgeJson = json && typeof json === 'object' ? json : null;
+  return e;
+}
+
 async function edgeFetchGet(name){
   await sb.auth.refreshSession();
   const { data:{ session } } = await sb.auth.getSession();
@@ -556,7 +565,7 @@ async function edgeFetchGet(name){
     if(!res.ok) console.error('[miniGameshow-admin] edge GET failed',name,payload.data);
   })();
   // #endregion
-  if(!res.ok) throw new Error(j.error || j.message || text || res.statusText);
+  if(!res.ok) throw makeEdgeFetchError(j.error || j.message || text || res.statusText, res.status, j);
   return j;
 }
 
@@ -587,7 +596,7 @@ async function edgeFetchPost(name, body){
     console.error('[miniGameshow-admin] edge POST failed',name,payload.data);
   }
   // #endregion
-  if(!res.ok) throw new Error(j.error || j.message || text || res.statusText);
+  if(!res.ok) throw makeEdgeFetchError(j.error || j.message || text || res.statusText, res.status, j);
   return j;
 }
 
@@ -653,9 +662,21 @@ async function loadUsers(){
       </tr>`;
     }).join('');
     if(st) st.textContent = 'Loaded via Edge Functions ✓';
+    const dbgOk = document.getElementById('users-edge-debug');
+    if(dbgOk){ dbgOk.textContent = ''; dbgOk.style.display = 'none'; }
   }catch(e){
     console.error(e);
-    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red);padding:16px">${escHtml(e.message || String(e))}<br><span style="font-size:11px;color:var(--muted)">Deploy functions or check functionsUrl in supabase-config.</span></td></tr>`;
+    const dbgEl = document.getElementById('users-edge-debug');
+    if(dbgEl){
+      if(e.edgeJson?.debug){
+        dbgEl.textContent = JSON.stringify(e.edgeJson.debug, null, 2);
+        dbgEl.style.display = 'block';
+      }else{
+        dbgEl.textContent = '';
+        dbgEl.style.display = 'none';
+      }
+    }
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red);padding:16px">${escHtml(e.message || String(e))}<br><span style="font-size:11px;color:var(--muted)">Deploy functions or check functionsUrl in supabase-config. If <code>debug</code> appears below the toolbar, copy it when asking for help.</span></td></tr>`;
     if(st) st.textContent = 'List failed — see row above';
   }
 }
@@ -982,7 +1003,10 @@ async function boot(){
       toast('User created ✓','ok');
       loadUsers();
     }catch(e){
-      errEl.textContent = e.message || String(e);
+      let t = e.message || String(e);
+      if(e.edgeJson?.debug) t += '\n\n' + JSON.stringify(e.edgeJson.debug, null, 2);
+      errEl.textContent = t;
+      errEl.style.whiteSpace = 'pre-wrap';
       errEl.style.display = 'block';
     }
   });
