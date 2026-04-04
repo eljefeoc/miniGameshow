@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/vercel-write-supabase-config.mjs"
+    "build": "node scripts/vercel-write-supabase-config.mjs",
+    "deploy:functions": "sh scripts/deploy-supabase-functions.sh"
   }
 }

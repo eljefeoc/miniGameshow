@@ -109,3 +109,5 @@ Verify in **Table Editor**: **`runs`**, **`leaderboard`**, **`daily_attempts`**.
 ## CLI (optional)
 
 Install the [Supabase CLI](https://supabase.com/docs/guides/cli), then `supabase link` and `supabase db push` if you prefer migrations over pasting SQL.
+
+**Admin Edge Functions** (after `supabase link` and `supabase secrets set SUPABASE_SERVICE_ROLE_KEY=…`): from the repo root run **`npm run deploy:functions`**. See **[`VERCEL.md`](VERCEL.md)** for the full checklist.

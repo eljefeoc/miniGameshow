@@ -29,21 +29,29 @@ You can also run **`__MINIGAMESHOW_CONFIRM_REDIRECT__`** in the console — it i
 
 ## Admin panel — database migration and Edge Functions
 
-**SQL (required for bans, clear-scores, week delete, profile flags):** Run migration [`supabase/migrations/20260330120000_admin_user_mgmt.sql`](supabase/migrations/20260330120000_admin_user_mgmt.sql) on your Supabase project (SQL Editor or `supabase db push`).
+**SQL (bans, clear-scores, week delete, profile flags):** Apply migration [`supabase/migrations/20260330120000_admin_user_mgmt.sql`](supabase/migrations/20260330120000_admin_user_mgmt.sql) (SQL Editor or `supabase db push`).
 
-**Edge Functions (required for user list, create user, delete Auth user):** Deploy from the repo root with the [Supabase CLI](https://supabase.com/docs/guides/functions):
+### Edge Functions (user list / create / delete Auth users)
+
+**Prerequisites:** [Supabase CLI](https://supabase.com/docs/guides/cli) installed, `supabase login`, and the project linked (`supabase link` or `supabase link --project-ref <ref>`).
+
+**One-time secret** (Dashboard → **Settings** → **API** — use the **service_role** key; never commit it):
 
 ```bash
-supabase link   # once per project
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your_service_role_key   # Dashboard → Settings → API
-supabase functions deploy admin-list-users
-supabase functions deploy admin-auth-create-user
-supabase functions deploy admin-auth-delete-user
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<your_service_role_key>
 ```
 
-The functions read `SUPABASE_URL` and `SUPABASE_ANON_KEY` automatically when deployed on Supabase; you must set **`SUPABASE_SERVICE_ROLE_KEY`** as a function secret. **Never** put the service role key in `supabase-config.js` or static HTML — the browser only uses the anon key; admin actions verify your JWT then use the service role on the server.
+**Redeploy** whenever `supabase/functions/` or [`supabase/config.toml`](supabase/config.toml) changes:
 
-Optional local override: in `supabase-config.js`, set `functionsUrl` if your functions base URL is not `{SUPABASE_URL}/functions/v1`.
+```bash
+npm run deploy:functions
+```
+
+That runs [`scripts/deploy-supabase-functions.sh`](scripts/deploy-supabase-functions.sh), which deploys `admin-list-users`, `admin-auth-create-user`, and `admin-auth-delete-user`.
+
+Deployed functions get `SUPABASE_URL` and `SUPABASE_ANON_KEY` from the project automatically. Auth is enforced in code (`requireAdmin`); [`supabase/config.toml`](supabase/config.toml) sets **`verify_jwt = false`** for those three so the API gateway does not return a bogus `Invalid JWT` before Deno runs. If you still see that error, check **Dashboard → Edge Functions →** each function **→ Verify JWT** is off (in case the dashboard overrode CLI config).
+
+**Browser config:** only the **anon** key belongs in `supabase-config.js` / Vercel env. Optional: set `functionsUrl` if the functions base is not `{SUPABASE_URL}/functions/v1`.
 
 ## Custom domain: Namecheap → Vercel (`theminigameshow.com`)
 
