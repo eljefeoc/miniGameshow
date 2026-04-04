@@ -42,12 +42,12 @@ export async function requireAdmin(req: Request): Promise<
     };
   }
 
-  // Prefer X-User-JWT: admin.html sends Authorization: Bearer <anon> for the API gateway and the real access token here.
-  const userToken = req.headers.get("x-user-jwt")?.trim();
-  const authHeader = userToken
-    ? `Bearer ${userToken}`
-    : req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
+  const authVal =
+    req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "")?.trim() || "";
+  const xJwt = req.headers.get("x-user-jwt")?.trim() || "";
+  // Prefer X-User-JWT; else Authorization. Never treat anon key as user session (happens if custom header is stripped).
+  let bearerToken = xJwt || authVal;
+  if (!bearerToken) {
     return {
       error: new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -55,8 +55,22 @@ export async function requireAdmin(req: Request): Promise<
       }),
     };
   }
+  if (bearerToken === anonKey) {
+    return {
+      error: new Response(
+        JSON.stringify({
+          error:
+            "No user session on this request (only anon key). Hard-refresh admin, sign out/in, or check adblock stripping the X-User-JWT header.",
+        }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      ),
+    };
+  }
 
-  // Validate JWT via Auth REST (same as PostgREST). supabase-js getUser() from Edge often returns "Invalid JWT" even when the token is valid.
+  const authHeader = `Bearer ${bearerToken}`;
+  const admin = createClient(supabaseUrl, serviceKey);
+
+  // 1) Auth REST
   const base = supabaseUrl.replace(/\/$/, "");
   const userRes = await fetch(`${base}/auth/v1/user`, {
     headers: {
@@ -76,6 +90,14 @@ export async function requireAdmin(req: Request): Promise<
   } catch {
     if (!userRes.ok && raw) errMsg = raw.slice(0, 200);
   }
+
+  // 2) Service-role getUser (works when REST path is picky in Edge)
+  if (!user) {
+    const { data: gu, error: ge } = await admin.auth.getUser(bearerToken);
+    if (!ge && gu.user) user = gu.user;
+    else if (ge?.message) errMsg = `${errMsg} / ${ge.message}`;
+  }
+
   if (!user) {
     return {
       error: new Response(JSON.stringify({ error: errMsg }), {
@@ -84,8 +106,6 @@ export async function requireAdmin(req: Request): Promise<
       }),
     };
   }
-
-  const admin = createClient(supabaseUrl, serviceKey);
 
   const { data: prof, error: perr } = await admin
     .from("profiles")

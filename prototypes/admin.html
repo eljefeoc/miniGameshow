@@ -537,7 +537,7 @@ async function edgeFetchGet(name){
   const res = await fetch(`${functionsBase()}/${name}`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${SB_KEY}`,
+      Authorization: `Bearer ${session.access_token}`,
       apikey: SB_KEY,
       'X-User-JWT': session.access_token,
     },
@@ -555,7 +555,7 @@ async function edgeFetchPost(name, body){
   const res = await fetch(`${functionsBase()}/${name}`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${SB_KEY}`,
+      Authorization: `Bearer ${session.access_token}`,
       apikey: SB_KEY,
       'X-User-JWT': session.access_token,
       'Content-Type': 'application/json',
