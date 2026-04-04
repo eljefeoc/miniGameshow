@@ -354,6 +354,17 @@ authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
 
+# Admin Edge Functions verify the user JWT in code (`requireAdmin` → GoTrue + profiles.is_admin).
+# Platform JWT verification can return `{ "code": 401, "message": "Invalid JWT" }` before Deno runs.
+[functions.admin-list-users]
+verify_jwt = false
+
+[functions.admin-auth-create-user]
+verify_jwt = false
+
+[functions.admin-auth-delete-user]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

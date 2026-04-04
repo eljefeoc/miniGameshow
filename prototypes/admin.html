@@ -617,7 +617,7 @@ async function edgeFetchGet(name){
     fetch('http://127.0.0.1:7724/ingest/e5f1dd3d-cbb1-4b56-97f9-2ee3c9d5cc64',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'92c9eb'},body:JSON.stringify(payload)}).catch(()=>{});
     console.error('[miniGameshow-admin] edge GET failed',name,payload.data);
     // #endregion
-    throw makeEdgeFetchError(j.error || error.message || String(status) || 'Edge error', status, j);
+    throw makeEdgeFetchError(j.error || j.message || error.message || String(status) || 'Edge error', status, j);
   }
 
   // #region agent log
@@ -697,7 +697,7 @@ async function edgeFetchPost(name, body){
     fetch('http://127.0.0.1:7724/ingest/e5f1dd3d-cbb1-4b56-97f9-2ee3c9d5cc64',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'92c9eb'},body:JSON.stringify(payload)}).catch(()=>{});
     console.error('[miniGameshow-admin] edge POST failed',name,payload.data);
     // #endregion
-    throw makeEdgeFetchError(j.error || error.message || String(status) || 'Edge error', status, j);
+    throw makeEdgeFetchError(j.error || j.message || error.message || String(status) || 'Edge error', status, j);
   }
 
   return data;
