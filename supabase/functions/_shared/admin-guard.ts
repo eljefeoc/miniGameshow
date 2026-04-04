@@ -15,11 +15,14 @@ export async function requireAdmin(req: Request): Promise<
   AdminContext | { error: Response }
 > {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceKey) {
+  if (!supabaseUrl || !anonKey || !serviceKey) {
     return {
       error: new Response(
-        JSON.stringify({ error: "Server missing Supabase secrets" }),
+        JSON.stringify({
+          error: "Server missing Supabase secrets (need SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY)",
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       ),
     };
@@ -34,18 +37,25 @@ export async function requireAdmin(req: Request): Promise<
       }),
     };
   }
-  const jwt = authHeader.slice(7);
 
-  const admin = createClient(supabaseUrl, serviceKey);
-  const { data: { user }, error: uerr } = await admin.auth.getUser(jwt);
+  // Validate the user JWT with the anon client + Authorization header (avoids service-role getUser(jwt) "Invalid JWT" issues).
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: { user }, error: uerr } = await userClient.auth.getUser();
   if (uerr || !user) {
     return {
-      error: new Response(JSON.stringify({ error: "Invalid session" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }),
+      error: new Response(
+        JSON.stringify({ error: uerr?.message || "Invalid session" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      ),
     };
   }
+
+  const admin = createClient(supabaseUrl, serviceKey);
 
   const { data: prof, error: perr } = await admin
     .from("profiles")
