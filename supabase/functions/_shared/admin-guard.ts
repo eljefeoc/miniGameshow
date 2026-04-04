@@ -15,13 +15,27 @@ export async function requireAdmin(req: Request): Promise<
   AdminContext | { error: Response }
 > {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !anonKey || !serviceKey) {
+  // Use the same anon key the browser sends (admin.html sets `apikey`). Edge-injected SUPABASE_ANON_KEY can drift from local/Vercel config and cause "Invalid JWT" on auth/v1/user while PostgREST still works.
+  const anonKey =
+    req.headers.get("apikey")?.trim() ||
+    Deno.env.get("SUPABASE_ANON_KEY") ||
+    "";
+  if (!supabaseUrl || !serviceKey) {
     return {
       error: new Response(
         JSON.stringify({
-          error: "Server missing Supabase secrets (need SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY)",
+          error: "Server missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      ),
+    };
+  }
+  if (!anonKey) {
+    return {
+      error: new Response(
+        JSON.stringify({
+          error: "Missing apikey header (anon key) or SUPABASE_ANON_KEY secret",
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       ),
