@@ -545,6 +545,14 @@ async function edgeFetchGet(name){
   const text = await res.text();
   let j;
   try{ j = JSON.parse(text); }catch{ j = { error: text }; }
+  // #region agent log
+  (function(){
+    let sbH='', fnH='';
+    try{ sbH=new URL(SB_URL).hostname; }catch{}
+    try{ fnH=new URL(functionsBase()).hostname; }catch{}
+    fetch('http://127.0.0.1:7724/ingest/e5f1dd3d-cbb1-4b56-97f9-2ee3c9d5cc64',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'92c9eb'},body:JSON.stringify({sessionId:'92c9eb',location:'admin.html:edgeFetchGet',message:name+' response',data:{runId:'pre-fix',hypothesisId:'H1-H5',ok:res.ok,status:res.status,err:String(j.error||''),debug:j.debug||null,sbHost:sbH,fnHost:fnH,tokenLen:session.access_token.length,expiresAt:session.expires_at||null},timestamp:Date.now()})}).catch(()=>{});
+  })();
+  // #endregion
   if(!res.ok) throw new Error(j.error || j.message || text || res.statusText);
   return j;
 }

@@ -49,10 +49,13 @@ export async function requireAdmin(req: Request): Promise<
   let bearerToken = xJwt || authVal;
   if (!bearerToken) {
     return {
-      error: new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }),
+      error: new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          debug: { branch: "no_bearer", hypothesisId: "H5", hasXJwt: Boolean(xJwt), authValLen: authVal.length },
+        }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      ),
     };
   }
   if (bearerToken === anonKey) {
@@ -61,6 +64,7 @@ export async function requireAdmin(req: Request): Promise<
         JSON.stringify({
           error:
             "No user session on this request (only anon key). Hard-refresh admin, sign out/in, or check adblock stripping the X-User-JWT header.",
+          debug: { branch: "bearer_is_anon", hypothesisId: "H5" },
         }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       ),
@@ -92,18 +96,40 @@ export async function requireAdmin(req: Request): Promise<
   }
 
   // 2) Service-role getUser (works when REST path is picky in Edge)
+  let getUserErr: string | null = null;
   if (!user) {
     const { data: gu, error: ge } = await admin.auth.getUser(bearerToken);
     if (!ge && gu.user) user = gu.user;
-    else if (ge?.message) errMsg = `${errMsg} / ${ge.message}`;
+    else if (ge?.message) {
+      getUserErr = ge.message;
+      errMsg = `${errMsg} / ${ge.message}`;
+    }
   }
 
   if (!user) {
+    let baseHost = "";
+    try {
+      baseHost = new URL(base).hostname;
+    } catch {
+      baseHost = "invalid_supabase_url";
+    }
     return {
-      error: new Response(JSON.stringify({ error: errMsg }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }),
+      error: new Response(
+        JSON.stringify({
+          error: errMsg,
+          debug: {
+            hypothesisId: "H1-H3",
+            userResStatus: userRes.status,
+            restErrSnippet: raw.slice(0, 120),
+            getUserErr,
+            baseHost,
+            bearerLen: bearerToken.length,
+            anonLen: anonKey.length,
+            hadXJwt: Boolean(xJwt),
+          },
+        }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      ),
     };
   }
 
