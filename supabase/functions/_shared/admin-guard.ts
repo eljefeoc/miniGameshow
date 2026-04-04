@@ -1,18 +1,23 @@
 import { createClient, type SupabaseClient, type User } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-/** Decode JWT payload `iss` without verifying (debug + host fix only). */
-function jwtIss(token: string): string | null {
+/** Decode JWT payload (no verify) — used for `iss`, `ref`, `role` only. */
+function jwtPayloadJson(token: string): Record<string, unknown> | null {
   const parts = token.split(".");
   if (parts.length < 2) return null;
   try {
     let b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
     const rem = b64.length % 4;
     if (rem) b64 += "=".repeat(4 - rem);
-    const json = JSON.parse(atob(b64)) as { iss?: string };
-    return typeof json.iss === "string" ? json.iss : null;
+    return JSON.parse(atob(b64)) as Record<string, unknown>;
   } catch {
     return null;
   }
+}
+
+function jwtIss(token: string): string | null {
+  const json = jwtPayloadJson(token);
+  const iss = json?.iss;
+  return typeof iss === "string" ? iss : null;
 }
 
 /**
@@ -62,19 +67,10 @@ function resolveAuthApiOrigin(base: string, bearerToken: string): string {
 
 /** Supabase API keys are JWTs; payload includes `ref` (project id) for hosted projects. */
 function jwtPayloadRef(supabaseKey: string): string | null {
-  const parts = supabaseKey.split(".");
-  if (parts.length < 2) return null;
-  try {
-    let b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const rem = b64.length % 4;
-    if (rem) b64 += "=".repeat(4 - rem);
-    const json = JSON.parse(atob(b64)) as { ref?: string };
-    const ref = typeof json.ref === "string" ? json.ref.trim() : "";
-    if (!ref || !/^[a-z0-9]{15,40}$/.test(ref)) return null;
-    return ref;
-  } catch {
-    return null;
-  }
+  const json = jwtPayloadJson(supabaseKey);
+  const ref = typeof json?.ref === "string" ? json.ref.trim() : "";
+  if (!ref || !/^[a-z0-9]{15,40}$/.test(ref)) return null;
+  return ref;
 }
 
 /**
@@ -197,6 +193,52 @@ export async function requireAdmin(req: Request): Promise<
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       ),
     };
+  }
+
+  const sessionPayload = jwtPayloadJson(bearerToken);
+  const sessionRole = typeof sessionPayload?.role === "string" ? sessionPayload.role : null;
+  if (sessionRole === "service_role") {
+    return {
+      error: new Response(
+        JSON.stringify({
+          error:
+            "Authorization carried a service key instead of a user access token. Ensure X-User-JWT is sent and not stripped by a proxy.",
+          debug: { branch: "bearer_is_service_role", hypothesisId: "H6" },
+        }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      ),
+    };
+  }
+
+  const svcRef = jwtPayloadRef(serviceKey);
+  const iss = jwtIss(bearerToken);
+  let tokenIssHost: string | null = null;
+  if (iss) {
+    try {
+      tokenIssHost = new URL(iss).hostname;
+    } catch {
+      tokenIssHost = null;
+    }
+  }
+  if (svcRef && tokenIssHost && tokenIssHost.endsWith(".supabase.co")) {
+    const expectedHost = `${svcRef}.supabase.co`;
+    if (tokenIssHost !== expectedHost) {
+      return {
+        error: new Response(
+          JSON.stringify({
+            error:
+              "User session is for a different Supabase project than this function. Align `url` and `functionsUrl` in admin config with the same project.",
+            debug: {
+              branch: "jwt_project_mismatch",
+              hypothesisId: "H7",
+              tokenIssHost,
+              functionProjectHost: expectedHost,
+            },
+          }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        ),
+      };
+    }
   }
 
   const authHeader = `Bearer ${bearerToken}`;
