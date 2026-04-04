@@ -314,6 +314,8 @@ html, body {
   text-align:center; font-size:10px; color:rgba(255,255,255,0.35);
   text-transform:uppercase; letter-spacing:0.12em; margin:12px 0 8px;
 }
+/* Hidden until Google/Apple are enabled in Supabase; remove this rule to show OAuth */
+.fp-auth-oauth-block { display:none !important; }
 .fp-auth-oauth-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
 .fp-auth-oauth {
   flex:1; min-width:120px; padding:10px 12px; border-radius:8px; cursor:pointer;
@@ -883,10 +885,12 @@ html, body {
             </div>
 
             <div id="ov-auth" class="fp-auth-embed" style="display:none" data-fp-open="0">
-              <p class="fp-auth-divider">Continue with</p>
-              <div class="fp-auth-oauth-row">
-                <button type="button" class="fp-auth-oauth fp-auth-oauth-google" id="auth-google" aria-label="Sign in with Google">Google</button>
-                <button type="button" class="fp-auth-oauth fp-auth-oauth-apple" id="auth-apple" aria-label="Sign in with Apple">Apple</button>
+              <div class="fp-auth-oauth-block">
+                <p class="fp-auth-divider">Continue with</p>
+                <div class="fp-auth-oauth-row">
+                  <button type="button" class="fp-auth-oauth fp-auth-oauth-google" id="auth-google" aria-label="Sign in with Google">Google</button>
+                  <button type="button" class="fp-auth-oauth fp-auth-oauth-apple" id="auth-apple" aria-label="Sign in with Apple">Apple</button>
+                </div>
               </div>
               <p class="fp-auth-divider">Or phone (SMS)</p>
               <p class="fp-auth-phone-hint">Use international format with country code, e.g. +1 415 555 1234</p>
