@@ -5,8 +5,10 @@ function jwtIss(token: string): string | null {
   const parts = token.split(".");
   if (parts.length < 2) return null;
   try {
-    const pad = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const json = JSON.parse(atob(pad)) as { iss?: string };
+    let b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const rem = b64.length % 4;
+    if (rem) b64 += "=".repeat(4 - rem);
+    const json = JSON.parse(atob(b64)) as { iss?: string };
     return typeof json.iss === "string" ? json.iss : null;
   } catch {
     return null;
