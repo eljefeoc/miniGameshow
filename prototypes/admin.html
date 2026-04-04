@@ -578,7 +578,7 @@ async function edgeFetchGetWithFetch(name, token, session){
 }
 
 async function edgeFetchGet(name){
-  await sb.auth.refreshSession();
+  // Do not call refreshSession() here — it races the GoTrue JS storage lock with getSession / functions.invoke ("lock … was stolen").
   const { data:{ session } } = await sb.auth.getSession();
   if(!session?.access_token) throw new Error('Not signed in');
   const token = session.access_token;
@@ -658,7 +658,6 @@ async function edgeFetchPostWithFetch(name, body, token){
 }
 
 async function edgeFetchPost(name, body){
-  await sb.auth.refreshSession();
   const { data:{ session } } = await sb.auth.getSession();
   if(!session?.access_token) throw new Error('Not signed in');
   const token = session.access_token;
@@ -1038,7 +1037,7 @@ async function onSignedIn(session){
   if(isAdmin){
     await loadGames();
     await loadWeeks();
-    loadUsers();
+    await loadUsers();
   }
 }
 
