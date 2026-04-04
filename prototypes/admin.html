@@ -1164,12 +1164,20 @@ async function boot(){
     }
     if(btn.classList.contains('btn-delete-user')){
       if(!confirm('Permanently delete this Auth user and all related data?')) return;
+      if(!uid){
+        toast('Delete failed: missing user id on row','err',5000);
+        return;
+      }
       try{
-        await edgeFetchPost('admin-auth-delete-user', { user_id: uid });
+        const out = await edgeFetchPost('admin-auth-delete-user', { user_id: uid });
+        if(!out || out.ok !== true){
+          throw new Error((out && out.error) || 'Server did not confirm delete');
+        }
         toast('User deleted','ok');
-        loadUsers();
+        await loadUsers();
       }catch(err){
-        toast('Delete failed: ' + (err.message || err),'err',5000);
+        console.error(err);
+        toast('Delete failed: ' + (err.message || err),'err',8000);
       }
     }
   });
