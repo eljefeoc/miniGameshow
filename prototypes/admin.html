@@ -451,7 +451,13 @@ tr:hover td { background:rgba(255,255,255,0.025); }
         <button type="button" class="btn btn-success btn-sm" id="btn-user-add">+ Add user</button>
         <span id="users-fn-status"></span>
       </div>
-      <pre id="users-edge-debug" class="note" style="display:none;white-space:pre-wrap;word-break:break-word;font-size:11px;max-height:220px;overflow:auto;margin-top:10px" aria-live="polite"></pre>
+      <div id="users-edge-debug-wrap" style="display:none;margin-top:10px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--text-dim)">Edge diagnostic (no tokens)</span>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-users-copy-debug">Copy JSON</button>
+        </div>
+        <pre id="users-edge-debug" class="note" style="white-space:pre-wrap;word-break:break-word;font-size:11px;max-height:220px;overflow:auto;margin:0" aria-live="polite"></pre>
+      </div>
       <div class="weeks-table-wrap">
         <table>
           <thead>
@@ -760,21 +766,28 @@ async function loadUsers(){
       </tr>`;
     }).join('');
     if(st) st.textContent = 'Loaded via Edge Functions ✓';
+    const dbgWrapOk = document.getElementById('users-edge-debug-wrap');
     const dbgOk = document.getElementById('users-edge-debug');
-    if(dbgOk){ dbgOk.textContent = ''; dbgOk.style.display = 'none'; }
+    if(dbgWrapOk) dbgWrapOk.style.display = 'none';
+    if(dbgOk) dbgOk.textContent = '';
+    window.__MG_USERS_EDGE_LAST__ = null;
   }catch(e){
     console.error(e);
+    const dbgWrap = document.getElementById('users-edge-debug-wrap');
     const dbgEl = document.getElementById('users-edge-debug');
+    const pack = {
+      function: 'admin-list-users',
+      message: e.message || String(e),
+      httpStatus: e.status != null ? e.status : null,
+      body: e.edgeJson && typeof e.edgeJson === 'object' ? e.edgeJson : null,
+    };
+    window.__MG_USERS_EDGE_LAST__ = pack;
     if(dbgEl){
-      if(e.edgeJson?.debug){
-        dbgEl.textContent = JSON.stringify(e.edgeJson.debug, null, 2);
-        dbgEl.style.display = 'block';
-      }else{
-        dbgEl.textContent = '';
-        dbgEl.style.display = 'none';
-      }
+      const show = pack.body?.debug ?? pack.body ?? { message: pack.message, httpStatus: pack.httpStatus };
+      dbgEl.textContent = JSON.stringify(show, null, 2);
     }
-    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red);padding:16px">${escHtml(e.message || String(e))}<br><span style="font-size:11px;color:var(--muted)">Deploy functions or check functionsUrl in supabase-config. If <code>debug</code> appears below the toolbar, copy it when asking for help.</span></td></tr>`;
+    if(dbgWrap) dbgWrap.style.display = 'block';
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red);padding:16px">${escHtml(e.message || String(e))}<br><span style="font-size:11px;color:var(--muted)">Use <strong>Copy JSON</strong> below and paste in chat if you need help. <code>branch: forbidden_not_admin</code> means JWT was OK but <code>profiles.is_admin</code> is false or missing.</span></td></tr>`;
     if(st) st.textContent = 'List failed — see row above';
   }
 }
@@ -1075,6 +1088,16 @@ async function boot(){
   document.getElementById('week-form').addEventListener('submit',saveWeek);
 
   document.getElementById('btn-users-refresh')?.addEventListener('click', ()=> loadUsers());
+  document.getElementById('btn-users-copy-debug')?.addEventListener('click', async ()=>{
+    const o = window.__MG_USERS_EDGE_LAST__;
+    const text = o ? JSON.stringify(o, null, 2) : '{}';
+    try{
+      await navigator.clipboard.writeText(text);
+      toast('Copied debug JSON','ok',2000);
+    }catch{
+      toast('Copy blocked — select the gray box and copy manually','err',4500);
+    }
+  });
   document.getElementById('btn-user-add')?.addEventListener('click', ()=>{
     document.getElementById('add-email').value = '';
     document.getElementById('add-pass').value = '';

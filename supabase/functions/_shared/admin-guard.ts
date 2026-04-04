@@ -375,10 +375,21 @@ export async function requireAdmin(req: Request): Promise<
 
   if (perr || !prof?.is_admin) {
     return {
-      error: new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }),
+      error: new Response(
+        JSON.stringify({
+          error: "Forbidden",
+          debug: {
+            branch: "forbidden_not_admin",
+            hypothesisId: "H8",
+            profileFetchError: perr?.message ?? null,
+            isAdminFlag: prof?.is_admin ?? null,
+          },
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      ),
     };
   }
 
