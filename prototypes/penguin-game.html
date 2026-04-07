@@ -1270,7 +1270,11 @@ let eventSponsor = '';
 let eventId      = null;   // stored after fetchActiveEvent for rank lookups
 let eventShowAt  = null;   // Date — live show (prize meta line)
 let eventEndsAt  = null;   // Date — scoring closes (prize meta line)
+const SIM_FPS=60;
+const MAX_FRAME_DT=0.05;
 let gameSpeed=2.6,frameCount=0,distance=0;
+let lastLoopTs=0,lastFrameScale=1;
+let scoreTickAccum=0,hudTickAccum=0,frenzyFlashSub=0;
 let combo=1,comboTimer=0;
 let maxComboThisRun=1;
 let postrunScoreDelta=0;
@@ -1344,10 +1348,10 @@ function makeTile(x){
   else if(c.ramp&&r<0.12) type='ramp';
   return {x,type,w:64,state:'ok',breakTimer:0};
 }
-function updateTerrain(){
+function updateTerrain(scale){
   terrainTiles.forEach(t=>{
-    t.x-=gameSpeed*0.5;
-    if(t.type==='crack'&&t.state==='breaking'){t.breakTimer--;if(t.breakTimer<=0)t.state='broken';}
+    t.x-=gameSpeed*0.5*scale;
+    if(t.type==='crack'&&t.state==='breaking'){t.breakTimer-=scale;if(t.breakTimer<=0)t.state='broken';}
   });
   terrainTiles=terrainTiles.filter(t=>t.x>-80);
   while(terrainTiles.length<14){const last=terrainTiles[terrainTiles.length-1];terrainTiles.push(makeTile(last.x+64));}
@@ -1375,19 +1379,20 @@ function createOb(type,x){
   if(type==='polarbear') return{x,y:GROUND_Y,w:62,h:58,type,phase:rng()*Math.PI*2,phaseSpd:0.025+rng()*0.02,speedMult:1};
   if(type==='iceblock') return{x,y:GROUND_Y,w:52,h:28,type,standable:true};
 }
-function updateObstacles(){
+function updateObstacles(scale){
   obstacles.forEach(ob=>{
     if(ob.type==='seal'){
-      ob.lungeTimer--;
-      if(ob.lungeTimer===30) ob.lungeWarn=30;
-      if(ob.lungeWarn>0) ob.lungeWarn--;
+      const prevLt=ob.lungeTimer;
+      ob.lungeTimer-=scale;
+      if(prevLt>30&&ob.lungeTimer<=30) ob.lungeWarn=30;
+      if(ob.lungeWarn>0){ob.lungeWarn-=scale;if(ob.lungeWarn<0)ob.lungeWarn=0;}
       if(ob.lungeTimer<=0&&!ob.lunging){ob.lunging=true;ob.lungeVx=-3.5;SFX.lunge();spawnP(ob.x-ob.w/2,ob.y-20,'#ffffff',5,3);}
-      if(ob.lunging){ob.x+=ob.lungeVx;ob.lungeVx*=0.88;if(Math.abs(ob.lungeVx)<0.2){ob.lunging=false;ob.lungeTimer=Math.floor(rng()*100)+80;}}
-      else ob.x-=gameSpeed;
+      if(ob.lunging){ob.x+=ob.lungeVx*scale;ob.lungeVx*=Math.pow(0.88,scale);if(Math.abs(ob.lungeVx)<0.2){ob.lunging=false;ob.lungeTimer=Math.floor(rng()*100)+80;}}
+      else ob.x-=gameSpeed*scale;
     }
-    else if(ob.type==='walrus'){ob.breathePhase+=0.04;ob.breatheAmt=Math.sin(ob.breathePhase)*5;ob.x-=gameSpeed*0.95;}
-    else if(ob.type==='polarbear'){ob.phase+=ob.phaseSpd;ob.speedMult=0.5+Math.abs(Math.sin(ob.phase))*1.5;ob.x-=gameSpeed*ob.speedMult;}
-    else ob.x-=gameSpeed;
+    else if(ob.type==='walrus'){ob.breathePhase+=0.04*scale;ob.breatheAmt=Math.sin(ob.breathePhase)*5;ob.x-=gameSpeed*0.95*scale;}
+    else if(ob.type==='polarbear'){ob.phase+=ob.phaseSpd*scale;ob.speedMult=0.5+Math.abs(Math.sin(ob.phase))*1.5;ob.x-=gameSpeed*ob.speedMult*scale;}
+    else ob.x-=gameSpeed*scale;
   });
   obstacles=obstacles.filter(ob=>ob.x>-120);
 }
@@ -1395,14 +1400,14 @@ function updateObstacles(){
 // ═══════════════════════════════════════════════════════════
 //  FISHING
 // ═══════════════════════════════════════════════════════════
-function updateFishing(){
+function updateFishing(scale){
   const c=cfg();
-  fishing.biteTimer--;
+  fishing.biteTimer-=scale;
   fishing.rodSwing=Math.sin(frameCount*0.04)*0.25;
-  if(fishing.resultTimer>0){fishing.resultTimer--;if(fishing.resultTimer===0)fishing.lastCastResult=null;}
+  if(fishing.resultTimer>0){fishing.resultTimer-=scale;if(fishing.resultTimer<=0)fishing.lastCastResult=null;}
   if(fishing.biteTimer<=0&&!fishing.biteActive){fishing.biteActive=true;fishing.biteMeter=0;fishing.biteSpeed=c.biteSpeed;fishing.castWindow=false;}
   if(fishing.biteActive){
-    fishing.biteMeter+=fishing.biteSpeed;
+    fishing.biteMeter+=fishing.biteSpeed*scale;
     fishing.castWindow=fishing.biteMeter>=55&&fishing.biteMeter<=80;
     // update cast button glow
     document.getElementById('btn-cast').classList.toggle('bite-ready',fishing.castWindow);
@@ -1447,13 +1452,15 @@ function updateFishing(){
 // ═══════════════════════════════════════════════════════════
 //  FRENZY
 // ═══════════════════════════════════════════════════════════
-function updateFrenzy(){
+function updateFrenzy(scale){
   if(frenzyActive){
-    frenzyTimer--;frenzyFlash=(frenzyFlash+1)%8;
-    if(frenzyTimer<=0){frenzyActive=false;fishMeter=0;pengu.mood='happy';}
+    frenzyTimer-=scale;
+    frenzyFlashSub+=scale;
+    while(frenzyFlashSub>=1){frenzyFlashSub-=1;frenzyFlash=(frenzyFlash+1)%8;}
+    if(frenzyTimer<=0){frenzyActive=false;fishMeter=0;pengu.mood='happy';frenzyFlashSub=0;}
   } else {
     if(fishMeter>=100){
-      frenzyActive=true;frenzyTimer=360;pengu.mood='excited';
+      frenzyActive=true;frenzyTimer=360;pengu.mood='excited';frenzyFlashSub=0;
       SFX.frenzy();spawnP(pengu.x,pengu.y-30,'#00ffaa',20,6);
       addPop(pengu.x-40,pengu.y-80,'FRENZY!','#00ffaa',10);
     }
@@ -1485,7 +1492,7 @@ function breakCombo(){
 //  COLLISION
 // ═══════════════════════════════════════════════════════════
 function overlap(ax,ay,aw,ah,bx,by,bw,bh){return ax<bx+bw&&ax+aw>bx&&ay<by+bh&&ay+ah>by;}
-function checkCollisions(){
+function checkCollisions(scale){
   const px_=pengu.x-pengu.w/2+6,py_=pengu.y-pengu.h+6,pw_=pengu.w-12,ph_=pengu.h-8;
   pengu.onPlatform=false;
   if(pengu.invincible>0) return;
@@ -1508,7 +1515,7 @@ function checkCollisions(){
     if(t.state==='broken') return;
     const onTile=pengu.x+pengu.w/2-6>t.x&&pengu.x-pengu.w/2+6<t.x+t.w&&pengu.y>=GROUND_Y-2;
     if(!onTile) return;
-    if(t.type==='slow') gameSpeed=Math.max(gameSpeed-0.04,1.2);
+    if(t.type==='slow') gameSpeed=Math.max(gameSpeed-0.04*scale,1.2);
     if(t.type==='ramp'&&pengu.vy>=0) pengu.vy=-3;
     if(t.type==='crack'){
       if(t.state==='ok'){t.state='breaking';t.breakTimer=25;spawnP(pengu.x,GROUND_Y,'#aaddff',8,3);}
@@ -1558,8 +1565,8 @@ function cast(){ if(state==='playing') inputCount++; fishing.castPressed=true; }
 // ═══════════════════════════════════════════════════════════
 //  MOOD
 // ═══════════════════════════════════════════════════════════
-function updateMood(){
-  if(pengu.moodTimer>0){pengu.moodTimer--;return;}
+function updateMood(scale){
+  if(pengu.moodTimer>0){pengu.moodTimer-=scale;if(pengu.moodTimer<0)pengu.moodTimer=0;return;}
   if(frenzyActive){pengu.mood='excited';return;}
   if(lives===1){pengu.mood='scared';return;}
   if(fishing.castWindow){pengu.mood='excited';return;}
@@ -1938,6 +1945,7 @@ function resetGame(){
   inputCount=0;
   maxComboThisRun=1;
   score=0;fishCount=0;lives=3;gameSpeed=2.6;frameCount=0;distance=0;
+  lastLoopTs=0;scoreTickAccum=0;hudTickAccum=0;frenzyFlashSub=0;
   combo=1;comboTimer=0;fishMeter=0;frenzyActive=false;frenzyTimer=0;backpackPulse=0;
   obstacles=[];particles=[];textPops=[];obstacleTimer=60;
   Object.assign(pengu,{x:90,y:GROUND_Y,vy:0,jumps:0,walkFrame:0,walkTimer:0,invincible:0,dead:false,squish:1,squishV:0,mood:'happy',moodTimer:0,onPlatform:false});
@@ -2022,36 +2030,41 @@ document.getElementById('rotate-nudge').addEventListener('touchstart',e=>{
 // ═══════════════════════════════════════════════════════════
 //  UPDATE
 // ═══════════════════════════════════════════════════════════
-function update(){
+function update(scale){
   if(state!=='playing') return;
-  frameCount++;distance++;
+  if(scale<=0) return;
+  frameCount+=scale;distance+=scale;
   const c=cfg();
-  if(gameSpeed<c.speed) gameSpeed=Math.min(gameSpeed+0.015,c.speed);
+  if(gameSpeed<c.speed) gameSpeed=Math.min(gameSpeed+0.015*scale,c.speed);
   else gameSpeed=c.speed;
 
   if(!pengu.dead){
-    pengu.vy+=0.58;pengu.y+=pengu.vy;
+    pengu.vy+=0.58*scale;pengu.y+=pengu.vy*scale;
     if(pengu.y>=GROUND_Y&&!pengu.onPlatform){
       if(pengu.vy>4){pengu.squish=0.6;pengu.squishV=0.08;SFX.land();}
       pengu.y=GROUND_Y;pengu.vy=0;pengu.jumps=0;
     }
     pengu.onPlatform=false;
   }
-  pengu.squishV+=(1-pengu.squish)*0.4;pengu.squishV*=0.68;pengu.squish+=pengu.squishV;
-  if(pengu.invincible>0) pengu.invincible--;
-  if(!pengu.dead&&pengu.y>=GROUND_Y-2){pengu.walkTimer++;if(pengu.walkTimer>7){pengu.walkTimer=0;pengu.walkFrame=(pengu.walkFrame+1)%4;}}
-  if(comboTimer>0){comboTimer--;if(comboTimer===0)breakCombo();}
-  if(backpackPulse>0) backpackPulse--;
+  pengu.squishV+=(1-pengu.squish)*0.4*scale;pengu.squishV*=Math.pow(0.68,scale);pengu.squish+=pengu.squishV*scale;
+  if(pengu.invincible>0){pengu.invincible-=scale;if(pengu.invincible<0)pengu.invincible=0;}
+  if(!pengu.dead&&pengu.y>=GROUND_Y-2){pengu.walkTimer+=scale;if(pengu.walkTimer>7){pengu.walkTimer=0;pengu.walkFrame=(pengu.walkFrame+1)%4;}}
+  if(comboTimer>0){comboTimer-=scale;if(comboTimer<=0)breakCombo();}
+  if(backpackPulse>0){backpackPulse-=scale;if(backpackPulse<0)backpackPulse=0;}
 
-  obstacleTimer--;if(obstacleTimer<=0){spawnObstacle();obstacleTimer=Math.floor(c.obstacleGap);}
-  updateObstacles();updateTerrain();updateFishing();updateFrenzy();updateMood();
+  obstacleTimer-=scale;
+  while(obstacleTimer<=0){spawnObstacle();obstacleTimer+=Math.floor(cfg().obstacleGap);}
+  updateObstacles(scale);updateTerrain(scale);updateFishing(scale);updateFrenzy(scale);updateMood(scale);
 
-  if(frameCount%6===0){score+=frenzyActive?3:1;if(frameCount%60===0)updateHUD();}
-  checkCollisions();
+  scoreTickAccum+=scale;
+  while(scoreTickAccum>=6){scoreTickAccum-=6;score+=frenzyActive?3:1;}
+  hudTickAccum+=scale;
+  while(hudTickAccum>=60){hudTickAccum-=60;updateHUD();}
+  checkCollisions(scale);
   particles=particles.filter(p=>p.life>0);
-  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.2;p.life--;});
+  particles.forEach(p=>{p.x+=p.vx*scale;p.y+=p.vy*scale;p.vy+=0.2*scale;p.life-=scale;});
   textPops=textPops.filter(t=>t.life>0);
-  textPops.forEach(t=>{t.y+=t.vy;t.life--;});
+  textPops.forEach(t=>{t.y+=t.vy*scale;t.life-=scale;});
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2079,7 +2092,7 @@ function drawBG(){
   ctx.strokeStyle='#cc6600';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(sun.x,sun.y+3,10,0.2,Math.PI-0.2);ctx.stroke();
 
   clouds.forEach(cl=>{
-    if(state==='playing') cl.x-=cl.spd;
+    if(state==='playing') cl.x-=cl.spd*lastFrameScale;
     if(cl.x<-cl.w-10) cl.x=W+20;
     ctx.save();ctx.globalAlpha=cl.alpha;
     const cc=cl.warm?'#ffbb77':'#ff8866';ctx.fillStyle=cc;
@@ -2095,14 +2108,14 @@ function drawBG(){
   let ref=ctx.createLinearGradient(sun.x-80,172,sun.x+80,222);
   ref.addColorStop(0,'rgba(255,180,60,0)');ref.addColorStop(0.5,'rgba(255,180,60,0.28)');ref.addColorStop(1,'rgba(255,180,60,0)');
   ctx.fillStyle=ref;ctx.fillRect(sun.x-80,172,160,50);
-  ripples.filter(r=>r.top).forEach(r=>{r.t++;if(state==='playing')r.x-=gameSpeed*0.38;if(r.x<-30)r.x=W+15;ctx.fillStyle=`rgba(255,160,80,${0.2+0.2*Math.sin(r.t*0.13)})`;ctx.fillRect(pr(r.x),pr(r.y),14+Math.sin(r.t*0.1)*6,2);});
+  ripples.filter(r=>r.top).forEach(r=>{r.t+=lastFrameScale;if(state==='playing')r.x-=gameSpeed*0.38*lastFrameScale;if(r.x<-30)r.x=W+15;ctx.fillStyle=`rgba(255,160,80,${0.2+0.2*Math.sin(r.t*0.13)})`;ctx.fillRect(pr(r.x),pr(r.y),14+Math.sin(r.t*0.1)*6,2);});
 
   drawIcePath();
 
   let wb=ctx.createLinearGradient(0,266,0,330);wb.addColorStop(0,'#001a66');wb.addColorStop(1,'#000c33');
   ctx.fillStyle=wb;ctx.fillRect(0,266,W,64);
-  ripples.filter(r=>!r.top).forEach(r=>{r.t++;if(state==='playing')r.x-=gameSpeed*0.42;if(r.x<-30)r.x=W+15;ctx.fillStyle=`rgba(80,140,255,${0.18+0.18*Math.sin(r.t*0.11)})`;ctx.fillRect(pr(r.x),pr(r.y),18+Math.sin(r.t*0.09)*7,2);});
-  iceBg.forEach(ib=>{if(state==='playing')ib.x-=ib.spd;if(ib.x<-ib.w-10)ib.x=W+20;rrect(ib.x,ib.y,ib.w,13,6,'#bbeeff');rrect(ib.x+3,ib.y-3,ib.w-10,6,3,'#eef8ff');});
+  ripples.filter(r=>!r.top).forEach(r=>{r.t+=lastFrameScale;if(state==='playing')r.x-=gameSpeed*0.42*lastFrameScale;if(r.x<-30)r.x=W+15;ctx.fillStyle=`rgba(80,140,255,${0.18+0.18*Math.sin(r.t*0.11)})`;ctx.fillRect(pr(r.x),pr(r.y),18+Math.sin(r.t*0.09)*7,2);});
+  iceBg.forEach(ib=>{if(state==='playing')ib.x-=ib.spd*lastFrameScale;if(ib.x<-ib.w-10)ib.x=W+20;rrect(ib.x,ib.y,ib.w,13,6,'#bbeeff');rrect(ib.x+3,ib.y-3,ib.w-10,6,3,'#eef8ff');});
 }
 
 function drawIcePath(){
@@ -3220,7 +3233,16 @@ function initFpFirstPlayCardUI(){
 // ═══════════════════════════════════════════════════════════
 //  LOOP + INIT
 // ═══════════════════════════════════════════════════════════
-function loop(){ update(); draw(); requestAnimationFrame(loop); }
+function loop(ts){
+  let dt=0;
+  if(lastLoopTs>0) dt=Math.min((ts-lastLoopTs)/1000,MAX_FRAME_DT);
+  lastLoopTs=ts;
+  const scale=dt*SIM_FPS;
+  lastFrameScale=scale>0?scale:1;
+  if(state==='playing') update(scale);
+  draw();
+  requestAnimationFrame(loop);
+}
 
 // HUD + menu panel first (wireframe z-order), then game loop
 window.GameshowHud.init('#gameshow-hud-mount');
