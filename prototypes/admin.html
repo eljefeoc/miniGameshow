@@ -879,6 +879,8 @@ function showSection(name){
   if(name === 'new')   { if(isAdmin) openFormNew(); }
   if(name === 'users') { if(isAdmin) loadUserAdminTab('all'); }
 }
+// Inline onclick handlers run in global scope; this script is type="module" so names are not globals.
+window.showSection = showSection;
 
 // ── Live stats ────────────────────────────────────────────────────────────────
 
@@ -1278,7 +1280,11 @@ async function loadEvents(){
   const { data, error } = await sb.from('events')
     .select('id,event_code,game_id,starts_at,ends_at,show_at,show_url,prize_title,prize_description,sponsor_name,seed')
     .order('starts_at',{ascending:false});
-  if(error) return;
+  if(error){
+    console.error('loadEvents', error);
+    toast('Could not load events: '+error.message,'err',5000);
+    return;
+  }
   eventsDataCache = data || [];
   updateWeekOverlapWarn(data);
   activeEvent = getActiveEvent();
