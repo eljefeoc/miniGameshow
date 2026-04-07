@@ -10,7 +10,7 @@ Use your **production** Supabase project if you want one database for launch. Yo
 
 ### What “conflict” means
 
-Our schema creates **tables** (`games`, `profiles`, `weeks`, …), **functions**, and a **trigger** on `auth.users`. If something with the **same name** already exists and was built for a different purpose, running `schema.sql` can **fail** or **overwrite** behavior.
+Our schema creates **tables** (`games`, `profiles`, `events`, …), **functions**, and a **trigger** on `auth.users`. If something with the **same name** already exists and was built for a different purpose, running `schema.sql` can **fail** or **overwrite** behavior.
 
 ### How to check (Supabase Dashboard)
 
@@ -37,9 +37,9 @@ Our schema creates **tables** (`games`, `profiles`, `weeks`, …), **functions**
 2. Confirm success (no errors).
 3. **Optional:** copy **Project URL** and **anon public** key into **`.env`** at repo root (see **`.env.example`**) for server-side tools later.
 
-You should see tables including `games`, `profiles`, `weeks`, `runs`, `leaderboard`, `daily_attempts`, `content_events`, and a seed row for `pengu-fisher` in `games`.
+You should see tables including `games`, `profiles`, `events`, `runs`, `leaderboard`, `daily_attempts`, `content_events`, and a seed row for `pengu-fisher` in `games`.
 
-4. **Insert your first week** (required before real score runs): in **SQL Editor**, run **`supabase/seed_week.sql`** (current ISO week for `pengu-fisher`, idempotent). Or use the example at the bottom of `schema.sql` / **Table Editor → `weeks`**.
+4. **Insert your first event** (required before real score runs): in **SQL Editor**, run **`supabase/seed_event.sql`** (adjust window for your event, idempotent). Or use the example at the bottom of `schema.sql` / **Table Editor → `events`**.
 
 ---
 
@@ -86,7 +86,7 @@ If keys are missing, the panel shows a short reminder to add `supabase-config.js
 Implemented in **`prototypes/penguin-game.html`** (after **game over**):
 
 1. **Sign in** (Step 2) so the client has a JWT; RLS requires `runs.user_id = auth.uid()`.
-2. **Active week** — run **`supabase/seed_week.sql`** (Step 1) so a `weeks` row exists for the current window.
+2. **Active event** — run **`supabase/seed_event.sql`** (Step 1) so an `events` row exists for the scoring window.
 3. Play until **GAME OVER**. The game inserts one row into **`runs`** with score, duration, `day_seed`, `input_count`, and `game_version`. Triggers update **`daily_attempts`**, **`leaderboard`**, and **`content_events`** (max **5** runs per day per `day_seed` — a 6th fails with an error message on the overlay).
 
 Verify in **Table Editor**: **`runs`**, **`leaderboard`**, **`daily_attempts`**.

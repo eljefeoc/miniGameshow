@@ -74,7 +74,7 @@ The **L2 contract is reused every week**; **L3 swaps** while Supabase events, at
 
 ### Target architecture — Pattern B (L2 host) + thin L3 modules
 
-**Choice:** Use **Pattern B** as the **primary player route**: one **L2 host page** loads the correct **L3** for the active week (from Supabase / `weeks`), instead of maintaining a separate full HTML page per game that each duplicates the shell.
+**Choice:** Use **Pattern B** as the **primary player route**: one **L2 host page** loads the correct **L3** for the active event (from Supabase / `events`), instead of maintaining a separate full HTML page per game that each duplicates the shell.
 
 **Pattern A still applies inside Pattern B:** each title is a **thin arcade bundle** (one ES module or script under e.g. [`prototypes/games/`](prototypes/games/)) that mounts into a single DOM sink (e.g. `#game-mount`) and implements a small **L3 contract**—no duplicated leaderboard, auth, or title/post-run chrome.
 
@@ -95,7 +95,7 @@ The **L2 contract is reused every week**; **L3 swaps** while Supabase events, at
 ```mermaid
 flowchart LR
   index[L1_index] --> play[L2_play_host]
-  play --> fetch[fetchActiveWeek]
+  play --> fetch[fetchActiveEvent]
   fetch --> load[import_L3_slug]
   load --> canvas[L3_canvas]
 ```
@@ -107,7 +107,7 @@ flowchart LR
 1. **Scaffold** — Add [`prototypes/play.html`](prototypes/play.html) (or agreed name) + empty `#game-mount`. L3 contract draft: [`prototypes/games/README.md`](prototypes/games/README.md). No behavior change to [`penguin-game.html`](prototypes/penguin-game.html) yet *or* play page is hidden behind a flag until step 2.
 2. **Extract L2** — Move shared shell markup (HUD roots, overlay/menu containers, global styles that are not canvas-specific) from [`penguin-game.html`](prototypes/penguin-game.html) into the host page + a small [`prototypes/gameshow-shell.js`](prototypes/gameshow-shell.js) (name TBD) that owns `GameshowHud.init`, menu panel, and overlay chrome. **Do not** change `resizeCanvas` math in the same PR as unrelated features.
 3. **Extract Pengu L3** — Move the canvas game loop and game-only helpers into [`prototypes/games/pengu.js`](prototypes/games/pengu.js) (ES module); host loads it and calls `mount(#game-mount)`. [`penguin-game.html`](prototypes/penguin-game.html) either redirects to the host or becomes a one-line loader.
-4. **Week-driven slug** — After [`fetchActiveWeek()`](prototypes/penguin-game.html) (or equivalent) returns the live game slug, host uses `import(\`./games/${slug}.js\`)` (with **fallback UI** if the bundle 404s or throws). Point L1 Play to `/play.html?autostart=1` (and add a [`vercel.json`](vercel.json) rewrite if you want a prettier path later).
+4. **Week-driven slug** — After [`fetchActiveEvent()`](prototypes/penguin-game.html) (or equivalent) returns the live game slug, host uses `import(\`./games/${slug}.js\`)` (with **fallback UI** if the bundle 404s or throws). Point L1 Play to `/play.html?autostart=1` (and add a [`vercel.json`](vercel.json) rewrite if you want a prettier path later).
 5. **Legacy URLs** — Implement redirect stub for [`penguin-game.html`](prototypes/penguin-game.html) → host + `game=pengu`.
 
 **Explicit non-goals for early phases:** No new framework; no bundler required if all `games/*.js` are static files and `import()` paths are literal enough for the browser. If dynamic `import()` with a variable slug is awkward for caching, use a small **registry** object in the host that maps slug → module URL.
@@ -161,8 +161,8 @@ package.json                     ← build (supabase-config) + deploy:functions
 
 **Supabase tables (high level):**
 - `profiles` — id (auth user), username, display_name, is_18_plus, is_admin, is_banned
-- `weeks` — competition windows: game_id, starts_at, ends_at, prize fields, show_at, show_url, seed, …
-- `runs` — score rows: user_id, week_id, day_seed, attempt_num, replay_payload, …
+- `events` — competition windows: game_id, starts_at, ends_at, prize fields, show_at, show_url, seed, …
+- `runs` — score rows: user_id, event_id, day_seed, attempt_num, replay_payload, …
 - `daily_attempts` — 5 attempts per user per day_seed (enforced in `before_run_insert`)
 - `leaderboard` — best score per user per week (+ rank refresh)
 
@@ -269,9 +269,9 @@ This is prerequisite work before Phase 4 leaderboard views can be built correctl
    ALTER TABLE runs
      ADD COLUMN mode text NOT NULL DEFAULT 'competition'
        CHECK (mode IN ('competition', 'arcade'));
-   ALTER TABLE runs ALTER COLUMN week_id DROP NOT NULL;
+   ALTER TABLE runs ALTER COLUMN event_id DROP NOT NULL;
    ```
-   Backfill existing rows: existing `freeplay` runs (random seed, no `week_id`)
+   Backfill existing rows: existing `freeplay` runs (random seed, no `event_id`)
    → `mode = 'arcade'`. Existing `competing` runs → `mode = 'competition'`.
 
 2. **Arcade seed generation** — replace `getDailySeed()` for arcade runs with
@@ -316,13 +316,13 @@ correctly on every insert, and the arcade name loop works for guests.
 **Goal:** An operator (you) can create and manage a competition event. Everything in the game responds to the active event.
 
 **Already in repo (partial Phase 3):**
-1. **`prototypes/admin.html`** — `profiles.is_admin` gate; **weeks** list + create/update (fields include prize copy, `show_at`, `show_url`, window dates, seed, game id). **Overlap warning** when two weeks for the same game have intersecting `[starts_at, ends_at]` (UI only — not a DB constraint).
+1. **`prototypes/admin.html`** — `profiles.is_admin` gate; **events** list + create/update (fields include prize copy, `show_at`, `show_url`, window dates, seed, game id). **Overlap warning** when two events for the same game have intersecting `[starts_at, ends_at]` (UI only — not a DB constraint).
 2. **Users card** — Supabase Edge Functions **`admin-list-users`**, **`admin-auth-create-user`**, **`admin-auth-delete-user`** (JWT + admin guard); RPCs for **`admin_set_profile_flags`** (ban/admin), clearing competition data, etc. (`20260330120000_admin_user_mgmt.sql`). Deploy with **`npm run deploy:functions`**.
 3. **Ban enforcement** — `before_run_insert` raises if `profiles.is_banned` for the runner.
-4. **HUD / submit “active week”** — `fetchActiveWeek` and score submit query `weeks` with `starts_at ≤ now ≤ ends_at` (client-side); ties broken by latest `starts_at`. No Postgres trigger yet that rejects inserts when the week is closed or mismatched.
+4. **HUD / submit “active event”** — `fetchActiveEvent` and score submit query `events` with `starts_at ≤ now ≤ ends_at` (client-side); ties broken by latest `starts_at`. No Postgres trigger yet that rejects inserts when the event is closed or mismatched.
 
 **Still to build:**
-1. **Server-side cutoff on insert** — Postgres (or Edge submit path) validates `week_id` against `now` and `ends_at` / `starts_at` so clients cannot target arbitrary weeks.
+1. **Server-side cutoff on insert** — Postgres (or Edge submit path) validates `event_id` against `now` and `ends_at` / `starts_at` so clients cannot target arbitrary events.
 2. **DB constraint for non-overlapping windows** (optional product decision) — currently **warning-only** in admin.
 3. **Post-event admin view** — frozen leaderboard, winner highlight, “new event live” trigger (not in `admin.html` today).
 4. **Full schedule copy vs DB** — HUD time states remain client rules; “Saturday local midnight” server enforcement is still product/DB work (see `GAME_BIBLE.md` §2 vs implementation).

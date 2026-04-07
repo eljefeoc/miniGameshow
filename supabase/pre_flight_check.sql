@@ -6,7 +6,7 @@ SELECT table_name
 FROM information_schema.tables
 WHERE table_schema = 'public'
   AND table_name IN (
-    'games', 'profiles', 'weeks', 'runs', 'leaderboard',
+    'games', 'profiles', 'events', 'runs', 'leaderboard',
     'daily_attempts', 'content_events'
   )
 ORDER BY table_name;

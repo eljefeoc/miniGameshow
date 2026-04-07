@@ -457,9 +457,9 @@ Breaking streak resets to 1x. Combo decay timer visible as bar.
 **Status:** Prototype complete. **Score save path live:** Supabase email auth +
 client insert into `public.runs`; daily attempt cap enforced in Postgres
 (`before_run_insert` on `runs` + `daily_attempts`); **banned** accounts are
-rejected in the same trigger. **Active week** for HUD and submit uses a
+rejected in the same trigger. **Active event** for HUD and submit uses a
 **client-side** query (`starts_at`/`ends_at` bracketing “now”); there is no
-Postgres check yet that `week_id` is still “open” on insert. Still needs: daily
+Postgres check yet that `event_id` is still “open” on insert. Still needs: daily
 seed **server-side validation** in gameplay, optional Edge Function for submits,
 **service worker** for offline, performance pass for mid-range Android. **L1**
 (`index.html`) links a **Web App Manifest** (`manifest.json`); the competition
@@ -676,7 +676,7 @@ are in.
 - Attempts: 5 per day, enforced server-side via `daily_attempts` table
 - Who scores: signed-in players with `is_18_plus = true` (set at sign-up)
 - Leaderboard: weekly, resets every Monday when the new week goes live
-- Scores validated: `week_id` and `day_seed` must match the active week on insert
+- Scores validated: `event_id` and `day_seed` must match the active event on insert
 - Prize eligible: yes — top score wins Sunday's live event prize
 - Cannot be practiced: Arcade uses a different random seed, so players can never
   rehearse the Competition layout offline
@@ -697,19 +697,19 @@ Both modes write to the same `runs` table. A `mode` column distinguishes them:
 
 ```sql
 -- Competition run
-mode = 'competition',  day_seed = 20260404,  week_id = '2026-W14'
+mode = 'competition',  day_seed = 20260404,  event_id = '2026-E01'
 
 -- Arcade run
-mode = 'arcade',  day_seed = 'a3f9c821',  week_id = NULL
+mode = 'arcade',  day_seed = 'a3f9c821',  event_id = NULL
 ```
 
-`week_id` is nullable — arcade runs do not belong to a competition week.
+`event_id` is nullable — arcade runs do not belong to a competition event.
 `day_seed` for arcade is a random hex string, not a date integer.
 
 Leaderboard queries filter by mode first:
 ```sql
 -- Competition leaderboard (this week)
-SELECT * FROM leaderboard WHERE mode = 'competition' AND week_id = '2026-W14'
+SELECT * FROM leaderboard WHERE mode = 'competition' AND event_id = '2026-E01'
 
 -- Arcade leaderboard (all-time best per player)
 SELECT user_id, MAX(score) FROM runs WHERE mode = 'arcade' GROUP BY user_id
@@ -721,7 +721,7 @@ arcade runs cannot be cleanly separated at the DB level. Add to migration queue:
 ```sql
 ALTER TABLE runs ADD COLUMN mode text NOT NULL DEFAULT 'competition'
   CHECK (mode IN ('competition', 'arcade'));
-ALTER TABLE runs ALTER COLUMN week_id DROP NOT NULL;
+ALTER TABLE runs ALTER COLUMN event_id DROP NOT NULL;
 ```
 
 **UI rule: players always know their mode.** The HUD shows the active mode
@@ -786,9 +786,9 @@ seed. **Product intent:** server-side validation of scores against the seed;
 
 ```sql
 profiles       — id (auth user), username, display_name, is_18_plus, is_admin, is_banned, …
-weeks          — id, week_code, game_id, seed, starts_at, ends_at, prize_*, sponsor_name, show_at, show_url, …
-runs           — id, user_id, week_id, score, attempt_num, duration_ms, day_seed, replay_payload, …
-leaderboard    — user_id, week_id, best_score, best_run_id, rank
+events         — id, event_code, game_id, seed, starts_at, ends_at, prize_*, sponsor_name, show_at, show_url, …
+runs           — id, user_id, event_id, score, attempt_num, duration_ms, day_seed, replay_payload, …
+leaderboard    — user_id, event_id, best_score, best_run_id, rank
 daily_attempts — user_id, day_seed, attempts_used (max 5)
 content_events — event_type, metadata (triggers social content pipeline)
 ```
@@ -1067,11 +1067,11 @@ Nightly job → checks content_events
   - **Supabase email auth** + **score insert** to `public.runs` in
     `penguin-game.html` when `prototypes/supabase-config.js` is configured — see
     `README.md` steps 2–3, **`VERCEL.md`** for deploy, **`supabase-config.example.js`**
-    for local template (requires active `weeks` row, e.g. `seed_week.sql`)
+    for local template (requires active `events` row, e.g. `seed_event.sql`)
   - **Vercel:** root **`vercel.json`**, **`package.json`** `build` → generated
     `supabase-config.js`; production **/** serves **`index.html`** (L1). Game
     play is **`/penguin-game.html`** (and L1 “Play” uses `?autostart=1`).
-  - **Admin (`admin.html`):** Operator UI for **`weeks`** (create/edit; overlap
+  - **Admin (`admin.html`):** Operator UI for **`events`** (create/edit; overlap
     warning in-page) and **users** (Supabase Edge Functions for Auth user
     list/create/delete; RPCs for ban/admin flags and clearing competition data).
     Requires `profiles.is_admin` and deployed Edge functions — see admin page
@@ -1099,7 +1099,7 @@ Nightly job → checks content_events
 - [ ] **Score submission via Edge Function** — prototype uses direct client insert; production may move to a server endpoint for validation and keys
 - [ ] **Re-fetch `daily_attempts` before each competing run start** — reduces stale x/5 across devices/tabs (DB cap still enforced on insert)
 - [ ] No server-side **seed validation** in gameplay (anti-cheat not active; client still drives RNG)
-- [ ] **Postgres enforcement of week window on `runs` insert** — client only submits when an active week exists; a crafted insert could still target another `week_id` until the DB validates it
+- [ ] **Postgres enforcement of event window on `runs` insert** — client only submits when an active event exists; a crafted insert could still target another `event_id` until the DB validates it
 - [ ] Service Worker not implemented — no offline support
 - [x] **Web App Manifest** — `prototypes/manifest.json` + icons; linked from **`index.html`** (L1) only; not linked from `penguin-game.html` yet
 - [ ] Score card image generation for social sharing — not built
@@ -1161,7 +1161,7 @@ Nightly job → checks content_events
     ├── schema.sql            ← full DB schema (reference / SQL Editor)
     ├── config.toml           ← Supabase CLI (local dev / link)
     ├── functions/            ← Edge: admin-list-users, admin-auth-create-user, admin-auth-delete-user
-    ├── seed_week.sql         ← example active week + game linkage
+    ├── seed_event.sql        ← example active event + game linkage
     ├── pre_flight_check.sql
     └── migrations/           ← … display_name/is_18_plus (20260403); admin runs_select (20260404);
                               legal consent / prize_awards / disqualifications (20260405120000 — not applied until legal build)
@@ -1213,7 +1213,7 @@ Never delete entries — cross them out if reversed and note why.*
 | Mar 2026 | Deep Dive: analog joystick not D-pad                  | Swimming game needs fluid directional input, not discrete buttons   |
 | Mar 2026 | Deep Dive: air bubbles as breath collectible           | Gives player agency over survival, rewards exploration over dive depth |
 | Mar 2026 | Supabase schema built before frontend auth             | Schema is the contract — build it first so frontend/API stay aligned |
-| Mar 2026 | `runs.seed` consolidated to `runs.day_seed`            | Single column for date-derived PRNG seed; `weeks.seed` separate      |
+| Mar 2026 | `runs.seed` consolidated to `runs.day_seed`            | Single column for date-derived PRNG seed; `events.seed` separate      |
 | Mar 2026 | Pengu sprite: single transparent PNG sheet + crop rects | One network request, fast first-frame, falls back to procedural      |
 | Mar 2026 | Midjourney for initial character reference art         | Fast, quality style exploration before committing to character designer |
 | Mar 2026 | Fish backpack added to pengu as persistent visual prop | Reinforces fishing identity, gives visible reward feedback per catch  |
@@ -1237,7 +1237,7 @@ Never delete entries — cross them out if reversed and note why.*
 | Apr 2026 | Competition board: weekly, shared daily seed, 18+, prize eligible | Direct score comparability requires a shared seed; prize eligibility requires age verification |
 | Apr 2026 | Arcade board: all-time, random seed per run, everyone, no prize | Never resets — a great run always means something; random seed means scores are personal bests not head-to-head comparisons |
 | Apr 2026 | Arcade seed: `crypto.getRandomValues()` per run | Fully random — cannot be used to rehearse Competition layout; meaningful anti-cheat benefit |
-| Apr 2026 | `runs.mode` column separates Competition from Arcade at DB level | Clean query separation; `week_id` nullable for arcade runs; planned migration not yet applied |
+| Apr 2026 | `runs.mode` column separates Competition from Arcade at DB level | Clean query separation; `event_id` nullable for arcade runs; planned migration not yet applied |
 | Apr 2026 | Guest arcade name: prompted on top-10 result, re-entered every time until signed in | Classic arcade pattern — friction is earned not demanded; "enter again" loop is the conversion engine; no localStorage shortcut |
 | Apr 2026 | Age checkbox framed as prize eligibility, not access | "Required to enter the competition and win prizes" — under-18 players leave it unchecked naturally; no label, no banner, no "practice mode" copy shown |
 | Apr 2026 | Competition is the headline from the first pixel | Prize shown on shared link, L1, and HUD immediately; sign-up prompt always framed as unlocking Competition not creating an account |

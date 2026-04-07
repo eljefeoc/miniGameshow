@@ -29,7 +29,7 @@ const GameshowHud = (() => {
   let _menuHandler    = null;
   let _avatarHandler  = null;
   let _schedInterval  = null;
-  let _endsAt         = null;   // scoring window end from public.weeks.ends_at (admin)
+  let _endsAt         = null;   // scoring window end from public.events.ends_at (admin)
 
   // ── template ─────────────────────────────────────────────
   const HTML = `

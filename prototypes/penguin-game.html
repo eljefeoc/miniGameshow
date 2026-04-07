@@ -1265,11 +1265,11 @@ let currentSeed=dailySeed; // active seed for this run (guest/freeplay = random)
 function randomSeed(){ return Math.floor(Math.random()*2147483647)+1; }
 
 // ── Show-strip state — handled by GameshowHud (hud.js) ─────
-let weekPrize   = '';
-let weekSponsor = '';
-let weekId      = null;   // stored after fetchActiveWeek for rank lookups
-let weekShowAt  = null;   // Date — live show (prize meta line)
-let weekEndsAt  = null;   // Date — scoring closes (prize meta line)
+let eventPrize   = '';
+let eventSponsor = '';
+let eventId      = null;   // stored after fetchActiveEvent for rank lookups
+let eventShowAt  = null;   // Date — live show (prize meta line)
+let eventEndsAt  = null;   // Date — scoring closes (prize meta line)
 let gameSpeed=2.6,frameCount=0,distance=0;
 let combo=1,comboTimer=0;
 let maxComboThisRun=1;
@@ -1629,7 +1629,7 @@ async function refreshPostrunRankDisplay(){
   }
   try{
     const { data:{ session } }=await window._miniGameshowSb.auth.getSession();
-    if(!session?.user||!weekId){ el.textContent='—'; return; }
+    if(!session?.user||!eventId){ el.textContent='—'; return; }
     const lb=await fetchUserRank(session.user.id);
     el.textContent=lb?.rank!=null?`#${lb.rank}`:'—';
   }catch{ el.textContent='—'; }
@@ -1707,16 +1707,16 @@ async function fetchAttemptsAndSetMode(userId){
   }
 }
 
-// Fetch the active week's prize_title (and sponsor) for the show strip.
-// Safe to call without a session — public read on weeks.
-async function fetchActiveWeek(){
+// Fetch the active event's prize_title (and sponsor) for the show strip.
+// Safe to call without a session — public read on events.
+async function fetchActiveEvent(){
   const sb=window._miniGameshowSb;
   if(!sb) return;
   try{
     const nowIso=new Date().toISOString();
     const { data: game } = await sb.from('games').select('id').eq('slug','pengu-fisher').maybeSingle();
     if(!game?.id) return;
-    const { data: week } = await sb.from('weeks')
+    const { data: event } = await sb.from('events')
       .select('id,prize_title,sponsor_name,show_at,starts_at,ends_at')
       .eq('game_id',game.id)
       .lte('starts_at',nowIso)
@@ -1724,20 +1724,20 @@ async function fetchActiveWeek(){
       .order('starts_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-    if(week){
-      weekPrize   = week.prize_title  || '';
-      weekSponsor = week.sponsor_name || '';
-      weekId      = week.id           || null;
-      weekShowAt  = week.show_at ? new Date(week.show_at) : null;
-      weekEndsAt  = week.ends_at ? new Date(week.ends_at) : null;
-      window.GameshowHud.setPrize(weekPrize);
-      window.GameshowHud.setShowAt(weekShowAt);
+    if(event){
+      eventPrize   = event.prize_title  || '';
+      eventSponsor = event.sponsor_name || '';
+      eventId      = event.id           || null;
+      eventShowAt  = event.show_at ? new Date(event.show_at) : null;
+      eventEndsAt  = event.ends_at ? new Date(event.ends_at) : null;
+      window.GameshowHud.setPrize(eventPrize);
+      window.GameshowHud.setShowAt(eventShowAt);
       if (typeof window.GameshowHud.setScoringEndsAt === 'function') {
-        window.GameshowHud.setScoringEndsAt(weekEndsAt);
+        window.GameshowHud.setScoringEndsAt(eventEndsAt);
       }
     } else {
-      weekPrize = ''; weekSponsor = ''; weekId = null;
-      weekShowAt = null; weekEndsAt = null;
+      eventPrize = ''; eventSponsor = ''; eventId = null;
+      eventShowAt = null; eventEndsAt = null;
       window.GameshowHud.setPrize('');
       window.GameshowHud.setShowAt(null);
       if (typeof window.GameshowHud.setScoringEndsAt === 'function') {
@@ -1745,18 +1745,18 @@ async function fetchActiveWeek(){
       }
     }
     if(state==='title') void refreshTitleFirstPlayCard();
-  }catch(e){ console.error('fetchActiveWeek',e); }
+  }catch(e){ console.error('fetchActiveEvent',e); }
 }
 
-// Fetch the player's rank on the leaderboard for the active week
+// Fetch the player's rank on the leaderboard for the active event
 async function fetchUserRank(userId){
   const sb=window._miniGameshowSb;
-  if(!sb||!userId||!weekId) return null;
+  if(!sb||!userId||!eventId) return null;
   try{
     const { data } = await sb.from('leaderboard')
       .select('rank,best_score')
       .eq('user_id',userId)
-      .eq('week_id',weekId)
+      .eq('event_id',eventId)
       .maybeSingle();
     return data || null;
   }catch(e){ console.error('fetchUserRank',e); return null; }
@@ -1768,7 +1768,7 @@ async function fetchLeaderboardTopScore(wid){
   try{
     const { data } = await sb.from('leaderboard')
       .select('best_score')
-      .eq('week_id',wid)
+      .eq('event_id',wid)
       .order('best_score',{ ascending:false })
       .limit(1)
       .maybeSingle();
@@ -1778,15 +1778,15 @@ async function fetchLeaderboardTopScore(wid){
 
 function formatFpPrizeScheduleLine(){
   let closePart='Sat midnight';
-  if(weekEndsAt instanceof Date && !isNaN(weekEndsAt.getTime())){
+  if(eventEndsAt instanceof Date && !isNaN(eventEndsAt.getTime())){
     try{
-      closePart=weekEndsAt.toLocaleString([],{ weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+      closePart=eventEndsAt.toLocaleString([],{ weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
     }catch(_){ /* keep default */ }
   }
   let showPart='···';
-  if(weekShowAt instanceof Date && !isNaN(weekShowAt.getTime())){
+  if(eventShowAt instanceof Date && !isNaN(eventShowAt.getTime())){
     try{
-      showPart=weekShowAt.toLocaleTimeString([],{ hour:'numeric', minute:'2-digit', timeZoneName:'short' }).replace(':00','').toLowerCase();
+      showPart=eventShowAt.toLocaleTimeString([],{ hour:'numeric', minute:'2-digit', timeZoneName:'short' }).replace(':00','').toLowerCase();
     }catch(_){ /* keep */ }
   }
   return `Scoring closes ${closePart} · Live show ${showPart}`;
@@ -1828,7 +1828,7 @@ function renderFpStatDots(used){
 async function refreshTitleFirstPlayCard(){
   document.getElementById('overlay').style.display='flex';
   const pn=document.getElementById('fp-prize-name');
-  if(pn) pn.textContent=(weekPrize||'').trim()||'Prize TBD';
+  if(pn) pn.textContent=(eventPrize||'').trim()||'Prize TBD';
   const pm=document.getElementById('fp-prize-meta');
   if(pm) pm.textContent=formatFpPrizeScheduleLine();
 
@@ -1878,9 +1878,9 @@ async function refreshTitleFirstPlayCard(){
   const rankEl=document.getElementById('fp-stat-rank');
   const bestEl=document.getElementById('fp-stat-best');
   const beatEl=document.getElementById('fp-stat-beat');
-  if(session?.user&&weekId){
+  if(session?.user&&eventId){
     const lb=await fetchUserRank(session.user.id);
-    const top=await fetchLeaderboardTopScore(weekId);
+    const top=await fetchLeaderboardTopScore(eventId);
     if(rankEl) rankEl.textContent=lb?.rank!=null?'#'+lb.rank:'—';
     if(bestEl) bestEl.textContent=lb?.best_score!=null?Number(lb.best_score).toLocaleString():'—';
     if(beatEl) beatEl.textContent=top!=null?Number(top).toLocaleString():'—';
@@ -2615,7 +2615,7 @@ function updateAuthUI(session){
 async function refreshSignedInCompetitionState(session){
   if(!session?.user||!window._miniGameshowSb) return;
   await fetchAttemptsAndSetMode(session.user.id);
-  await fetchActiveWeek().catch(()=>{});
+  await fetchActiveEvent().catch(()=>{});
   const lb = await fetchUserRank(session.user.id);
   const best = syncHiScoreFromLeaderboard(lb);
   window.GameshowHud.setStats({
@@ -2812,7 +2812,7 @@ async function bootSupabaseAuth(){
 }
 
 // ═══════════════════════════════════════════════════════════
-//  SCORE SUBMIT (Step B) — insert into public.runs; requires auth + active week
+//  SCORE SUBMIT (Step B) — insert into public.runs; requires auth + active event
 // ═══════════════════════════════════════════════════════════
 async function submitRunToSupabase(){
   const sb=window._miniGameshowSb;
@@ -2829,7 +2829,7 @@ async function submitRunToSupabase(){
     return;
   }
   const nowIso=new Date().toISOString();
-  const { data: week, error: wErr } = await sb.from('weeks')
+  const { data: activeEvent, error: wErr } = await sb.from('events')
     .select('id')
     .eq('game_id',game.id)
     .lte('starts_at',nowIso)
@@ -2837,15 +2837,15 @@ async function submitRunToSupabase(){
     .order('starts_at', { ascending: false })
     .limit(1)
     .maybeSingle();
-  if(wErr||!week?.id){
+  if(wErr||!activeEvent?.id){
     showModeOverlay('gameover');
     const tipEl=document.getElementById('postrun-tip');
-    if(tipEl){ tipEl.style.display='block'; tipEl.textContent=(tipEl.textContent||'')+'\n\nNo active competition week (run seed_week.sql).'; }
+    if(tipEl){ tipEl.style.display='block'; tipEl.textContent=(tipEl.textContent||'')+'\n\nNo active competition event (run seed_event.sql).'; }
     return;
   }
   const row={
     user_id: session.user.id,
-    week_id: week.id,
+    event_id: activeEvent.id,
     score: Math.max(0,Math.floor(score)),
     attempt_num: attemptsUsed+1,
     duration_ms: durationMs,
@@ -2987,8 +2987,8 @@ async function refreshGspLeaderboard(){
   const body = document.getElementById('gsp-lb-body');
   if(!body) return;
   const sb = window._miniGameshowSb;
-  if(!sb || !weekId){
-    body.innerHTML = '<p class="gsp-muted">Load the game with Supabase configured and an active week to see rankings.</p>';
+  if(!sb || !eventId){
+    body.innerHTML = '<p class="gsp-muted">Load the game with Supabase configured and an active event to see rankings.</p>';
     return;
   }
   body.innerHTML = '<p class="gsp-muted">Loading…</p>';
@@ -2997,24 +2997,24 @@ async function refreshGspLeaderboard(){
     const myId = session?.user?.id || null;
     let { data, error } = await sb.from('leaderboard')
       .select('rank,best_score,user_id,profiles(username)')
-      .eq('week_id', weekId)
+      .eq('event_id', eventId)
       .order('rank', { ascending: true })
       .limit(30);
     if(error){
       const r2 = await sb.from('leaderboard')
         .select('rank,best_score,user_id')
-        .eq('week_id', weekId)
+        .eq('event_id', eventId)
         .order('rank', { ascending: true })
         .limit(30);
       data = r2.data; error = r2.error;
     }
     if(error) throw error;
     if(!data?.length){
-      body.innerHTML = '<p class="gsp-muted">No scores yet this week — be the first!</p>';
+      body.innerHTML = '<p class="gsp-muted">No scores yet this event — be the first!</p>';
       return;
     }
-    let html = '<div class="lb-week"><div><div class="lb-week-title">Pengu Fisher · This week</div><div class="lb-week-sub">Ends per week rules · see HUD for live show</div></div>';
-    if(weekPrize) html += `<div class="lb-prize-pill">${gspEscapeHtml(weekPrize)}</div>`;
+    let html = '<div class="lb-week"><div><div class="lb-week-title">Pengu Fisher · This event</div><div class="lb-week-sub">Ends per event rules · see HUD for live show</div></div>';
+    if(eventPrize) html += `<div class="lb-prize-pill">${gspEscapeHtml(eventPrize)}</div>`;
     html += '</div>';
     data.forEach((row,i)=>{
       const name = row.profiles?.username || 'Player';
@@ -3049,8 +3049,8 @@ async function refreshGspMyScores(){
     body.innerHTML = '<p class="gsp-muted">Sign in from the title screen to see your runs here.</p>';
     return;
   }
-  if(!weekId){
-    body.innerHTML = '<p class="gsp-muted">No active competition week loaded.</p>';
+  if(!eventId){
+    body.innerHTML = '<p class="gsp-muted">No active competition event loaded.</p>';
     return;
   }
   body.innerHTML = '<p class="gsp-muted">Loading…</p>';
@@ -3058,11 +3058,11 @@ async function refreshGspMyScores(){
     const { data, error } = await sb.from('runs')
       .select('score,attempt_num,created_at')
       .eq('user_id', session.user.id)
-      .eq('week_id', weekId)
+      .eq('event_id', eventId)
       .order('created_at', { ascending: false });
     if(error) throw error;
     if(!data?.length){
-      body.innerHTML = '<p class="gsp-muted">No runs saved this week yet.</p>';
+      body.innerHTML = '<p class="gsp-muted">No runs saved this event yet.</p>';
       return;
     }
     let html = '<table class="gsp-lb-table"><thead><tr><th>Attempt</th><th>Score</th><th>When</th></tr></thead><tbody>';
@@ -3237,7 +3237,7 @@ if(new URLSearchParams(location.search).get('autostart') === '1'){
     if(state === 'title') startFromOverlay();
   });
 }
-bootSupabaseAuth().then(()=>{ fetchActiveWeek().catch(()=>{}); });
+bootSupabaseAuth().then(()=>{ fetchActiveEvent().catch(()=>{}); });
 loop();
 </script>
 </body>

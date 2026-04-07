@@ -25,4 +25,4 @@ The host (L2) remains responsible for **Supabase session**, **attempts**, and **
 
 ## Slugs
 
-Slug values should match what the admin / `weeks` row stores (e.g. `pengu`, `fish-stack`) so the host can resolve `games/<slug>.js` or a registry map.
+Slug values should match what the admin / `events` row stores (e.g. `pengu`, `fish-stack`) so the host can resolve `games/<slug>.js` or a registry map.

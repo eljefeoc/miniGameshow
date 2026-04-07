@@ -5,6 +5,7 @@
 -- Or with CLI: supabase link && supabase db push (uses supabase/migrations/)
 --
 -- Keep in sync with: supabase/migrations/20250327120000_initial_schema.sql
+--                    supabase/migrations/20260406_rename_weeks_to_events.sql
 
 -- -----------------------------------------------------------------------------
 -- Extensions
@@ -33,6 +34,7 @@ CREATE TABLE public.profiles (
   phone_verified boolean NOT NULL DEFAULT false,
   country text,
   is_banned boolean NOT NULL DEFAULT false,
+  is_admin boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -40,23 +42,26 @@ CREATE TABLE public.profiles (
 CREATE INDEX profiles_username_lower_idx ON public.profiles (lower(username));
 
 -- -----------------------------------------------------------------------------
--- Weeks (weekly competition window)
+-- Events (competition windows — formerly "weeks")
 -- -----------------------------------------------------------------------------
-CREATE TABLE public.weeks (
+CREATE TABLE public.events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  week_code text NOT NULL UNIQUE,
+  event_code text NOT NULL UNIQUE,
   game_id uuid NOT NULL REFERENCES public.games (id) ON DELETE RESTRICT,
   seed bigint,
   starts_at timestamptz NOT NULL,
   ends_at timestamptz NOT NULL,
+  show_at timestamptz,
+  show_url text,
   prize_title text,
+  prize_description text,
   sponsor_name text,
   created_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT weeks_time_order CHECK (ends_at > starts_at)
+  CONSTRAINT events_time_order CHECK (ends_at > starts_at)
 );
 
-CREATE INDEX weeks_code_idx ON public.weeks (week_code);
-CREATE INDEX weeks_window_idx ON public.weeks (starts_at, ends_at);
+CREATE INDEX events_code_idx   ON public.events (event_code);
+CREATE INDEX events_window_idx ON public.events (starts_at, ends_at);
 
 -- -----------------------------------------------------------------------------
 -- Runs (score submissions; replay_payload holds anti-cheat / validation data)
@@ -64,7 +69,7 @@ CREATE INDEX weeks_window_idx ON public.weeks (starts_at, ends_at);
 CREATE TABLE public.runs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
-  week_id uuid NOT NULL REFERENCES public.weeks (id) ON DELETE CASCADE,
+  event_id uuid NOT NULL REFERENCES public.events (id) ON DELETE CASCADE,
   score bigint NOT NULL CHECK (score >= 0),
   attempt_num smallint NOT NULL CHECK (attempt_num >= 1 AND attempt_num <= 5),
   duration_ms integer NOT NULL CHECK (duration_ms >= 0),
@@ -79,25 +84,25 @@ CREATE TABLE public.runs (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX runs_user_week_idx ON public.runs (user_id, week_id);
-CREATE INDEX runs_week_score_idx ON public.runs (week_id, score DESC);
-CREATE INDEX runs_day_seed_idx ON public.runs (user_id, day_seed);
+CREATE INDEX runs_user_event_idx  ON public.runs (user_id, event_id);
+CREATE INDEX runs_event_score_idx ON public.runs (event_id, score DESC);
+CREATE INDEX runs_day_seed_idx    ON public.runs (user_id, day_seed);
 
 -- -----------------------------------------------------------------------------
--- Leaderboard (one row per user per week — best run)
+-- Leaderboard (one row per user per event — best run)
 -- -----------------------------------------------------------------------------
 CREATE TABLE public.leaderboard (
   user_id uuid NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
-  week_id uuid NOT NULL REFERENCES public.weeks (id) ON DELETE CASCADE,
+  event_id uuid NOT NULL REFERENCES public.events (id) ON DELETE CASCADE,
   best_score bigint NOT NULL CHECK (best_score >= 0),
   best_run_id uuid NOT NULL REFERENCES public.runs (id) ON DELETE RESTRICT,
   rank integer,
   updated_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (user_id, week_id)
+  PRIMARY KEY (user_id, event_id)
 );
 
-CREATE INDEX leaderboard_week_rank_idx ON public.leaderboard (week_id, rank);
-CREATE INDEX leaderboard_week_score_idx ON public.leaderboard (week_id, best_score DESC);
+CREATE INDEX leaderboard_event_rank_idx  ON public.leaderboard (event_id, rank);
+CREATE INDEX leaderboard_event_score_idx ON public.leaderboard (event_id, best_score DESC);
 
 -- -----------------------------------------------------------------------------
 -- Daily attempts (5 per calendar day per daily seed)
@@ -166,9 +171,9 @@ CREATE TRIGGER on_auth_user_created
   EXECUTE FUNCTION public.handle_new_user();
 
 -- -----------------------------------------------------------------------------
--- Leaderboard: recompute ranks for a week (dense by score order)
+-- Leaderboard: recompute ranks for an event (dense by score order)
 -- -----------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.refresh_leaderboard_ranks(p_week_id uuid)
+CREATE OR REPLACE FUNCTION public.refresh_leaderboard_ranks(p_event_id uuid)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -178,17 +183,17 @@ BEGIN
   WITH ranked AS (
     SELECT
       user_id,
-      week_id,
+      event_id,
       row_number() OVER (ORDER BY best_score DESC, updated_at ASC) AS rnk
     FROM public.leaderboard
-    WHERE week_id = p_week_id
+    WHERE event_id = p_event_id
   )
   UPDATE public.leaderboard l
   SET rank = ranked.rnk,
       updated_at = now()
   FROM ranked
   WHERE l.user_id = ranked.user_id
-    AND l.week_id = ranked.week_id;
+    AND l.event_id = ranked.event_id;
 END;
 $$;
 
@@ -206,19 +211,19 @@ DECLARE
 BEGIN
   SELECT best_score INTO v_old_best
   FROM public.leaderboard
-  WHERE user_id = NEW.user_id AND week_id = NEW.week_id;
+  WHERE user_id = NEW.user_id AND event_id = NEW.event_id;
 
   IF v_old_best IS NULL OR NEW.score > v_old_best THEN
-    INSERT INTO public.leaderboard (user_id, week_id, best_score, best_run_id, rank)
-    VALUES (NEW.user_id, NEW.week_id, NEW.score, NEW.id, NULL)
-    ON CONFLICT (user_id, week_id) DO UPDATE
+    INSERT INTO public.leaderboard (user_id, event_id, best_score, best_run_id, rank)
+    VALUES (NEW.user_id, NEW.event_id, NEW.score, NEW.id, NULL)
+    ON CONFLICT (user_id, event_id) DO UPDATE
       SET best_score = EXCLUDED.best_score,
           best_run_id = EXCLUDED.best_run_id,
           updated_at = now()
       WHERE EXCLUDED.best_score > public.leaderboard.best_score;
   END IF;
 
-  PERFORM public.refresh_leaderboard_ranks(NEW.week_id);
+  PERFORM public.refresh_leaderboard_ranks(NEW.event_id);
 
   INSERT INTO public.content_events (event_type, metadata)
   VALUES (
@@ -226,7 +231,7 @@ BEGIN
     jsonb_build_object(
       'run_id', NEW.id,
       'user_id', NEW.user_id,
-      'week_id', NEW.week_id,
+      'event_id', NEW.event_id,
       'score', NEW.score,
       'attempt_num', NEW.attempt_num,
       'day_seed', NEW.day_seed
@@ -240,7 +245,7 @@ BEGIN
       jsonb_build_object(
         'run_id', NEW.id,
         'user_id', NEW.user_id,
-        'week_id', NEW.week_id,
+        'event_id', NEW.event_id,
         'score', NEW.score,
         'previous_best', v_old_best
       )
@@ -328,27 +333,27 @@ BEGIN
   IF EXISTS (
     SELECT 1 FROM public.leaderboard
     WHERE user_id = OLD.user_id
-      AND week_id = OLD.week_id
+      AND event_id = OLD.event_id
       AND best_run_id = OLD.id
   ) THEN
     SELECT r.id, r.score INTO v_best_id, v_best_score
     FROM public.runs r
-    WHERE r.user_id = OLD.user_id AND r.week_id = OLD.week_id
+    WHERE r.user_id = OLD.user_id AND r.event_id = OLD.event_id
     ORDER BY r.score DESC, r.created_at ASC
     LIMIT 1;
 
     IF v_best_id IS NULL THEN
       DELETE FROM public.leaderboard
-      WHERE user_id = OLD.user_id AND week_id = OLD.week_id;
+      WHERE user_id = OLD.user_id AND event_id = OLD.event_id;
     ELSE
       UPDATE public.leaderboard
       SET best_score = v_best_score,
           best_run_id = v_best_id,
           updated_at = now()
-      WHERE user_id = OLD.user_id AND week_id = OLD.week_id;
+      WHERE user_id = OLD.user_id AND event_id = OLD.event_id;
     END IF;
 
-    PERFORM public.refresh_leaderboard_ranks(OLD.week_id);
+    PERFORM public.refresh_leaderboard_ranks(OLD.event_id);
   END IF;
 
   RETURN OLD;
@@ -365,7 +370,7 @@ CREATE TRIGGER runs_after_delete
 -- -----------------------------------------------------------------------------
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.games ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.weeks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.runs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leaderboard ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.daily_attempts ENABLE ROW LEVEL SECURITY;
@@ -382,14 +387,40 @@ CREATE POLICY "profiles_update_own"
   USING (id = auth.uid())
   WITH CHECK (id = auth.uid());
 
--- Games & weeks: public read
+-- Games & events: public read
 CREATE POLICY "games_select_all"
   ON public.games FOR SELECT
   USING (true);
 
-CREATE POLICY "weeks_select_all"
-  ON public.weeks FOR SELECT
+CREATE POLICY "events_select_all"
+  ON public.events FOR SELECT
   USING (true);
+
+CREATE POLICY "events_insert_admin"
+  ON public.events FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_admin = true
+    )
+  );
+
+CREATE POLICY "events_update_admin"
+  ON public.events FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_admin = true
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_admin = true
+    )
+  );
 
 -- Runs: insert own; read own (leaderboard uses leaderboard table)
 CREATE POLICY "runs_insert_own"
@@ -401,6 +432,16 @@ CREATE POLICY "runs_select_own"
   ON public.runs FOR SELECT
   TO authenticated
   USING (user_id = auth.uid());
+
+CREATE POLICY "runs_select_admin"
+  ON public.runs FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_admin = true
+    )
+  );
 
 CREATE POLICY "runs_delete_own"
   ON public.runs FOR DELETE
@@ -437,14 +478,14 @@ INSERT INTO public.games (slug, name)
 VALUES ('pengu-fisher', 'Pengu Fisher')
 ON CONFLICT (slug) DO NOTHING;
 
--- Example: create the current competition week (run manually after deploy; adjust ISO week + window)
--- INSERT INTO public.weeks (week_code, game_id, seed, starts_at, ends_at, prize_title, sponsor_name)
+-- Example: create a competition event (run manually after deploy; adjust event_code + window)
+-- INSERT INTO public.events (event_code, game_id, seed, starts_at, ends_at, prize_title, sponsor_name)
 -- SELECT
---   '2026-W13',
+--   '2026-E01',
 --   id,
---   20260323,
---   timestamptz '2026-03-23 00:00:00+00',
---   timestamptz '2026-03-28 23:59:59+00',
+--   20260406,
+--   timestamptz '2026-04-06 18:00:00+00',
+--   timestamptz '2026-04-06 19:00:00+00',
 --   'Prize title TBD',
 --   NULL
 -- FROM public.games WHERE slug = 'pengu-fisher';
