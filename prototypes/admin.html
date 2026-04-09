@@ -331,6 +331,31 @@ textarea { resize: vertical; min-height: 64px; }
 }
 .search-inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(127,119,221,.12); }
 .user-cb { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+
+/* ── Event hub (past / active / upcoming) ───────────────────────────── */
+.event-hub-card { margin-bottom: 20px; }
+.etabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+.etab-btn {
+  padding: 6px 12px; border: none; border-radius: 6px;
+  background: var(--page-bg); font-size: 12px; font-weight: 500;
+  color: var(--muted); cursor: pointer; font-family: inherit;
+  transition: background .1s, color .1s;
+}
+.etab-btn:hover { color: var(--body); }
+.etab-btn.active { background: var(--card-bg); color: var(--accent-dark); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.ev-list { display: flex; flex-direction: column; gap: 8px; }
+.ev-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px; border: 0.5px solid var(--border); border-radius: var(--r);
+  background: var(--card-bg);
+}
+.ev-row-selected { border-color: var(--accent); background: var(--comp-bg); }
+.ev-row-main { flex: 1; min-width: 0; }
+.ev-row-title { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+.ev-row-meta { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.ev-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.event-winner-banner { margin-bottom: 16px; }
 .u-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* ── Modal ──────────────────────────────────────────────────────────── */
@@ -412,6 +437,24 @@ textarea { resize: vertical; min-height: 64px; }
     <section id="section-live" class="admin-section active">
       <div class="page-title">Live competition</div>
 
+      <div class="card event-hub-card" id="event-hub-card">
+        <div class="card-header" style="margin-bottom:10px">
+          <span class="card-title">Competition events</span>
+          <span id="event-hub-sub" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+        <p id="event-hub-empty" class="empty" style="padding:12px;display:none">No events yet. Create one under New competition.</p>
+        <div id="event-hub-wrap" style="display:none">
+          <div class="etabs" id="event-etabs" role="tablist">
+            <button type="button" class="etab-btn active" data-etab="active" role="tab" aria-selected="true">Active <span id="etab-n-active" class="badge badge-active" style="margin-left:4px">0</span></button>
+            <button type="button" class="etab-btn" data-etab="upcoming" role="tab" aria-selected="false">Upcoming <span id="etab-n-upcoming" class="badge badge-upcoming" style="margin-left:4px">0</span></button>
+            <button type="button" class="etab-btn" data-etab="past" role="tab" aria-selected="false">Past <span id="etab-n-past" class="badge badge-past" style="margin-left:4px">0</span></button>
+          </div>
+          <div id="event-hub-panel" class="ev-list" role="tabpanel"></div>
+        </div>
+      </div>
+
+      <div id="event-winner-banner" class="notice notice-info event-winner-banner" style="display:none" aria-live="polite"></div>
+
       <div class="stats-row">
         <div class="stat-tile">
           <div class="stat-value" id="sv-players">—</div>
@@ -430,7 +473,7 @@ textarea { resize: vertical; min-height: 64px; }
         </div>
         <div class="stat-tile">
           <div class="stat-value" id="sv-time">—</div>
-          <div class="stat-label">Until scoring closes</div>
+          <div class="stat-label" id="sv-time-label">Scoring window</div>
           <div class="stat-sub"  id="ss-time"></div>
         </div>
       </div>
@@ -702,6 +745,8 @@ let editingEventId       = null;
 let gamesCache           = [];
 let eventsDataCache      = [];
 let activeEvent          = null;
+let focusEvent           = null;
+let eventHubTab          = 'active';
 let lbMode               = 'competition';
 let lbDataCache          = [];
 let allUsersCache        = [];
@@ -868,6 +913,137 @@ function eventStatusOf(row){
   if(now > e) return 'past';
   return 'active';
 }
+
+function partitionEventsByStatus(){
+  const active=[], upcoming=[], past=[];
+  for(const row of eventsDataCache){
+    const st = eventStatusOf(row);
+    if(st==='active') active.push(row);
+    else if(st==='upcoming') upcoming.push(row);
+    else past.push(row);
+  }
+  upcoming.sort((a,b)=> new Date(a.starts_at)-new Date(b.starts_at));
+  past.sort((a,b)=> new Date(b.ends_at)-new Date(a.ends_at));
+  active.sort((a,b)=> new Date(b.starts_at)-new Date(a.starts_at));
+  return { active, upcoming, past };
+}
+
+function resolveDefaultFocus(){
+  const act = getActiveEvent();
+  if(act) return act;
+  const { past, upcoming } = partitionEventsByStatus();
+  if(past.length) return past[0];
+  if(upcoming.length) return upcoming[0];
+  return null;
+}
+
+function syncFocusEvent(){
+  if(focusEvent){
+    const fresh = eventsDataCache.find(e=>e.id===focusEvent.id);
+    if(fresh){ focusEvent = fresh; return; }
+  }
+  focusEvent = resolveDefaultFocus();
+}
+
+function updateDangerZoneState(){
+  const closeBtn = document.getElementById('btn-close-scoring');
+  const endBtn   = document.getElementById('btn-end-event');
+  const ok = !!(focusEvent && eventStatusOf(focusEvent)==='active');
+  if(closeBtn){ closeBtn.disabled = !ok; closeBtn.title = ok ? '' : 'Only available while the selected event is in its active scoring window.'; }
+  if(endBtn){ endBtn.disabled = !ok; endBtn.title = ok ? '' : 'Only available while the selected event is in its active scoring window.'; }
+}
+
+function renderEventHub(){
+  const emptyEl = document.getElementById('event-hub-empty');
+  const wrapEl  = document.getElementById('event-hub-wrap');
+  const panel   = document.getElementById('event-hub-panel');
+  const subEl   = document.getElementById('event-hub-sub');
+  if(!emptyEl||!wrapEl||!panel) return;
+
+  const parts = partitionEventsByStatus();
+  document.getElementById('etab-n-active').textContent   = String(parts.active.length);
+  document.getElementById('etab-n-upcoming').textContent = String(parts.upcoming.length);
+  document.getElementById('etab-n-past').textContent     = String(parts.past.length);
+
+  if(!eventsDataCache.length){
+    emptyEl.style.display = 'block';
+    wrapEl.style.display = 'none';
+    if(subEl) subEl.textContent = '';
+    updateDangerZoneState();
+    return;
+  }
+  emptyEl.style.display = 'none';
+  wrapEl.style.display = 'block';
+
+  let tab = eventHubTab;
+  const listFor = (t)=>{
+    if(t==='active') return parts.active;
+    if(t==='upcoming') return parts.upcoming;
+    return parts.past;
+  };
+  if(!listFor(tab).length){
+    if(parts.active.length) tab = 'active';
+    else if(parts.upcoming.length) tab = 'upcoming';
+    else tab = 'past';
+    eventHubTab = tab;
+  }
+
+  document.querySelectorAll('#event-etabs .etab-btn').forEach(b=>{
+    const on = b.dataset.etab === tab;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+
+  const gameMap = Object.fromEntries(gamesCache.map(g=>[g.id,g.name]));
+  const rows = listFor(tab);
+  if(!rows.length){
+    panel.innerHTML = `<div class="empty" style="padding:12px">No ${tab} events.</div>`;
+  } else {
+    panel.innerHTML = rows.map(r=>{
+      const sel = focusEvent && focusEvent.id===r.id;
+      const st  = eventStatusOf(r);
+      const badge = st==='active' ? 'badge-active' : st==='upcoming' ? 'badge-upcoming' : 'badge-past';
+      return `<div class="ev-row${sel?' ev-row-selected':''}" data-event-id="${r.id}">
+        <div class="ev-row-main">
+          <div class="ev-row-title"><span class="badge ${badge}" style="margin-right:8px;text-transform:capitalize">${st}</span>${esc(r.event_code||'—')}</div>
+          <div class="ev-row-meta">${esc(gameMap[r.game_id]||'Game')} · ${fmtDateShort(r.starts_at)} → ${fmtDateShort(r.ends_at)}</div>
+        </div>
+        <div class="ev-row-actions">
+          <button type="button" class="btn btn-primary btn-sm btn-ev-focus">View</button>
+          <button type="button" class="btn btn-secondary btn-sm btn-ev-edit">Edit</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  if(subEl){
+    if(focusEvent){
+      const fst = eventStatusOf(focusEvent);
+      subEl.textContent = `Viewing: ${focusEvent.event_code||focusEvent.id} (${fst})`;
+    } else subEl.textContent = '';
+  }
+  updateDangerZoneState();
+}
+
+window._selectFocusEventById = function(id){
+  const row = eventsDataCache.find(e=>e.id===id);
+  if(!row) return;
+  focusEvent = row;
+  eventHubTab = eventStatusOf(row);
+  renderEventHub();
+  void refreshFocusDrivenLiveCards();
+};
+
+async function refreshFocusDrivenLiveCards(){
+  await Promise.all([
+    loadLiveStats(),
+    loadLeaderboard(lbMode),
+    loadWeekGlance(),
+    loadFlaggedCard(),
+    loadWinnerBanner(),
+  ]);
+}
+
 function getTodaySeed(){
   const d = new Date(), pad = n=>String(n).padStart(2,'0');
   return Number(`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`);
@@ -900,42 +1076,74 @@ function getActiveEvent(){
 
 async function loadLiveSection(){
   activeEvent = getActiveEvent();
+  syncFocusEvent();
+  renderEventHub();
   await Promise.all([
     loadLiveStats(),
     loadLeaderboard(),
     loadWeekGlance(),
     loadFlaggedCard(),
+    loadWinnerBanner(),
     loadActivityFeed(),
   ]);
 }
 
 async function loadLiveStats(){
-  const aw = activeEvent;
+  const aw = focusEvent;
 
-  // Countdown
   function updateCountdown(){
-    if(!aw){ document.getElementById('sv-time').textContent = 'No event'; return; }
+    const tEl = document.getElementById('sv-time');
+    const sEl = document.getElementById('ss-time');
+    const lbl = document.getElementById('sv-time-label');
+    if(!aw){
+      tEl.textContent = '—'; sEl.textContent = '';
+      if(lbl) lbl.textContent = 'Scoring window';
+      return;
+    }
+    const curSt = eventStatusOf(aw);
+    if(lbl){
+      if(curSt==='past') lbl.textContent = 'Status';
+      else if(curSt==='upcoming') lbl.textContent = 'Starts in';
+      else lbl.textContent = 'Until scoring closes';
+    }
+    if(curSt==='past'){
+      tEl.textContent = 'Ended';
+      sEl.textContent = fmtDateShort(aw.ends_at);
+      return;
+    }
+    if(curSt==='upcoming'){
+      const diff = new Date(aw.starts_at).getTime() - Date.now();
+      if(diff<=0){ tEl.textContent = 'Starting'; sEl.textContent = ''; return; }
+      const d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000);
+      tEl.textContent = d>0 ? `${d}d ${h}h` : `${Math.max(0,h)}h`;
+      sEl.textContent = `until open · ${fmtDateShort(aw.starts_at)}`;
+      return;
+    }
     const diff = new Date(aw.ends_at).getTime() - Date.now();
-    if(diff <= 0){ document.getElementById('sv-time').textContent = 'Closed'; document.getElementById('ss-time').textContent = ''; return; }
+    if(diff <= 0){ tEl.textContent = 'Closed'; sEl.textContent = ''; return; }
     const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000);
-    document.getElementById('sv-time').textContent = `${h}h ${m}m`;
-    document.getElementById('ss-time').textContent = `until ${fmtDateShort(aw.ends_at)}`;
+    tEl.textContent = `${h}h ${m}m`;
+    sEl.textContent = `until ${fmtDateShort(aw.ends_at)}`;
   }
   clearInterval(countdownTimer);
   updateCountdown();
-  countdownTimer = setInterval(updateCountdown, 30000);
+  countdownTimer = setInterval(()=>{
+    if(document.getElementById('section-live')?.classList.contains('active')) updateCountdown();
+  }, 30000);
 
   if(!aw){
     ['sv-players','sv-runs','sv-flagged'].forEach(id=>{ document.getElementById(id).textContent='—'; });
+    document.getElementById('ss-runs').textContent = '';
+    document.getElementById('ss-players').textContent = '';
+    const lbl0 = document.getElementById('sv-time-label');
+    if(lbl0) lbl0.textContent = 'Scoring window';
     return;
   }
 
-  // Players: distinct entries in leaderboard
   const { count: pCount } = await sb.from('leaderboard')
     .select('user_id', { count:'exact', head:true }).eq('event_id', aw.id);
   document.getElementById('sv-players').textContent = pCount ?? '—';
 
-  // New today
   try{
     const t = new Date(); t.setHours(0,0,0,0);
     const { count: newT } = await sb.from('profiles')
@@ -943,13 +1151,11 @@ async function loadLiveStats(){
     if(newT != null) document.getElementById('ss-players').textContent = `${newT} new today`;
   }catch{ /* RLS may block */ }
 
-  // Total runs
   const { count: rCount } = await sb.from('runs')
     .select('id',{count:'exact',head:true}).eq('event_id', aw.id);
   document.getElementById('sv-runs').textContent = rCount ?? '—';
   if(rCount != null && pCount) document.getElementById('ss-runs').textContent = `avg ${(rCount/pCount).toFixed(1)} per player`;
 
-  // Flagged
   try{
     const { count: fCount } = await sb.from('runs')
       .select('id',{count:'exact',head:true}).eq('event_id', aw.id).eq('is_validated', false);
@@ -992,15 +1198,15 @@ async function loadLeaderboard(mode){
     return;
   }
 
-  if(!activeEvent){
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">No active competition event.</td></tr>';
+  if(!focusEvent){
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">No competition event selected.</td></tr>';
     lbDataCache = [];
     return;
   }
 
   const { data: rows, error } = await sb.from('leaderboard')
     .select('rank, user_id, best_score, profiles(display_name, username)')
-    .eq('event_id', activeEvent.id).order('rank').limit(10);
+    .eq('event_id', focusEvent.id).order('rank').limit(10);
   if(error){ tbody.innerHTML = `<tr><td colspan="6" class="empty" style="color:var(--danger)">${esc(error.message)}</td></tr>`; return; }
   lbDataCache = rows || [];
 
@@ -1019,12 +1225,12 @@ async function loadLeaderboard(mode){
   if(userIds.length){
     const { data: recents } = await sb.from('runs')
       .select('user_id, created_at').in('user_id', userIds)
-      .eq('event_id', activeEvent.id).order('created_at',{ascending:false}).limit(userIds.length * 5);
+      .eq('event_id', focusEvent.id).order('created_at',{ascending:false}).limit(userIds.length * 5);
     for(const r of recents||[]){ if(!lastMap[r.user_id]) lastMap[r.user_id] = r.created_at; }
   }
 
   const { count: totalCount } = await sb.from('leaderboard')
-    .select('user_id',{count:'exact',head:true}).eq('event_id', activeEvent.id);
+    .select('user_id',{count:'exact',head:true}).eq('event_id', focusEvent.id);
 
   tbody.innerHTML = (rows||[]).map(r=>{
     const used = attMap[r.user_id] || 0;
@@ -1038,18 +1244,21 @@ async function loadLeaderboard(mode){
       <td><button class="btn btn-dng btn-xs" onclick="window._banUser('${r.user_id}')">Ban</button></td>
     </tr>`;
   }).join('') || '<tr><td colspan="6" class="empty">No entries yet.</td></tr>';
-  footer.textContent = `Showing ${rows?.length||0} of ${totalCount||0} players`;
+  const frozen = focusEvent && eventStatusOf(focusEvent)==='past';
+  footer.textContent = frozen
+    ? `Frozen · showing ${rows?.length||0} of ${totalCount||0} players`
+    : `Showing ${rows?.length||0} of ${totalCount||0} players`;
 }
 
 // ── Event at a glance ─────────────────────────────────────────────────────────
 
 async function loadWeekGlance(){
-  const aw = activeEvent;
+  const aw = focusEvent;
   const statusEl = document.getElementById('glance-status');
   const bodyEl   = document.getElementById('glance-body');
   if(!aw){
     if(statusEl) statusEl.innerHTML = '';
-    bodyEl.innerHTML = `<div class="empty" style="padding:12px">No active event.<br>
+    bodyEl.innerHTML = `<div class="empty" style="padding:12px">No event selected.<br>
       <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="showSection('new')">Create one</button></div>`;
     return;
   }
@@ -1072,12 +1281,12 @@ async function loadWeekGlance(){
 // ── Flagged runs card ─────────────────────────────────────────────────────────
 
 async function loadFlaggedCard(){
-  const aw = activeEvent;
+  const aw = focusEvent;
   const bodyEl  = document.getElementById('flagged-body');
   const badge   = document.getElementById('flagged-badge');
   if(!aw){
     badge.style.display = 'none';
-    bodyEl.innerHTML = '<div class="empty" style="padding:12px">No active event.</div>';
+    bodyEl.innerHTML = '<div class="empty" style="padding:12px">No event selected.</div>';
     return;
   }
   try{
@@ -1124,6 +1333,32 @@ async function loadFlaggedCard(){
   }
 }
 
+async function loadWinnerBanner(){
+  const el = document.getElementById('event-winner-banner');
+  if(!el) return;
+  if(!focusEvent || eventStatusOf(focusEvent)!=='past'){
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  try{
+    const { data: top, error } = await sb.from('leaderboard')
+      .select('rank,best_score,user_id,profiles(display_name,username)')
+      .eq('event_id', focusEvent.id).eq('rank', 1).maybeSingle();
+    if(error || !top){
+      el.style.display = 'none';
+      el.innerHTML = '';
+      return;
+    }
+    const name = esc(top.profiles?.display_name || top.profiles?.username || 'Player');
+    el.style.display = 'block';
+    el.innerHTML = `<strong>Winner (${esc(focusEvent.event_code||'event')})</strong> — ${name} · <span class="mono">${(top.best_score??0).toLocaleString()}</span> pts (frozen leaderboard)`;
+  }catch(e){
+    console.error('loadWinnerBanner', e);
+    el.style.display = 'none';
+  }
+}
+
 // ── Activity feed ─────────────────────────────────────────────────────────────
 
 async function loadActivityFeed(){
@@ -1160,6 +1395,9 @@ function startActivityPoll(){
   if(activityTimer) clearInterval(activityTimer);
   activityTimer = setInterval(()=>{
     if(document.getElementById('section-live').classList.contains('active')){
+      activeEvent = getActiveEvent();
+      syncFocusEvent();
+      renderEventHub();
       loadActivityFeed();
       loadLiveStats();
     }
@@ -1295,6 +1533,7 @@ async function loadEvents(){
   eventsDataCache = data || [];
   updateWeekOverlapWarn(data);
   activeEvent = getActiveEvent();
+  syncFocusEvent();
 }
 
 // ── Users (preserved + enhanced) ────────────────────────────────────────────
@@ -1392,13 +1631,13 @@ window._switchUserTab = (tab) => loadUserAdminTab(tab);
 async function loadFlaggedTab(){
   const tbody  = document.getElementById('flagged-tab-tbody');
   const notice = document.getElementById('flagged-tab-notice');
-  if(!activeEvent){ tbody.innerHTML='<tr><td colspan="5" class="empty">No active event.</td></tr>'; return; }
+  if(!focusEvent){ tbody.innerHTML='<tr><td colspan="5" class="empty">No event selected on Live — pick an event first.</td></tr>'; return; }
   tbody.innerHTML = '<tr><td colspan="5" class="empty">Loading…</td></tr>';
   try{
     // Step 1: fetch unvalidated runs without join
     const { data: flagged, count } = await sb.from('runs')
       .select('id, user_id, score, created_at',{count:'exact'})
-      .eq('event_id', activeEvent.id).eq('is_validated', false).order('score',{ascending:false});
+      .eq('event_id', focusEvent.id).eq('is_validated', false).order('score',{ascending:false});
     if(notice){
       if(count){ notice.textContent=`${count} run${count!==1?'s':''} flagged this event. Review before the show to confirm the winner.`; notice.style.display='block'; }
       else notice.style.display='none';
@@ -1469,14 +1708,14 @@ window._approveRun = async (runId)=>{
   const { error } = await sb.from('runs').update({ is_validated:true }).eq('id', runId);
   if(error){ toast('Approve failed: '+error.message,'err'); return; }
   toast('Run approved ✓','ok');
-  loadFlaggedCard(); loadLiveStats();
+  loadFlaggedCard(); loadLiveStats(); void loadWinnerBanner();
 };
 window._deleteRun = async (runId)=>{
   if(!confirm('Remove this run? This cannot be undone.')) return;
   const { error } = await sb.from('runs').delete().eq('id', runId);
   if(error){ toast('Delete failed: '+error.message,'err'); return; }
   toast('Run removed','ok');
-  loadFlaggedCard(); loadLiveStats(); loadLeaderboard();
+  loadFlaggedCard(); loadLiveStats(); loadLeaderboard(); void loadWinnerBanner();
 };
 
 // ── CSV export ────────────────────────────────────────────────────────────────
@@ -1492,7 +1731,7 @@ function exportCsv(){
   const blob = new Blob([header+body],{type:'text/csv'});
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href = url; a.download = `leaderboard-${activeEvent?.event_code||'export'}.csv`;
+  a.href = url; a.download = `leaderboard-${focusEvent?.event_code||activeEvent?.event_code||'export'}.csv`;
   a.click(); URL.revokeObjectURL(url);
 }
 
@@ -1568,6 +1807,7 @@ async function onSignedIn(session){
 
 function onSignedOut(){
   currentUser = null; isAdmin = false;
+  focusEvent = null;
   clearInterval(activityTimer); clearInterval(countdownTimer);
   const av = document.getElementById('sidebar-avatar');
   const em = document.getElementById('sidebar-email');
@@ -1645,21 +1885,37 @@ async function boot(){
 
   // Danger zone
   document.getElementById('btn-close-scoring').addEventListener('click', async()=>{
-    if(!activeEvent) return;
+    if(!focusEvent || eventStatusOf(focusEvent)!=='active') return;
     if(!confirm('Close scoring now? Players will not be able to submit new runs.')) return;
-    const { error } = await sb.from('events').update({ends_at: new Date().toISOString()}).eq('id', activeEvent.id);
+    const { error } = await sb.from('events').update({ends_at: new Date().toISOString()}).eq('id', focusEvent.id);
     if(error){ toast('Failed: '+error.message,'err'); return; }
     toast('Scoring closed ✓','ok');
-    await loadEvents(); activeEvent = getActiveEvent(); loadLiveSection();
+    await loadEvents(); activeEvent = getActiveEvent(); syncFocusEvent(); await loadLiveSection();
   });
   document.getElementById('btn-end-event').addEventListener('click', async()=>{
-    if(!activeEvent) return;
+    if(!focusEvent || eventStatusOf(focusEvent)!=='active') return;
     if(!confirm('End this event and freeze the leaderboard? Scoring closes now.')) return;
     if(!confirm('Are you sure? This cannot be easily undone.')) return;
-    const { error } = await sb.from('events').update({ends_at: new Date().toISOString()}).eq('id', activeEvent.id);
+    const { error } = await sb.from('events').update({ends_at: new Date().toISOString()}).eq('id', focusEvent.id);
     if(error){ toast('Failed: '+error.message,'err'); return; }
     toast('Event ended — leaderboard frozen ✓','ok');
-    await loadEvents(); activeEvent = getActiveEvent(); loadLiveSection();
+    await loadEvents(); activeEvent = getActiveEvent(); syncFocusEvent(); await loadLiveSection();
+  });
+
+  document.getElementById('event-etabs')?.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.etab-btn');
+    if(!btn?.dataset.etab) return;
+    eventHubTab = btn.dataset.etab;
+    renderEventHub();
+  });
+  document.getElementById('event-hub-panel')?.addEventListener('click', (e)=>{
+    const row = e.target.closest('.ev-row');
+    if(e.target.closest('.btn-ev-focus') && row?.dataset.eventId){
+      window._selectFocusEventById(row.dataset.eventId);
+    }
+    if(e.target.closest('.btn-ev-edit') && row?.dataset.eventId){
+      void window._editEvent(row.dataset.eventId);
+    }
   });
 
   // User admin tabs
@@ -1768,13 +2024,13 @@ async function boot(){
     if(btn.classList.contains('btn-fl-approve')){
       const { error } = await sb.from('runs').update({is_validated:true}).eq('id', runId);
       if(error){ toast('Approve failed: '+error.message,'err'); return; }
-      toast('Run approved ✓','ok'); loadFlaggedTab(); loadLiveStats();
+      toast('Run approved ✓','ok'); loadFlaggedTab(); loadLiveStats(); loadFlaggedCard(); void loadWinnerBanner();
     }
     if(btn.classList.contains('btn-fl-remove')){
       if(!confirm('Remove this run?')) return;
       const { error } = await sb.from('runs').delete().eq('id', runId);
       if(error){ toast('Delete failed: '+error.message,'err'); return; }
-      toast('Run removed','ok'); loadFlaggedTab(); loadLiveStats();
+      toast('Run removed','ok'); loadFlaggedTab(); loadLiveStats(); loadFlaggedCard(); loadLeaderboard(); void loadWinnerBanner();
     }
     if(btn.classList.contains('btn-fl-ban')){
       if(!confirm('Ban this player?')) return;

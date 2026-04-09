@@ -53,7 +53,7 @@
 - [ ] **ADMN-01**: Admin panel requires `is_admin = true` on profile to access (existing — needs hardening)
 - [ ] **ADMN-02**: Admin can create, edit, and delete events
 - [ ] **ADMN-03**: Admin can manually trigger "new event live" (post-show publish flow)
-- [ ] **ADMN-04**: Admin can view the frozen leaderboard after event ends with winner clearly identified
+- [x] **ADMN-04**: Admin can view the frozen leaderboard after event ends (Competition events → **Past**, select event) with **Winner** banner for rank #1; active/upcoming tabs for full lifecycle. (18+–only winner line remains tied to **LBRD-03** if you split boards.)
 - [ ] **ADMN-05**: Admin can mark a player as banned (sets `is_banned`; banned players cannot submit scores)
 - [ ] **ADMN-06**: Admin dashboard shows active event status, player count, top 3 scores at a glance
 - [x] **ADMN-07**: Admin can sign out from the admin panel (ends Supabase session; returns to sign-in gate)
