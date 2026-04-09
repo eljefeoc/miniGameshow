@@ -56,6 +56,7 @@
 - [ ] **ADMN-04**: Admin can view the frozen leaderboard after event ends with winner clearly identified
 - [ ] **ADMN-05**: Admin can mark a player as banned (sets `is_banned`; banned players cannot submit scores)
 - [ ] **ADMN-06**: Admin dashboard shows active event status, player count, top 3 scores at a glance
+- [x] **ADMN-07**: Admin can sign out from the admin panel (ends Supabase session; returns to sign-in gate)
 
 ### Social & Sharing
 
