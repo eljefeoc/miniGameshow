@@ -11,7 +11,7 @@
   --accent:       #7F77DD;
   --accent-dark:  #534AB7;
   --page-bg:      #f5f5f3;
-  --sidebar-bg:   #ffffff;
+  --sidebar-bg:   #1a1826;
   --card-bg:      #ffffff;
   --body:         #1a1a1a;
   --muted:        #6b7280;
@@ -31,6 +31,14 @@
   --comp-t:       #3C3489;
   --red:          #ef4444;
   --green:        #22c55e;
+  --sidebar-hover:  #252236;
+  --sidebar-active: #2e2a45;
+  --sidebar-text:   rgba(255,255,255,0.55);
+  --sidebar-head:   rgba(255,255,255,0.25);
+  --gold:           #F5A623;
+  --gold-bg:        rgba(245,166,35,0.10);
+  --gold-border:    rgba(245,166,35,0.30);
+  --live-green:     #22c55e;
 }
 
 html, body {
@@ -66,50 +74,280 @@ html, body {
 
 /* ── Sidebar ───────────────────────────────────────────────────────── */
 #sidebar {
-  width: 200px; min-width: 200px;
+  width: 220px;
+  min-width: 220px;
   background: var(--sidebar-bg);
-  border-right: 0.5px solid var(--border);
-  display: flex; flex-direction: column;
-  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: sticky;
+  top: 0;
 }
+
 .sidebar-brand {
-  padding: 20px 16px 16px;
-  font-weight: 700; font-size: 13px; letter-spacing: .02em;
-  color: var(--accent);
-  border-bottom: 0.5px solid var(--border);
+  padding: 18px 16px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
 }
-.sidebar-nav { padding: 12px 8px; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.brand-icon {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.brand-name {
+  font-size: 13px; font-weight: 700; color: #fff;
+  letter-spacing: 0.01em; line-height: 1.2;
+}
+.brand-sub {
+  font-size: 10px; color: var(--sidebar-text); letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.rail-section {
+  padding: 14px 10px 4px;
+}
+.rail-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--sidebar-head);
+  padding: 0 6px; margin-bottom: 6px;
+}
+
+.event-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.12s;
+  margin-bottom: 2px;
+  border: 1px solid transparent;
+}
+.event-item:hover { background: var(--sidebar-hover); }
+.event-item.active {
+  background: var(--sidebar-active);
+  border-color: rgba(127,119,221,0.3);
+}
+
+.event-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 4px;
+}
+.event-dot.live {
+  background: var(--live-green);
+  box-shadow: 0 0 0 0 rgba(34,197,94,0.5);
+  animation: pulse-dot 2s infinite;
+}
+.event-dot.upcoming { background: rgba(255,255,255,0.25); }
+.event-dot.past     { background: rgba(255,255,255,0.12); }
+
+@keyframes pulse-dot {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+  70%  { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+.event-info { min-width: 0; flex: 1; }
+.event-name {
+  font-size: 12.5px; font-weight: 600; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.event-item:not(.active) .event-name { color: rgba(255,255,255,0.7); font-weight: 500; }
+.event-meta {
+  font-size: 11px; color: var(--sidebar-text);
+  margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.live-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+  color: var(--live-green); text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.past-toggle {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; cursor: pointer;
+  color: var(--sidebar-text); font-size: 11px;
+  border-radius: 8px; transition: background 0.12s;
+  user-select: none;
+}
+.past-toggle:hover { background: var(--sidebar-hover); color: rgba(255,255,255,0.7); }
+.toggle-arrow { font-size: 9px; transition: transform 0.2s; }
+
+.past-list { overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+.past-list.open { max-height: 300px; }
+
+.past-item {
+  padding: 8px 10px 8px 28px;
+  border-radius: 8px; cursor: pointer;
+  transition: background 0.1s; margin-bottom: 1px;
+}
+.past-item:hover { background: var(--sidebar-hover); }
+.past-item.active { background: var(--sidebar-active); }
+.past-name { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500; }
+.past-meta { font-size: 10.5px; color: var(--sidebar-text); margin-top: 1px; }
+.past-winner { color: var(--gold); }
+
+.sidebar-spacer { flex: 1; }
+.sidebar-footer-nav {
+  padding: 8px 10px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+.footer-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px;
+  color: var(--sidebar-text); font-size: 12.5px;
+  cursor: pointer; transition: background 0.12s; margin-bottom: 2px;
+}
+.footer-nav-item:hover { background: var(--sidebar-hover); color: rgba(255,255,255,0.8); }
+.footer-nav-item .icon { font-size: 14px; width: 18px; text-align: center; }
+
+.sidebar-user {
+  padding: 10px 16px 14px;
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  flex-wrap: wrap;
+}
+.user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.user-email { font-size: 11px; color: var(--sidebar-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-role { font-size: 10px; color: var(--accent); font-weight: 600; }
+
+.live-dot-sm {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--live-green);
+  animation: pulse-dot 2s infinite;
+}
+
 .nav-item {
   display: block; width: 100%; text-align: left;
   padding: 9px 12px; border: none; border-radius: var(--r);
   background: transparent; color: var(--muted); font-size: 13px;
   cursor: pointer; transition: background .12s, color .12s; font-family: inherit;
 }
-.nav-item:hover  { background: var(--page-bg); color: var(--body); }
-.nav-item.active { background: var(--comp-bg); color: var(--accent-dark); font-weight: 600; }
-.sidebar-footer {
-  padding: 14px 16px; border-top: 0.5px solid var(--border);
-  display: flex; flex-direction: column; align-items: stretch; gap: 8px;
-}
-.sidebar-footer-user {
-  display: flex; align-items: center; gap: 10px;
-  min-width: 0;
-}
-.sidebar-avatar {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: var(--accent); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; flex-shrink: 0;
-}
-.sidebar-email {
-  font-size: 11px; color: var(--muted);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+.nav-item:hover  { background: rgba(255,255,255,0.06); color: #fff; }
+.nav-item.active { background: var(--sidebar-active); color: #fff; font-weight: 600; }
 
 /* ── Content ───────────────────────────────────────────────────────── */
 #content { flex: 1; padding: 24px; overflow-y: auto; min-width: 0; }
 .admin-section { display: none; }
 .admin-section.active { display: block; }
+
+/* ── Leaderboard card (mockup) ─────────────────────────────────────── */
+.lb-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--rc);
+  overflow: hidden;
+}
+.lb-header {
+  padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  gap: 12px; flex-wrap: wrap;
+}
+.lb-title { font-size: 13px; font-weight: 700; }
+#lb-tabs {
+  display: flex; gap: 3px; background: var(--page-bg); border-radius: 8px; padding: 3px;
+}
+#lb-tabs .tab-btn {
+  padding: 4px 12px; border: none; border-radius: 6px;
+  background: transparent; font-size: 12px; font-weight: 500;
+  color: var(--muted); cursor: pointer; font-family: inherit; transition: all 0.1s;
+}
+#lb-tabs .tab-btn.active { background: var(--card-bg); color: var(--body); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+.lb-body { padding: 8px 0; }
+
+.lb-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 18px;
+  transition: background 0.3s, transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  position: relative; border-radius: 6px; margin: 0 6px;
+  flex-wrap: wrap;
+}
+.lb-row:hover { background: rgba(0,0,0,0.025); }
+.lb-row.rank-1 {
+  background: var(--gold-bg);
+  border: 1px solid var(--gold-border);
+  margin: 4px 6px;
+}
+.lb-row.flash-up {
+  animation: flash-up 1.2s ease forwards;
+}
+.lb-row.flash-down {
+  animation: flash-down 0.8s ease forwards;
+}
+
+@keyframes flash-up {
+  0%   { background: rgba(34,197,94,0.25); }
+  60%  { background: rgba(34,197,94,0.12); }
+  100% { background: transparent; }
+}
+@keyframes flash-down {
+  0%   { background: rgba(239,68,68,0.15); }
+  100% { background: transparent; }
+}
+
+.lb-rank {
+  width: 28px; text-align: center; font-size: 13px; font-weight: 700;
+  color: var(--muted); flex-shrink: 0;
+}
+.lb-row.rank-1 .lb-rank { color: var(--gold); font-size: 16px; }
+.lb-row.rank-2 .lb-rank { color: #94a3b8; }
+.lb-row.rank-3 .lb-rank { color: #b45309; }
+
+.lb-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.lb-row.rank-1 .lb-avatar { background: var(--gold); }
+
+.lb-info { flex: 1; min-width: 0; }
+.lb-username { font-size: 13px; font-weight: 600; color: var(--body); }
+.lb-row.rank-1 .lb-username { color: #92400e; }
+.lb-attempts { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+.lb-score {
+  font-size: 15px; font-weight: 800;
+  color: var(--body); letter-spacing: -0.02em; flex-shrink: 0;
+}
+.lb-row.rank-1 .lb-score { color: var(--gold); }
+
+.lb-change {
+  width: 32px; text-align: right; font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+.lb-change.up   { color: var(--live-green); }
+.lb-change.down { color: #ef4444; }
+.lb-change.same { color: var(--muted); opacity: 0.5; }
+
+.lb-footer.lb-mock-footer {
+  padding: 10px 18px;
+  font-size: 11px; color: var(--muted);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.lb-live-indicator {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--live-green); font-weight: 600;
+}
+
+.lb-row .lb-lastrun { font-size: 12px; color: var(--muted); flex-shrink: 0; min-width: 4.5em; text-align: right; }
+.lb-row .lb-actions { flex-shrink: 0; }
 
 /* ── Not-admin note ─────────────────────────────────────────────────── */
 #not-admin-note {
@@ -410,19 +648,75 @@ textarea { resize: vertical; min-height: 64px; }
 
   <!-- Sidebar -->
   <nav id="sidebar">
-    <div class="sidebar-brand">miniGameshow</div>
-    <div class="sidebar-nav">
-      <button class="nav-item active" data-section="live">◉ Live competition</button>
-      <button class="nav-item" data-section="new">＋ New competition</button>
-      <button class="nav-item" data-section="users">◻ User admin</button>
-    </div>
-    <div class="sidebar-footer">
-      <div class="sidebar-footer-user">
-        <div class="sidebar-avatar" id="sidebar-avatar">?</div>
-        <span class="sidebar-email" id="sidebar-email"></span>
+
+    <!-- Brand -->
+    <div class="sidebar-brand">
+      <div class="brand-icon">🎮</div>
+      <div>
+        <div class="brand-name">MiniGameshow</div>
+        <div class="brand-sub">Admin</div>
       </div>
-      <button type="button" class="btn btn-secondary btn-sm" id="btn-admin-logout" style="width:100%">Log out</button>
     </div>
+
+    <!-- Live event rail — populated by renderSidebarRail() -->
+    <div class="rail-section">
+      <div class="rail-label">Live Now</div>
+      <div id="sidebar-rail-live">
+        <!-- JS populates this -->
+      </div>
+    </div>
+
+    <div class="rail-section">
+      <div class="rail-label">Upcoming</div>
+      <div id="sidebar-rail-upcoming">
+        <!-- JS populates this -->
+      </div>
+    </div>
+
+    <div class="rail-section">
+      <div class="rail-label">Past Events</div>
+      <div class="past-toggle" id="past-toggle-btn">
+        <span class="toggle-arrow" id="past-arrow">▶</span>
+        Show past events
+      </div>
+      <div class="past-list" id="past-list">
+        <div id="sidebar-rail-past">
+          <!-- JS populates this -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden nav buttons — keep for JS section switching compatibility -->
+    <div style="display:none">
+      <button class="nav-item active" data-section="live">Live competition</button>
+      <button class="nav-item" data-section="new">New competition</button>
+      <button class="nav-item" data-section="users">User admin</button>
+    </div>
+
+    <div class="sidebar-spacer"></div>
+
+    <!-- Footer nav -->
+    <div class="sidebar-footer-nav">
+      <div class="footer-nav-item" onclick="navigateTo('users')">
+        <span class="icon">👤</span>
+        User Admin
+      </div>
+      <div class="footer-nav-item" onclick="navigateTo('new')">
+        <span class="icon">＋</span>
+        New Event
+      </div>
+    </div>
+
+    <!-- User identity (preserved IDs) -->
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-avatar">?</div>
+      <div style="min-width:0">
+        <div class="user-role">Admin</div>
+        <div class="user-email" id="sidebar-email"></div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-admin-logout" style="width:100%;margin-top:8px">Log out</button>
+    </div>
+
   </nav>
 
   <!-- Content -->
@@ -435,7 +729,32 @@ textarea { resize: vertical; min-height: 64px; }
 
     <!-- ── Section 1: Live competition ── -->
     <section id="section-live" class="admin-section active">
-      <div class="page-title">Live competition</div>
+      <div id="live-hero" style="
+        background: linear-gradient(135deg, #1e1b2e 0%, #2a2550 50%, #1e2d40 100%);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 14px 24px;
+        display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+        margin: -24px -24px 24px;
+        position: relative; overflow: hidden;
+      ">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(127,119,221,0.12) 0%,transparent 70%);pointer-events:none"></div>
+        <div id="live-hero-chip" style="
+          display:inline-flex;align-items:center;gap:5px;
+          background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);
+          border-radius:100px;padding:3px 10px;font-size:10.5px;font-weight:700;
+          color:#22c55e;letter-spacing:0.05em;text-transform:uppercase;
+          flex-shrink:0;position:relative;
+        ">
+          <div style="width:6px;height:6px;border-radius:50%;background:#22c55e;animation:pulse-dot 2s infinite"></div>
+          Live
+        </div>
+        <div id="live-hero-title" style="font-size:16px;font-weight:700;color:#fff;flex-shrink:0;position:relative;">
+          Live competition
+        </div>
+        <div style="width:1px;height:20px;background:rgba(255,255,255,0.12);flex-shrink:0;position:relative"></div>
+        <div id="live-hero-meta" style="font-size:12px;color:rgba(255,255,255,0.45);position:relative"></div>
+        <div id="live-hero-countdown" style="font-size:13px;font-weight:700;color:#22c55e;margin-left:auto;font-variant-numeric:tabular-nums;position:relative"></div>
+      </div>
 
       <div class="card event-hub-card" id="event-hub-card">
         <div class="card-header" style="margin-bottom:10px">
@@ -480,31 +799,26 @@ textarea { resize: vertical; min-height: 64px; }
 
       <div class="two-col">
         <!-- Leaderboard -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Top 10 leaderboard</span>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="lb-card" id="lb-card-wrap">
+          <div class="lb-header">
+            <span class="lb-title">Top 10 leaderboard</span>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
               <div class="tabs" id="lb-tabs">
-                <button class="tab-btn active" data-tab="competition">Competition</button>
-                <button class="tab-btn" data-tab="arcade">Arcade</button>
+                <button type="button" class="tab-btn active" data-tab="competition">Competition</button>
+                <button type="button" class="tab-btn" data-tab="arcade">Arcade</button>
               </div>
               <button class="btn btn-secondary btn-sm" id="btn-csv">Export CSV</button>
             </div>
           </div>
-          <div class="table-wrap">
-            <table id="lb-table">
-              <thead><tr>
-                <th>#</th>
-                <th>Player</th>
-                <th>Best score</th>
-                <th id="lb-th-dots">Attempts</th>
-                <th>Last run</th>
-                <th></th>
-              </tr></thead>
-              <tbody id="lb-tbody"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
-            </table>
+          <span id="lb-th-dots" style="display:none" aria-hidden="true"></span>
+          <div class="lb-body" id="lb-tbody"><div class="empty" style="padding:12px 18px">Loading…</div></div>
+          <div class="lb-footer lb-mock-footer" id="lb-footer">
+            <div class="lb-live-indicator" id="lb-live-indicator" style="display:none">
+              <div class="live-dot-sm"></div>
+              Updating live
+            </div>
+            <span id="lb-footer-text"></span>
           </div>
-          <div class="table-footer" id="lb-footer"></div>
         </div>
 
         <!-- Right stacked cards -->
@@ -754,6 +1068,9 @@ let eventRunCountMap     = {};
 let eventBestMap         = {};
 let activityTimer        = null;
 let countdownTimer       = null;
+let heroCountdownTimer   = null;
+let lbPrevRankMap        = new Map();
+let lbRealtimeChannel    = null;
 
 // ── Edge Function utilities (preserved) ─────────────────────────────────────
 
@@ -914,6 +1231,83 @@ function eventStatusOf(row){
   return 'active';
 }
 
+function prizeHintFromEvent(e){
+  if(!e || !e.prize_title) return '';
+  const m = String(e.prize_title).match(/\$[\d,]+/);
+  return m ? ` · ${m[0]}` : '';
+}
+
+function renderSidebarRail(events) {
+  const now = new Date();
+
+  const live     = events.filter(e => new Date(e.starts_at) <= now && new Date(e.ends_at) >= now);
+  const upcoming = events.filter(e => new Date(e.starts_at) > now);
+  const past     = events.filter(e => new Date(e.ends_at) < now).sort((a,b) => new Date(b.ends_at) - new Date(a.ends_at));
+
+  function eventLabel(e) {
+    return e.prize_title ? `${e.prize_title}` : (e.game_id || 'Event');
+  }
+
+  const liveEl = document.getElementById('sidebar-rail-live');
+  if (liveEl) {
+    liveEl.innerHTML = live.length === 0
+      ? `<div style="padding:6px 10px;font-size:12px;color:var(--sidebar-text)">No live event</div>`
+      : live.map(e => `
+        <div class="event-item${focusEvent && focusEvent.id===e.id ? ' active' : ''}" data-event-id="${e.id}" onclick="sidebarSelectEvent(this, '${e.id}')">
+          <div class="event-dot live"></div>
+          <div class="event-info">
+            <div class="event-name">${esc(eventLabel(e))}</div>
+            <div class="live-badge">● Live</div>
+            <div class="event-meta">Ends ${new Date(e.ends_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}${prizeHintFromEvent(e)}</div>
+          </div>
+        </div>`).join('');
+  }
+
+  const upEl = document.getElementById('sidebar-rail-upcoming');
+  if (upEl) {
+    upEl.innerHTML = upcoming.length === 0
+      ? `<div style="padding:6px 10px;font-size:12px;color:var(--sidebar-text)">None scheduled</div>`
+      : upcoming.slice(0,3).map(e => `
+        <div class="event-item${focusEvent && focusEvent.id===e.id ? ' active' : ''}" data-event-id="${e.id}" onclick="sidebarSelectEvent(this, '${e.id}')">
+          <div class="event-dot upcoming"></div>
+          <div class="event-info">
+            <div class="event-name">${esc(eventLabel(e))}</div>
+            <div class="event-meta">Starts ${new Date(e.starts_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+          </div>
+        </div>`).join('');
+  }
+
+  const pastEl = document.getElementById('sidebar-rail-past');
+  if (pastEl) {
+    pastEl.innerHTML = past.length === 0
+      ? `<div style="padding:6px 10px;font-size:12px;color:var(--sidebar-text)">No past events</div>`
+      : past.slice(0,8).map(e => `
+        <div class="past-item${focusEvent && focusEvent.id===e.id ? ' active' : ''}" data-event-id="${e.id}" onclick="sidebarSelectEvent(this, '${e.id}')">
+          <div class="past-name">${esc(eventLabel(e))}</div>
+          <div class="past-meta">Ended ${new Date(e.ends_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}${prizeHintFromEvent(e)}</div>
+        </div>`).join('');
+  }
+
+  const toggleBtn = document.getElementById('past-toggle-btn');
+  if (toggleBtn) {
+    toggleBtn.onclick = () => {
+      const list = document.getElementById('past-list');
+      const arrow = document.getElementById('past-arrow');
+      list.classList.toggle('open');
+      if (arrow) arrow.textContent = list.classList.contains('open') ? '▼' : '▶';
+    };
+  }
+}
+
+function sidebarSelectEvent(el, eventId) {
+  document.querySelectorAll('#sidebar .event-item, #sidebar .past-item').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  window._selectFocusEventById(eventId);
+  navigateTo('live');
+}
+
+function navigateTo(name){ showSection(name); }
+
 function partitionEventsByStatus(){
   const active=[], upcoming=[], past=[];
   for(const row of eventsDataCache){
@@ -970,6 +1364,7 @@ function renderEventHub(){
     wrapEl.style.display = 'none';
     if(subEl) subEl.textContent = '';
     updateDangerZoneState();
+    renderSidebarRail(eventsDataCache);
     return;
   }
   emptyEl.style.display = 'none';
@@ -1023,6 +1418,7 @@ function renderEventHub(){
     } else subEl.textContent = '';
   }
   updateDangerZoneState();
+  renderSidebarRail(eventsDataCache);
 }
 
 window._selectFocusEventById = function(id){
@@ -1064,6 +1460,8 @@ function showSection(name){
 }
 // Inline onclick handlers run in global scope; this script is type="module" so names are not globals.
 window.showSection = showSection;
+window.navigateTo = navigateTo;
+window.sidebarSelectEvent = sidebarSelectEvent;
 
 // ── Live stats ────────────────────────────────────────────────────────────────
 
@@ -1072,6 +1470,44 @@ function getActiveEvent(){
   return eventsDataCache.find(w =>
     new Date(w.starts_at).getTime() <= now && new Date(w.ends_at).getTime() >= now
   ) || null;
+}
+
+function updateLiveHero(){
+  const heroTitle = document.getElementById('live-hero-title');
+  const heroMeta = document.getElementById('live-hero-meta');
+  const heroCountdown = document.getElementById('live-hero-countdown');
+  const heroChip = document.getElementById('live-hero-chip');
+  const act = getActiveEvent();
+  clearInterval(heroCountdownTimer);
+  heroCountdownTimer = null;
+
+  if(!act && heroChip){
+    heroChip.style.display = 'none';
+    if(heroTitle) heroTitle.textContent = 'No live event';
+    if(heroMeta) heroMeta.innerHTML = '';
+    if(heroCountdown) heroCountdown.textContent = '';
+    return;
+  }
+  if(heroChip) heroChip.style.display = '';
+  if(act && heroTitle){
+    heroTitle.textContent = act.prize_title || act.event_code || 'Live competition';
+    const prizeLabel = act.prize_title ? esc(act.prize_title) : '—';
+    if(heroMeta) heroMeta.innerHTML = `Prize: <span style="font-weight:600;color:rgba(255,255,255,0.85)">${prizeLabel}</span>`;
+  }
+  if(act && heroCountdown){
+    function tickHero(){
+      const end = new Date(act.ends_at);
+      const diff = end - Date.now();
+      if(diff <= 0){ heroCountdown.textContent = 'Scoring closed'; return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000)  / 60000);
+      const s = Math.floor((diff % 60000)    / 1000);
+      heroCountdown.textContent = `${d}d ${h}h ${m}m ${s}s left`;
+    }
+    tickHero();
+    heroCountdownTimer = setInterval(tickHero, 1000);
+  }
 }
 
 async function loadLiveSection(){
@@ -1086,6 +1522,7 @@ async function loadLiveSection(){
     loadWinnerBanner(),
     loadActivityFeed(),
   ]);
+  updateLiveHero();
 }
 
 async function loadLiveStats(){
@@ -1167,12 +1604,60 @@ async function loadLiveStats(){
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 
+function playerInitialsFromRow(profile){
+  const name = profile?.display_name||profile?.username||'Player';
+  const s = String(name).replace(/\s+/g,' ').trim();
+  if(!s) return '?';
+  const parts = s.split(/\s+/);
+  if(parts.length>=2 && parts[0][0] && parts[1][0]) return (parts[0][0]+parts[1][0]).toUpperCase();
+  return s.slice(0,2).toUpperCase();
+}
+
+function lbChangeHtml(prev, userId, newRank){
+  const old = prev.get(userId);
+  if(old === undefined) return '<span class="lb-change same">—</span>';
+  if(newRank < old) return `<span class="lb-change up">▲${old-newRank}</span>`;
+  if(newRank > old) return `<span class="lb-change down">▼${newRank-old}</span>`;
+  return '<span class="lb-change same">—</span>';
+}
+
+function lbFlashClass(prev, userId, newRank){
+  const old = prev.get(userId);
+  if(old === undefined) return '';
+  if(newRank < old) return ' flash-up';
+  if(newRank > old) return ' flash-down';
+  return '';
+}
+
+function setLbFooterTextAndLive(text){
+  const ft = document.getElementById('lb-footer-text');
+  const li = document.getElementById('lb-live-indicator');
+  if(ft) ft.textContent = text;
+  if(li){
+    const liveOk = lbMode === 'competition' && focusEvent && eventStatusOf(focusEvent)==='active';
+    li.style.display = liveOk ? 'flex' : 'none';
+  }
+}
+
+function attachLeaderboardRealtime(){
+  if(!sb || lbRealtimeChannel) return;
+  lbRealtimeChannel = sb.channel('leaderboard-admin')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'runs',
+    }, () => {
+      if(document.getElementById('section-live')?.classList.contains('active')) void loadLeaderboard();
+    })
+    .subscribe();
+}
+
 async function loadLeaderboard(mode){
   if(mode) lbMode = mode;
   const tbody = document.getElementById('lb-tbody');
-  const footer = document.getElementById('lb-footer');
   const thDots = document.getElementById('lb-th-dots');
-  tbody.innerHTML = '<tr><td colspan="6" class="empty">Loading…</td></tr>';
+  const prevRanks = lbPrevRankMap;
+  tbody.innerHTML = '<div class="empty" style="padding:12px 18px">Loading…</div>';
   if(thDots) thDots.style.display = lbMode === 'competition' ? '' : 'none';
 
   if(lbMode === 'arcade'){
@@ -1180,37 +1665,54 @@ async function loadLeaderboard(mode){
       .select('user_id, best_score, profiles(display_name, username)')
       .order('best_score',{ascending:false}).limit(10);
     if(error){
-      tbody.innerHTML = '<tr><td colspan="6" class="empty">Arcade board coming soon — run Phase 2b migration.</td></tr>';
+      tbody.innerHTML = '<div class="empty" style="padding:12px 18px">Arcade board coming soon — run Phase 2b migration.</div>';
       lbDataCache = [];
+      setLbFooterTextAndLive('');
       return;
     }
     lbDataCache = rows || [];
-    tbody.innerHTML = (rows||[]).map((r,i)=>`
-      <tr${i===0?' class="row-gold"':''}>
-        <td><strong>${i+1}</strong></td>
-        <td>${esc(r.profiles?.display_name||r.profiles?.username||'Player')}</td>
-        <td class="mono">${(r.best_score??0).toLocaleString()}</td>
-        <td style="display:none"></td>
-        <td>—</td>
-        <td><button class="btn btn-dng btn-xs" onclick="window._banUser('${r.user_id}')">Ban</button></td>
-      </tr>`).join('') || '<tr><td colspan="6" class="empty">No entries yet.</td></tr>';
-    footer.textContent = `Showing ${rows?.length||0} players`;
+    const nextMap = new Map();
+    (rows||[]).forEach((r,i)=> nextMap.set(r.user_id, i+1));
+    tbody.innerHTML = (rows||[]).map((r,i)=>{
+      const rank = i+1;
+      const rc = rank===1 ? 'rank-1' : rank===2 ? 'rank-2' : rank===3 ? 'rank-3' : '';
+      const flash = lbFlashClass(prevRanks, r.user_id, rank);
+      return `<div class="lb-row ${rc}${flash}" data-user-id="${r.user_id}">
+        <div class="lb-rank">${rank}</div>
+        <div class="lb-avatar">${esc(playerInitialsFromRow(r.profiles))}</div>
+        <div class="lb-info">
+          <div class="lb-username">${esc(r.profiles?.display_name||r.profiles?.username||'Player')}</div>
+          <div class="lb-attempts">Arcade</div>
+        </div>
+        <div class="lb-score mono">${(r.best_score??0).toLocaleString()}</div>
+        ${lbChangeHtml(prevRanks, r.user_id, rank)}
+        <div class="lb-lastrun">—</div>
+        <div class="lb-actions"><button class="btn btn-dng btn-xs" onclick="window._banUser('${r.user_id}')">Ban</button></div>
+      </div>`;
+    }).join('') || '<div class="empty" style="padding:12px 18px">No entries yet.</div>';
+    lbPrevRankMap = nextMap;
+    setLbFooterTextAndLive(`Showing ${rows?.length||0} players`);
     return;
   }
 
   if(!focusEvent){
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">No competition event selected.</td></tr>';
+    tbody.innerHTML = '<div class="empty" style="padding:12px 18px">No competition event selected.</div>';
     lbDataCache = [];
+    lbPrevRankMap = new Map();
+    setLbFooterTextAndLive('');
     return;
   }
 
   const { data: rows, error } = await sb.from('leaderboard')
     .select('rank, user_id, best_score, profiles(display_name, username)')
     .eq('event_id', focusEvent.id).order('rank').limit(10);
-  if(error){ tbody.innerHTML = `<tr><td colspan="6" class="empty" style="color:var(--danger)">${esc(error.message)}</td></tr>`; return; }
+  if(error){
+    tbody.innerHTML = `<div class="empty" style="padding:12px 18px;color:var(--danger)">${esc(error.message)}</div>`;
+    setLbFooterTextAndLive('');
+    return;
+  }
   lbDataCache = rows || [];
 
-  // Today's attempts per user
   const todaySeed = getTodaySeed();
   const userIds = (rows||[]).map(r=>r.user_id);
   let attMap = {};
@@ -1220,7 +1722,6 @@ async function loadLeaderboard(mode){
     for(const a of atts||[]) attMap[a.user_id] = a.attempts_used;
   }
 
-  // Most recent run per user
   let lastMap = {};
   if(userIds.length){
     const { data: recents } = await sb.from('runs')
@@ -1232,22 +1733,35 @@ async function loadLeaderboard(mode){
   const { count: totalCount } = await sb.from('leaderboard')
     .select('user_id',{count:'exact',head:true}).eq('event_id', focusEvent.id);
 
+  const nextMap = new Map();
+  (rows||[]).forEach(r=> nextMap.set(r.user_id, r.rank));
+
   tbody.innerHTML = (rows||[]).map(r=>{
     const used = attMap[r.user_id] || 0;
     const dots = Array.from({length:5},(_,i)=>`<span class="dot${i<used?' on':''}"></span>`).join('');
-    return `<tr${r.rank===1?' class="row-gold"':''}>
-      <td><strong>${r.rank}</strong></td>
-      <td>${esc(r.profiles?.display_name||r.profiles?.username||'Player')}</td>
-      <td class="mono">${(r.best_score??0).toLocaleString()}</td>
-      <td><span class="dots">${dots}</span></td>
-      <td style="font-size:12px;color:var(--muted)">${relTime(lastMap[r.user_id])}</td>
-      <td><button class="btn btn-dng btn-xs" onclick="window._banUser('${r.user_id}')">Ban</button></td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="6" class="empty">No entries yet.</td></tr>';
+    const rc = r.rank===1 ? 'rank-1' : r.rank===2 ? 'rank-2' : r.rank===3 ? 'rank-3' : '';
+    const flash = lbFlashClass(prevRanks, r.user_id, r.rank);
+    const attemptsLine = `<span class="dots">${dots}</span> · ${used}/5 today`;
+    return `<div class="lb-row ${rc}${flash}" data-user-id="${r.user_id}">
+      <div class="lb-rank">${r.rank}</div>
+      <div class="lb-avatar">${esc(playerInitialsFromRow(r.profiles))}</div>
+      <div class="lb-info">
+        <div class="lb-username">${esc(r.profiles?.display_name||r.profiles?.username||'Player')}</div>
+        <div class="lb-attempts">${attemptsLine}</div>
+      </div>
+      <div class="lb-score mono">${(r.best_score??0).toLocaleString()}</div>
+      ${lbChangeHtml(prevRanks, r.user_id, r.rank)}
+      <div class="lb-lastrun">${relTime(lastMap[r.user_id])}</div>
+      <div class="lb-actions"><button class="btn btn-dng btn-xs" onclick="window._banUser('${r.user_id}')">Ban</button></div>
+    </div>`;
+  }).join('') || '<div class="empty" style="padding:12px 18px">No entries yet.</div>';
+
+  lbPrevRankMap = nextMap;
+
   const frozen = focusEvent && eventStatusOf(focusEvent)==='past';
-  footer.textContent = frozen
+  setLbFooterTextAndLive(frozen
     ? `Frozen · showing ${rows?.length||0} of ${totalCount||0} players`
-    : `Showing ${rows?.length||0} of ${totalCount||0} players`;
+    : `Showing ${rows?.length||0} of ${totalCount||0} players`);
 }
 
 // ── Event at a glance ─────────────────────────────────────────────────────────
@@ -1534,6 +2048,7 @@ async function loadEvents(){
   updateWeekOverlapWarn(data);
   activeEvent = getActiveEvent();
   syncFocusEvent();
+  renderSidebarRail(eventsDataCache);
 }
 
 // ── Users (preserved + enhanced) ────────────────────────────────────────────
@@ -1802,6 +2317,7 @@ async function onSignedIn(session){
     await loadEvents();
     loadLiveSection();
     startActivityPoll();
+    attachLeaderboardRealtime();
   }
 }
 
@@ -1809,6 +2325,12 @@ function onSignedOut(){
   currentUser = null; isAdmin = false;
   focusEvent = null;
   clearInterval(activityTimer); clearInterval(countdownTimer);
+  clearInterval(heroCountdownTimer);
+  heroCountdownTimer = null;
+  if(lbRealtimeChannel && sb){
+    try{ sb.removeChannel(lbRealtimeChannel); }catch{ /* noop */ }
+    lbRealtimeChannel = null;
+  }
   const av = document.getElementById('sidebar-avatar');
   const em = document.getElementById('sidebar-email');
   if(av) av.textContent = '?';

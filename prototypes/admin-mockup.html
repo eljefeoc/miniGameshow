@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiniGameshow — Admin Mockup</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --accent:       #7F77DD;
+  --accent-dark:  #534AB7;
+  --accent-glow:  rgba(127,119,221,0.18);
+  --page-bg:      #f0f0ee;
+  --sidebar-bg:   #1a1826;
+  --sidebar-hover:#252236;
+  --sidebar-active:#2e2a45;
+  --card-bg:      #ffffff;
+  --body:         #1a1a1a;
+  --muted:        #6b7280;
+  --border:       rgba(0,0,0,0.10);
+  --sidebar-text: rgba(255,255,255,0.55);
+  --sidebar-head: rgba(255,255,255,0.25);
+  --r:            8px;
+  --rc:           14px;
+  --danger:       #A32D2D;
+  --danger-b:     #F09595;
+  --gold:         #F5A623;
+  --gold-bg:      rgba(245,166,35,0.10);
+  --gold-border:  rgba(245,166,35,0.30);
+  --live-green:   #22c55e;
+  --rank-up:      rgba(34,197,94,0.15);
+  --rank-dn:      rgba(239,68,68,0.10);
+}
+
+html, body {
+  background: var(--page-bg);
+  color: var(--body);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  height: 100%;
+}
+
+/* ── Shell ──────────────────────────────────────────────────────────── */
+#shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Sidebar ────────────────────────────────────────────────────────── */
+#sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar-brand {
+  padding: 18px 16px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.brand-icon {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.brand-name {
+  font-size: 13px; font-weight: 700; color: #fff;
+  letter-spacing: 0.01em; line-height: 1.2;
+}
+.brand-sub {
+  font-size: 10px; color: var(--sidebar-text); letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Event rail */
+.rail-section {
+  padding: 14px 10px 4px;
+}
+.rail-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--sidebar-head);
+  padding: 0 6px; margin-bottom: 6px;
+}
+
+.event-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.12s;
+  margin-bottom: 2px;
+  border: 1px solid transparent;
+}
+.event-item:hover { background: var(--sidebar-hover); }
+.event-item.active {
+  background: var(--sidebar-active);
+  border-color: rgba(127,119,221,0.3);
+}
+
+.event-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 4px;
+}
+.event-dot.live {
+  background: var(--live-green);
+  box-shadow: 0 0 0 0 rgba(34,197,94,0.5);
+  animation: pulse-dot 2s infinite;
+}
+.event-dot.upcoming { background: rgba(255,255,255,0.25); }
+.event-dot.past     { background: rgba(255,255,255,0.12); }
+
+@keyframes pulse-dot {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+  70%  { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+.event-info { min-width: 0; flex: 1; }
+.event-name {
+  font-size: 12.5px; font-weight: 600; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.event-item:not(.active) .event-name { color: rgba(255,255,255,0.7); font-weight: 500; }
+.event-meta {
+  font-size: 11px; color: var(--sidebar-text);
+  margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.live-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+  color: var(--live-green); text-transform: uppercase;
+  margin-top: 3px;
+}
+
+/* Past events toggle */
+.past-toggle {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; cursor: pointer;
+  color: var(--sidebar-text); font-size: 11px;
+  border-radius: 8px; transition: background 0.12s;
+  user-select: none;
+}
+.past-toggle:hover { background: var(--sidebar-hover); color: rgba(255,255,255,0.7); }
+.toggle-arrow { font-size: 9px; transition: transform 0.2s; }
+
+.past-list { overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+.past-list.open { max-height: 300px; }
+
+.past-item {
+  padding: 8px 10px 8px 28px;
+  border-radius: 8px; cursor: pointer;
+  transition: background 0.1s; margin-bottom: 1px;
+}
+.past-item:hover { background: var(--sidebar-hover); }
+.past-name { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500; }
+.past-meta { font-size: 10.5px; color: var(--sidebar-text); margin-top: 1px; }
+.past-winner { color: var(--gold); }
+
+/* Sidebar footer nav */
+.sidebar-spacer { flex: 1; }
+.sidebar-footer-nav {
+  padding: 8px 10px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+.footer-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px;
+  color: var(--sidebar-text); font-size: 12.5px;
+  cursor: pointer; transition: background 0.12s; margin-bottom: 2px;
+}
+.footer-nav-item:hover { background: var(--sidebar-hover); color: rgba(255,255,255,0.8); }
+.footer-nav-item .icon { font-size: 14px; width: 18px; text-align: center; }
+
+.sidebar-user {
+  padding: 10px 16px 14px;
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+.user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.user-email { font-size: 11px; color: var(--sidebar-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-role { font-size: 10px; color: var(--accent); font-weight: 600; }
+
+/* ── Content ──────────────────────────────────────────────────────────── */
+#content {
+  flex: 1; overflow-y: auto; min-width: 0;
+  display: flex; flex-direction: column;
+}
+
+/* ── Hero — Compact dark header ──────────────────────────────────────── */
+#hero-b {
+  background: linear-gradient(135deg, #1e1b2e 0%, #2a2550 50%, #1e2d40 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 14px 24px;
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  flex-shrink: 0;
+  position: relative; overflow: hidden;
+}
+#hero-b::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 80% 50%, rgba(127,119,221,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-b-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 100px; padding: 3px 10px; font-size: 10.5px; font-weight: 700;
+  color: var(--live-green); letter-spacing: 0.05em; text-transform: uppercase;
+  flex-shrink: 0; position: relative;
+}
+.hero-b-title { font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0; position: relative; }
+.hero-b-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.12); flex-shrink: 0; position: relative; }
+.hero-b-meta { font-size: 12px; color: rgba(255,255,255,0.45); position: relative; }
+.hero-b-meta span { font-weight: 600; color: rgba(255,255,255,0.85); }
+.hero-b-countdown { font-size: 13px; font-weight: 700; color: var(--live-green); margin-left: auto; font-variant-numeric: tabular-nums; position: relative; }
+
+.live-dot-sm {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--live-green);
+  animation: pulse-dot 2s infinite;
+}
+
+/* ── Main content area ────────────────────────────────────────────────── */
+.content-body { padding: 20px 24px; flex: 1; }
+
+/* ── Leaderboard card ─────────────────────────────────────────────────── */
+.lb-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--rc);
+  overflow: hidden;
+}
+.lb-header {
+  padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.lb-title { font-size: 13px; font-weight: 700; }
+.lb-tabs { display: flex; gap: 3px; background: var(--page-bg); border-radius: 8px; padding: 3px; }
+.lb-tab {
+  padding: 4px 12px; border: none; border-radius: 6px;
+  background: transparent; font-size: 12px; font-weight: 500;
+  color: var(--muted); cursor: pointer; font-family: inherit; transition: all 0.1s;
+}
+.lb-tab.active { background: var(--card-bg); color: var(--body); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+.lb-simulate {
+  padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border);
+  background: transparent; font-size: 11px; color: var(--muted);
+  cursor: pointer; font-family: inherit; transition: all 0.12s;
+}
+.lb-simulate:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Leaderboard rows */
+.lb-body { padding: 8px 0; }
+
+.lb-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 18px;
+  transition: background 0.3s, transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  position: relative; border-radius: 6px; margin: 0 6px;
+}
+.lb-row:hover { background: rgba(0,0,0,0.025); }
+.lb-row.rank-1 {
+  background: var(--gold-bg);
+  border: 1px solid var(--gold-border);
+  margin: 4px 6px;
+}
+.lb-row.flash-up {
+  animation: flash-up 1.2s ease forwards;
+}
+.lb-row.flash-down {
+  animation: flash-down 0.8s ease forwards;
+}
+
+@keyframes flash-up {
+  0%   { background: rgba(34,197,94,0.25); }
+  60%  { background: rgba(34,197,94,0.12); }
+  100% { background: transparent; }
+}
+@keyframes flash-down {
+  0%   { background: rgba(239,68,68,0.15); }
+  100% { background: transparent; }
+}
+
+.lb-rank {
+  width: 28px; text-align: center; font-size: 13px; font-weight: 700;
+  color: var(--muted); flex-shrink: 0;
+}
+.lb-row.rank-1 .lb-rank { color: var(--gold); font-size: 16px; }
+.lb-row.rank-2 .lb-rank { color: #94a3b8; }
+.lb-row.rank-3 .lb-rank { color: #b45309; }
+
+.lb-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.lb-row.rank-1 .lb-avatar { background: var(--gold); }
+
+.lb-info { flex: 1; min-width: 0; }
+.lb-username { font-size: 13px; font-weight: 600; color: var(--body); }
+.lb-row.rank-1 .lb-username { color: #92400e; }
+.lb-attempts { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+.lb-score {
+  font-size: 15px; font-weight: 800;
+  color: var(--body); letter-spacing: -0.02em; flex-shrink: 0;
+}
+.lb-row.rank-1 .lb-score { color: var(--gold); }
+
+.lb-change {
+  width: 32px; text-align: right; font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+.lb-change.up   { color: var(--live-green); }
+.lb-change.down { color: #ef4444; }
+.lb-change.same { color: var(--muted); opacity: 0.5; }
+
+.lb-footer {
+  padding: 10px 18px;
+  font-size: 11px; color: var(--muted);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.lb-live-indicator {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--live-green); font-weight: 600;
+}
+
+/* ── Right sidebar cards ─────────────────────────────────────────────── */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+}
+@media(max-width:900px){ .content-grid { grid-template-columns: 1fr; } }
+
+.right-stack { display: flex; flex-direction: column; gap: 14px; }
+
+.mini-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--rc);
+  padding: 16px;
+}
+.mini-card-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--accent); margin-bottom: 12px;
+}
+.glance-row { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; font-size: 13px; }
+.glance-lbl { color: var(--muted); }
+.glance-val { font-weight: 600; }
+.glance-val.gold { color: var(--gold); }
+
+.stat-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+.stat-box {
+  background: var(--page-bg); border-radius: 8px;
+  padding: 12px; text-align: center;
+}
+.stat-box-val { font-size: 22px; font-weight: 800; line-height: 1; }
+.stat-box-lbl { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+/* ── Flags mini card ─────────────────────────────────────────────────── */
+.flag-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.flag-row:last-child { border-bottom: none; }
+.flag-name { flex: 1; font-weight: 500; }
+.flag-reason { color: var(--muted); font-size: 11px; }
+.flag-action { font-size: 11px; color: var(--accent); cursor: pointer; font-weight: 600; }
+
+/* ── Scrollbar ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
+
+</style>
+</head>
+<body>
+
+<div id="shell">
+
+  <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+  <aside id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">🎮</div>
+      <div>
+        <div class="brand-name">MiniGameshow</div>
+        <div class="brand-sub">Admin</div>
+      </div>
+    </div>
+
+    <!-- LIVE -->
+    <div class="rail-section">
+      <div class="rail-label">Live Now</div>
+      <div class="event-item active" onclick="selectEvent(this)">
+        <div class="event-dot live"></div>
+        <div class="event-info">
+          <div class="event-name">Pengu Fisher — Wk 12</div>
+          <div class="live-badge">● Live</div>
+          <div class="event-meta">Ends Sat midnight · $500</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPCOMING -->
+    <div class="rail-section">
+      <div class="rail-label">Upcoming</div>
+      <div class="event-item" onclick="selectEvent(this)">
+        <div class="event-dot upcoming"></div>
+        <div class="event-info">
+          <div class="event-name">Pengu Fisher — Wk 13</div>
+          <div class="event-meta">Starts Apr 14</div>
+        </div>
+      </div>
+      <div class="event-item" onclick="selectEvent(this)">
+        <div class="event-dot upcoming"></div>
+        <div class="event-info">
+          <div class="event-name">Fish Stack — Wk 14</div>
+          <div class="event-meta">Starts Apr 21</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAST -->
+    <div class="rail-section">
+      <div class="rail-label">Past Events</div>
+      <div class="past-toggle" onclick="togglePast(this)">
+        <span class="toggle-arrow" id="past-arrow">▶</span>
+        Show past events
+      </div>
+      <div class="past-list" id="past-list">
+        <div class="past-item" onclick="selectEvent(this)">
+          <div class="past-name">Pengu Fisher — Wk 11</div>
+          <div class="past-meta">Ended Apr 5 · <span class="past-winner">@iceberg_jeff</span> · $500</div>
+        </div>
+        <div class="past-item" onclick="selectEvent(this)">
+          <div class="past-name">Pengu Fisher — Wk 10</div>
+          <div class="past-meta">Ended Mar 29 · <span class="past-winner">@arctic_pro</span> · $500</div>
+        </div>
+        <div class="past-item" onclick="selectEvent(this)">
+          <div class="past-name">Pengu Fisher — Wk 9</div>
+          <div class="past-meta">Ended Mar 22 · <span class="past-winner">@polar_queen</span> · $500</div>
+        </div>
+        <div class="past-item" onclick="selectEvent(this)">
+          <div class="past-name">Pengu Fisher — Wk 8</div>
+          <div class="past-meta">Ended Mar 15 · <span class="past-winner">@fishmaster99</span> · $500</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-spacer"></div>
+
+    <!-- Footer nav -->
+    <div class="sidebar-footer-nav">
+      <div class="footer-nav-item">
+        <span class="icon">👤</span>
+        <span class="footer-nav-label">User Admin</span>
+      </div>
+      <div class="footer-nav-item">
+        <span class="icon">＋</span>
+        <span class="footer-nav-label">New Event</span>
+      </div>
+      <div class="footer-nav-item">
+        <span class="icon">⚙️</span>
+        <span class="footer-nav-label">Settings</span>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">J</div>
+      <div style="min-width:0">
+        <div class="user-role">Admin</div>
+        <div class="user-email">eljefeoc@gmail.com</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Content ──────────────────────────────────────────────────────── -->
+  <div id="content">
+
+    <!-- Hero: Compact dark header -->
+    <div id="hero-b">
+      <div class="hero-b-chip"><div class="live-dot-sm"></div> Live</div>
+      <div class="hero-b-title">Pengu Fisher — Week 12</div>
+      <div class="hero-b-divider"></div>
+      <div class="hero-b-meta">Prize: <span>$500</span> · Players: <span>48</span> · Runs today: <span>134</span></div>
+      <div class="hero-b-countdown" id="countdown-b">3d 14h 22m left</div>
+    </div>
+
+    <!-- Content body -->
+    <div class="content-body">
+      <div class="content-grid">
+
+        <!-- Leaderboard -->
+        <div>
+          <div class="lb-card">
+            <div class="lb-header">
+              <div class="lb-title">Leaderboard</div>
+              <div style="display:flex;gap:10px;align-items:center">
+                <div class="lb-tabs">
+                  <button class="lb-tab active">Competition</button>
+                  <button class="lb-tab">Arcade</button>
+                </div>
+                <button class="lb-simulate" onclick="simulateScore()">▶ Simulate score</button>
+              </div>
+            </div>
+
+            <div class="lb-body" id="leaderboard">
+              <!-- rows injected by JS -->
+            </div>
+
+            <div class="lb-footer">
+              <div class="lb-live-indicator">
+                <div class="live-dot-sm"></div>
+                Updating live
+              </div>
+              <div>48 players · Seed 20260408</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right stack -->
+        <div class="right-stack">
+
+          <div class="mini-card">
+            <div class="mini-card-title">Week at a glance</div>
+            <div class="stat-pair">
+              <div class="stat-box">
+                <div class="stat-box-val">48</div>
+                <div class="stat-box-lbl">Players</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-box-val">134</div>
+                <div class="stat-box-lbl">Runs today</div>
+              </div>
+            </div>
+            <div style="margin-top:10px">
+              <div class="glance-row"><span class="glance-lbl">Current leader</span><span class="glance-val gold">@penguin_ace</span></div>
+              <div class="glance-row"><span class="glance-lbl">Top score</span><span class="glance-val">4,820</span></div>
+              <div class="glance-row"><span class="glance-lbl">Avg score</span><span class="glance-val">2,140</span></div>
+              <div class="glance-row"><span class="glance-lbl">Days remaining</span><span class="glance-val">3</span></div>
+            </div>
+          </div>
+
+          <div class="mini-card">
+            <div class="mini-card-title">Flagged Runs <span style="background:#fee2e2;color:#991b1b;border-radius:100px;padding:1px 7px;font-size:10px;margin-left:4px">3</span></div>
+            <div class="flag-row">
+              <div>
+                <div class="flag-name">@speedy_pete</div>
+                <div class="flag-reason">Score velocity outlier</div>
+              </div>
+              <div class="flag-action">Review</div>
+            </div>
+            <div class="flag-row">
+              <div>
+                <div class="flag-name">@arctic_hax</div>
+                <div class="flag-reason">Input count mismatch</div>
+              </div>
+              <div class="flag-action">Review</div>
+            </div>
+            <div class="flag-row">
+              <div>
+                <div class="flag-name">@ghost_fish</div>
+                <div class="flag-reason">Duration too short</div>
+              </div>
+              <div class="flag-action">Review</div>
+            </div>
+          </div>
+
+          <div class="mini-card">
+            <div class="mini-card-title">Activity feed</div>
+            <div id="activity-feed" style="display:flex;flex-direction:column;gap:6px">
+              <!-- injected by JS -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Fake leaderboard data ──────────────────────────────────────────────
+let players = [
+  { name: '@penguin_ace',   score: 4820, attempts: 5, change: 0  },
+  { name: '@iceberg_jeff',  score: 4340, attempts: 4, change: +1 },
+  { name: '@polar_queen',   score: 4105, attempts: 5, change: -1 },
+  { name: '@fish_wizard',   score: 3870, attempts: 3, change: +2 },
+  { name: '@arctic_pro',    score: 3640, attempts: 5, change: -1 },
+  { name: '@cold_current',  score: 3410, attempts: 4, change: 0  },
+  { name: '@tundra_tap',    score: 3180, attempts: 5, change: +3 },
+  { name: '@blizzard_boy',  score: 2940, attempts: 2, change: -2 },
+  { name: '@frost_runner',  score: 2710, attempts: 4, change: 0  },
+  { name: '@seal_slapper',  score: 2480, attempts: 3, change: +1 },
+];
+
+const medals = ['🥇','🥈','🥉'];
+const avatarColors = ['#7F77DD','#22c55e','#f59e0b','#ec4899','#06b6d4','#8b5cf6','#f97316','#14b8a6','#6366f1','#84cc16'];
+
+function initials(name) {
+  return name.replace('@','').slice(0,2).toUpperCase();
+}
+
+function renderLeaderboard(flashIdx = null, flashDir = null) {
+  const lb = document.getElementById('leaderboard');
+  lb.innerHTML = players.map((p, i) => {
+    const rank = i + 1;
+    const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
+    const rankDisplay = rank <= 3 ? medals[rank-1] : rank;
+    const changeHtml = p.change > 0
+      ? `<span class="lb-change up">▲${p.change}</span>`
+      : p.change < 0
+      ? `<span class="lb-change down">▼${Math.abs(p.change)}</span>`
+      : `<span class="lb-change same">—</span>`;
+    const flashClass = (flashIdx === i) ? (flashDir === 'up' ? 'flash-up' : 'flash-down') : '';
+    return `
+      <div class="lb-row ${rankClass} ${flashClass}" id="row-${i}">
+        <div class="lb-rank">${rankDisplay}</div>
+        <div class="lb-avatar" style="background:${avatarColors[i % avatarColors.length]}">${initials(p.name)}</div>
+        <div class="lb-info">
+          <div class="lb-username">${p.name}</div>
+          <div class="lb-attempts">${p.attempts} attempt${p.attempts !== 1 ? 's' : ''} today</div>
+        </div>
+        <div class="lb-score">${p.score.toLocaleString()}</div>
+        ${changeHtml}
+      </div>`;
+  }).join('');
+}
+
+// ── Simulate a score update ────────────────────────────────────────────
+let simCount = 0;
+const simScenarios = [
+  { idx: 6, newScore: 4220, moveTo: 2 },
+  { idx: 9, newScore: 3950, moveTo: 3 },
+  { idx: 7, newScore: 4510, moveTo: 2 },
+];
+
+function simulateScore() {
+  const scenario = simScenarios[simCount % simScenarios.length];
+  simCount++;
+  players[scenario.idx].score = scenario.newScore;
+  players[scenario.idx].change = scenario.moveTo - scenario.idx;
+  addActivity(`🔥 ${players[scenario.idx].name} scored ${scenario.newScore.toLocaleString()}!`);
+  const mover = players.splice(scenario.idx, 1)[0];
+  players.splice(scenario.moveTo, 0, mover);
+  renderLeaderboard(scenario.moveTo, 'up');
+  setTimeout(() => {
+    players.forEach(p => p.change = 0);
+    renderLeaderboard();
+  }, 3000);
+}
+
+// ── Activity feed ─────────────────────────────────────────────────────
+const seedActivities = [
+  '🎯 @iceberg_jeff scored 4,340 (new PB)',
+  '🐧 @polar_queen completed run #5 today',
+  '⚡ @fish_wizard jumped to #4',
+  '🎮 @cold_current just started a run',
+];
+
+function addActivity(msg) {
+  const feed = document.getElementById('activity-feed');
+  const item = document.createElement('div');
+  item.style.cssText = 'font-size:12px;color:#374151;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.06);animation:flash-up 0.8s ease';
+  item.textContent = msg;
+  feed.insertBefore(item, feed.firstChild);
+  if (feed.children.length > 5) feed.removeChild(feed.lastChild);
+}
+
+function initFeed() {
+  seedActivities.forEach(a => addActivity(a));
+}
+
+// ── Countdown ─────────────────────────────────────────────────────────
+function updateCountdown() {
+  const now = new Date();
+  const sat = new Date(now);
+  sat.setDate(now.getDate() + (6 - now.getDay() + 7) % 7 || 7);
+  sat.setHours(23, 59, 59, 0);
+  const diff = sat - now;
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  const b = document.getElementById('countdown-b');
+  if (b) b.textContent = `${d}d ${h}h ${m}m ${s}s left`;
+}
+
+// ── Event item selection ──────────────────────────────────────────────
+function selectEvent(el) {
+  document.querySelectorAll('.event-item').forEach(e => e.classList.remove('active'));
+  if (el.classList.contains('event-item')) el.classList.add('active');
+}
+
+// ── Past events toggle ────────────────────────────────────────────────
+function togglePast(el) {
+  const list = document.getElementById('past-list');
+  const arrow = document.getElementById('past-arrow');
+  list.classList.toggle('open');
+  arrow.textContent = list.classList.contains('open') ? '▼' : '▶';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+renderLeaderboard();
+initFeed();
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+setInterval(() => {
+  const msgs = [
+    '🐧 New run completed by @tundra_tap',
+    '🎯 @frost_runner improved their score',
+    '⚡ @seal_slapper is on run #4 today',
+    '🎮 @cold_current just started a run',
+    '🔔 @blizzard_boy scored a new PB',
+  ];
+  addActivity(msgs[Math.floor(Math.random() * msgs.length)]);
+}, 12000);
+</script>
+</body>
+</html>
