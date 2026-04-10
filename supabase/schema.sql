@@ -56,6 +56,8 @@ CREATE TABLE public.events (
   prize_title text,
   prize_description text,
   sponsor_name text,
+  canceled_at timestamptz,
+  admin_tag text,
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT events_time_order CHECK (ends_at > starts_at)
 );
@@ -267,6 +269,13 @@ DECLARE
   v_next smallint;
   v_banned boolean;
 BEGIN
+  IF EXISTS (
+    SELECT 1 FROM public.events e
+    WHERE e.id = NEW.event_id AND e.canceled_at IS NOT NULL
+  ) THEN
+    RAISE EXCEPTION 'competition event was canceled';
+  END IF;
+
   -- Direct client inserts: JWT must match. Service role (Edge) bypasses RLS; trust server-side validation.
   IF auth.uid() IS NOT NULL AND NEW.user_id IS DISTINCT FROM auth.uid() THEN
     RAISE EXCEPTION 'user_id must match authenticated user';
@@ -422,6 +431,16 @@ CREATE POLICY "events_update_admin"
     )
   );
 
+CREATE POLICY "events_delete_admin"
+  ON public.events FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_admin = true
+    )
+  );
+
 -- Runs: insert own; read own (leaderboard uses leaderboard table)
 CREATE POLICY "runs_insert_own"
   ON public.runs FOR INSERT
@@ -448,6 +467,16 @@ CREATE POLICY "runs_delete_own"
   TO authenticated
   USING (user_id = auth.uid());
 
+CREATE POLICY "runs_delete_admin"
+  ON public.runs FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_admin = true
+    )
+  );
+
 -- Leaderboard: public read
 CREATE POLICY "leaderboard_select_all"
   ON public.leaderboard FOR SELECT
@@ -457,6 +486,16 @@ CREATE POLICY "leaderboard_delete_own"
   ON public.leaderboard FOR DELETE
   TO authenticated
   USING (user_id = auth.uid());
+
+CREATE POLICY "leaderboard_delete_admin"
+  ON public.leaderboard FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_admin = true
+    )
+  );
 
 -- Daily attempts: own rows only
 CREATE POLICY "daily_attempts_select_own"
