@@ -1,0 +1,2583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiniGameshow — Admin</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --accent:       #7F77DD;
+  --accent-dark:  #534AB7;
+  --page-bg:      #f5f5f3;
+  --sidebar-bg:   #1a1826;
+  --card-bg:      #ffffff;
+  --body:         #1a1a1a;
+  --muted:        #6b7280;
+  --border:       rgba(0,0,0,0.12);
+  --r:            8px;
+  --rc:           12px;
+  --danger:       #A32D2D;
+  --danger-b:     #F09595;
+  --warn-bg:      #FAEEDA;
+  --warn-b:       #FAC775;
+  --warn-t:       #633806;
+  --ok-bg:        #EAF3DE;
+  --ok-t:         #3B6D11;
+  --info-bg:      #E6F1FB;
+  --info-t:       #185FA5;
+  --comp-bg:      #EEEDFE;
+  --comp-t:       #3C3489;
+  --red:          #ef4444;
+  --green:        #22c55e;
+  --sidebar-hover:  #252236;
+  --sidebar-active: #2e2a45;
+  --sidebar-text:   rgba(255,255,255,0.55);
+  --sidebar-head:   rgba(255,255,255,0.25);
+  --gold:           #F5A623;
+  --gold-bg:        rgba(245,166,35,0.10);
+  --gold-border:    rgba(245,166,35,0.30);
+  --live-green:     #22c55e;
+}
+
+html, body {
+  background: var(--page-bg);
+  color: var(--body);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  min-height: 100%;
+}
+
+/* ── Auth gate ─────────────────────────────────────────────────────── */
+#auth-gate {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh; gap: 24px; text-align: center; padding: 24px;
+}
+#auth-gate h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+#auth-gate p  { color: var(--muted); line-height: 1.7; max-width: 380px; }
+.auth-form {
+  display: flex; flex-direction: column; gap: 10px;
+  width: 100%; max-width: 320px;
+}
+.auth-form input {
+  padding: 10px 14px; background: #fff;
+  border: 1px solid var(--border); border-radius: var(--r);
+  color: var(--body); font-size: 14px; font-family: inherit;
+}
+.auth-form input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(127,119,221,.15); }
+
+/* ── Shell ─────────────────────────────────────────────────────────── */
+#admin-shell { display: none; min-height: 100vh; }
+#admin-shell.visible { display: flex; }
+
+/* ── Sidebar ───────────────────────────────────────────────────────── */
+#sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar-brand {
+  padding: 18px 16px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.brand-icon {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.brand-name {
+  font-size: 13px; font-weight: 700; color: #fff;
+  letter-spacing: 0.01em; line-height: 1.2;
+}
+.brand-sub {
+  font-size: 10px; color: var(--sidebar-text); letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.rail-section {
+  padding: 14px 10px 4px;
+}
+.rail-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--sidebar-head);
+  padding: 0 6px; margin-bottom: 6px;
+}
+
+.event-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.12s;
+  margin-bottom: 2px;
+  border: 1px solid transparent;
+}
+.event-item:hover { background: var(--sidebar-hover); }
+.event-item.active {
+  background: var(--sidebar-active);
+  border-color: rgba(127,119,221,0.3);
+}
+
+.event-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 4px;
+}
+.event-dot.live {
+  background: var(--live-green);
+  box-shadow: 0 0 0 0 rgba(34,197,94,0.5);
+  animation: pulse-dot 2s infinite;
+}
+.event-dot.upcoming { background: rgba(255,255,255,0.25); }
+.event-dot.past     { background: rgba(255,255,255,0.12); }
+
+@keyframes pulse-dot {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+  70%  { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+.event-info { min-width: 0; flex: 1; }
+.event-name {
+  font-size: 12.5px; font-weight: 600; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.event-item:not(.active) .event-name { color: rgba(255,255,255,0.7); font-weight: 500; }
+.event-meta {
+  font-size: 11px; color: var(--sidebar-text);
+  margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.live-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+  color: var(--live-green); text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.past-toggle {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; cursor: pointer;
+  color: var(--sidebar-text); font-size: 11px;
+  border-radius: 8px; transition: background 0.12s;
+  user-select: none;
+}
+.past-toggle:hover { background: var(--sidebar-hover); color: rgba(255,255,255,0.7); }
+.toggle-arrow { font-size: 9px; transition: transform 0.2s; }
+
+.past-list { overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+.past-list.open { max-height: 300px; }
+
+.past-item {
+  padding: 8px 10px 8px 28px;
+  border-radius: 8px; cursor: pointer;
+  transition: background 0.1s; margin-bottom: 1px;
+}
+.past-item:hover { background: var(--sidebar-hover); }
+.past-item.active { background: var(--sidebar-active); }
+.past-name { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500; }
+.past-meta { font-size: 10.5px; color: var(--sidebar-text); margin-top: 1px; }
+.past-winner { color: var(--gold); }
+
+.sidebar-spacer { flex: 1; }
+.sidebar-footer-nav {
+  padding: 8px 10px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+.footer-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px;
+  color: var(--sidebar-text); font-size: 12.5px;
+  cursor: pointer; transition: background 0.12s; margin-bottom: 2px;
+}
+.footer-nav-item:hover { background: var(--sidebar-hover); color: rgba(255,255,255,0.8); }
+.footer-nav-item .icon { font-size: 14px; width: 18px; text-align: center; }
+
+.sidebar-user {
+  padding: 10px 16px 14px;
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  flex-wrap: wrap;
+}
+.user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.user-email { font-size: 11px; color: var(--sidebar-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-role { font-size: 10px; color: var(--accent); font-weight: 600; }
+
+.live-dot-sm {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--live-green);
+  animation: pulse-dot 2s infinite;
+}
+
+.nav-item {
+  display: block; width: 100%; text-align: left;
+  padding: 9px 12px; border: none; border-radius: var(--r);
+  background: transparent; color: var(--muted); font-size: 13px;
+  cursor: pointer; transition: background .12s, color .12s; font-family: inherit;
+}
+.nav-item:hover  { background: rgba(255,255,255,0.06); color: #fff; }
+.nav-item.active { background: var(--sidebar-active); color: #fff; font-weight: 600; }
+
+/* ── Content ───────────────────────────────────────────────────────── */
+#content { flex: 1; padding: 24px; overflow-y: auto; min-width: 0; }
+.admin-section { display: none; }
+.admin-section.active { display: block; }
+
+/* ── Leaderboard card (mockup) ─────────────────────────────────────── */
+.lb-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--rc);
+  overflow: hidden;
+}
+.lb-header {
+  padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  gap: 12px; flex-wrap: wrap;
+}
+.lb-title { font-size: 13px; font-weight: 700; }
+#lb-tabs {
+  display: flex; gap: 3px; background: var(--page-bg); border-radius: 8px; padding: 3px;
+}
+#lb-tabs .tab-btn {
+  padding: 4px 12px; border: none; border-radius: 6px;
+  background: transparent; font-size: 12px; font-weight: 500;
+  color: var(--muted); cursor: pointer; font-family: inherit; transition: all 0.1s;
+}
+#lb-tabs .tab-btn.active { background: var(--card-bg); color: var(--body); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+.lb-body { padding: 8px 0; }
+
+.lb-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 18px;
+  transition: background 0.3s, transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  position: relative; border-radius: 6px; margin: 0 6px;
+  flex-wrap: wrap;
+}
+.lb-row:hover { background: rgba(0,0,0,0.025); }
+.lb-row.rank-1 {
+  background: var(--gold-bg);
+  border: 1px solid var(--gold-border);
+  margin: 4px 6px;
+}
+.lb-row.flash-up {
+  animation: flash-up 1.2s ease forwards;
+}
+.lb-row.flash-down {
+  animation: flash-down 0.8s ease forwards;
+}
+
+@keyframes flash-up {
+  0%   { background: rgba(34,197,94,0.25); }
+  60%  { background: rgba(34,197,94,0.12); }
+  100% { background: transparent; }
+}
+@keyframes flash-down {
+  0%   { background: rgba(239,68,68,0.15); }
+  100% { background: transparent; }
+}
+
+.lb-rank {
+  width: 28px; text-align: center; font-size: 13px; font-weight: 700;
+  color: var(--muted); flex-shrink: 0;
+}
+.lb-row.rank-1 .lb-rank { color: var(--gold); font-size: 16px; }
+.lb-row.rank-2 .lb-rank { color: #94a3b8; }
+.lb-row.rank-3 .lb-rank { color: #b45309; }
+
+.lb-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.lb-row.rank-1 .lb-avatar { background: var(--gold); }
+
+.lb-info { flex: 1; min-width: 0; }
+.lb-username { font-size: 13px; font-weight: 600; color: var(--body); }
+.lb-row.rank-1 .lb-username { color: #92400e; }
+.lb-attempts { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+.lb-score {
+  font-size: 15px; font-weight: 800;
+  color: var(--body); letter-spacing: -0.02em; flex-shrink: 0;
+}
+.lb-row.rank-1 .lb-score { color: var(--gold); }
+
+.lb-change {
+  width: 32px; text-align: right; font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+.lb-change.up   { color: var(--live-green); }
+.lb-change.down { color: #ef4444; }
+.lb-change.same { color: var(--muted); opacity: 0.5; }
+
+.lb-footer.lb-mock-footer {
+  padding: 10px 18px;
+  font-size: 11px; color: var(--muted);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.lb-live-indicator {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--live-green); font-weight: 600;
+}
+
+.lb-row .lb-lastrun { font-size: 12px; color: var(--muted); flex-shrink: 0; min-width: 4.5em; text-align: right; }
+.lb-row .lb-actions { flex-shrink: 0; }
+
+/* ── Not-admin note ─────────────────────────────────────────────────── */
+#not-admin-note {
+  display: none;
+  background: var(--warn-bg); border: 1px solid var(--warn-b);
+  border-radius: var(--r); padding: 12px 16px;
+  font-size: 13px; color: var(--warn-t); margin-bottom: 20px;
+}
+
+/* ── Page titles ────────────────────────────────────────────────────── */
+.page-title { font-size: 18px; font-weight: 700; color: var(--body); margin-bottom: 20px; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+
+/* ── Stats row ──────────────────────────────────────────────────────── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 14px; margin-bottom: 20px;
+}
+@media(max-width:900px){ .stats-row { grid-template-columns: repeat(2,1fr); } }
+.stat-tile {
+  background: var(--card-bg); border: 0.5px solid var(--border);
+  border-radius: var(--rc); padding: 18px 20px;
+}
+.stat-value { font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.stat-value.red { color: var(--danger); }
+.stat-label { font-size: 12px; color: var(--muted); }
+.stat-sub   { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+/* ── Two-column ────────────────────────────────────────────────────── */
+.two-col {
+  display: grid; grid-template-columns: 1fr 340px;
+  gap: 16px; margin-bottom: 20px;
+}
+@media(max-width:1000px){ .two-col { grid-template-columns: 1fr; } }
+.right-col { display: flex; flex-direction: column; gap: 14px; }
+
+/* ── Cards ─────────────────────────────────────────────────────────── */
+.card {
+  background: var(--card-bg); border: 0.5px solid var(--border);
+  border-radius: var(--rc); padding: 20px;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; gap: 12px; flex-wrap: wrap;
+}
+.card-title { font-size: 14px; font-weight: 600; }
+
+/* ── Section labels ─────────────────────────────────────────────────── */
+.sec-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--accent); margin-bottom: 8px;
+}
+.sec-rule { border: none; border-top: 0.5px solid var(--border); margin-bottom: 16px; }
+
+/* ── Buttons ────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: var(--r); border: none;
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: filter .12s, opacity .12s; font-family: inherit;
+}
+.btn:active  { opacity: .85; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary  { background: var(--accent); color: #fff; }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-secondary { background: transparent; color: var(--body); border: 0.5px solid var(--border); }
+.btn-secondary:hover { background: var(--page-bg); }
+.btn-dng { background: transparent; color: var(--danger); border: 1px solid var(--danger-b); }
+.btn-dng:hover { background: #fff0f0; }
+.btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+.btn-xs { padding: 3px 8px;  font-size: 11px; border-radius: 5px; }
+
+/* ── Tabs ───────────────────────────────────────────────────────────── */
+.tabs { display: flex; gap: 4px; background: var(--page-bg); border-radius: var(--r); padding: 3px; }
+.tab-btn {
+  padding: 5px 12px; border: none; border-radius: 6px;
+  background: transparent; font-size: 12px; font-weight: 500;
+  color: var(--muted); cursor: pointer; transition: background .1s, color .1s; font-family: inherit;
+}
+.tab-btn.active { background: var(--card-bg); color: var(--body); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+/* ── Tables ─────────────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; padding: 8px 12px;
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  letter-spacing: .03em; border-bottom: 0.5px solid var(--border); white-space: nowrap;
+}
+td {
+  padding: 10px 12px; border-bottom: 0.5px solid rgba(0,0,0,.05);
+  vertical-align: middle;
+}
+tr:last-child td  { border-bottom: none; }
+tr:hover td       { background: rgba(0,0,0,.02); }
+.row-gold td      { background: rgba(250,199,75,.08) !important; }
+.table-wrap       { overflow-x: auto; }
+.table-footer     { font-size: 12px; color: var(--muted); padding: 10px 12px 0; }
+
+/* ── Attempt dots ───────────────────────────────────────────────────── */
+.dots { display: flex; gap: 3px; align-items: center; }
+.dot  { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--accent); }
+.dot.on { background: var(--accent); }
+
+/* ── Badges ─────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 100px;
+  font-size: 11px; font-weight: 600; letter-spacing: .02em;
+}
+.badge-active   { background: var(--ok-bg);   color: var(--ok-t); }
+.badge-upcoming { background: #FEF3C7;         color: #92400E; }
+.badge-past     { background: #F3F4F6;         color: #6B7280; }
+.badge-18       { background: var(--ok-bg);   color: var(--ok-t); }
+.badge-prac     { background: var(--info-bg); color: var(--info-t); }
+.badge-banned   { background: #FEE2E2;         color: #991B1B; }
+.count-dot {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--danger); color: #fff; border-radius: 100px;
+  min-width: 18px; height: 18px; font-size: 10px; font-weight: 700;
+  padding: 0 5px; margin-left: 6px;
+}
+
+/* ── Notices ────────────────────────────────────────────────────────── */
+.notice { padding: 10px 14px; border-radius: var(--r); font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+.notice-warn { background: var(--warn-bg); border: 1px solid var(--warn-b); color: var(--warn-t); }
+.notice-dng  { background: #FEF2F2;       border: 1px solid var(--danger-b); color: var(--danger); }
+.notice-info { background: var(--info-bg); border: 1px solid #B3D0F0;        color: var(--info-t); }
+
+/* ── Progress ───────────────────────────────────────────────────────── */
+.prog-wrap { margin: 10px 0 4px; }
+.prog-bg { height: 6px; background: var(--page-bg); border-radius: 100px; overflow: hidden; border: 0.5px solid var(--border); }
+.prog-fill { height: 100%; background: var(--accent); border-radius: 100px; transition: width .3s; }
+.prog-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── Glance rows ────────────────────────────────────────────────────── */
+.glance-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; padding: 4px 0; }
+.glance-lbl { color: var(--muted); }
+.glance-val { font-weight: 500; }
+.mono       { font-family: monospace; font-size: 12px; }
+
+/* ── Activity ───────────────────────────────────────────────────────── */
+.act-list { display: flex; flex-direction: column; gap: 10px; }
+.act-row  { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+.act-dot  { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+.act-dot.purple { background: var(--accent); }
+.act-dot.green  { background: var(--green); }
+.act-dot.red    { background: var(--red); }
+.act-txt  { flex: 1; line-height: 1.4; }
+.act-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* ── Flagged items ──────────────────────────────────────────────────── */
+.flag-item {
+  padding: 10px 0; border-bottom: 0.5px solid rgba(0,0,0,.06);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.flag-item:last-of-type { border-bottom: none; }
+.flag-reason { font-size: 12px; color: var(--danger); }
+
+/* ── Danger zone ────────────────────────────────────────────────────── */
+.danger-zone {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 14px 16px; background: var(--card-bg);
+  border: 0.5px solid var(--border); border-radius: var(--rc); margin-top: 4px;
+}
+.dng-label {
+  font-size: 11px; color: var(--danger); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; margin-right: 4px;
+}
+
+/* ── Form (section 2) ───────────────────────────────────────────────── */
+.form-sec { margin-bottom: 28px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
+@media(max-width:640px){ .form-grid { grid-template-columns: 1fr; } }
+.fg { display: flex; flex-direction: column; gap: 5px; }
+.fg.full { grid-column: 1 / -1; }
+label   { font-size: 12px; font-weight: 500; color: var(--muted); }
+.lhint  { font-size: 11px; color: var(--muted); font-weight: normal; margin-left: 4px; }
+
+input[type=text],
+input[type=url],
+input[type=number],
+input[type=datetime-local],
+select,
+textarea {
+  background: #fff; border: 1px solid rgba(0,0,0,.15);
+  border-radius: var(--r); color: var(--body);
+  font-size: 13px; padding: 9px 12px; width: 100%;
+  transition: border-color .15s, box-shadow .15s; font-family: inherit;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(127,119,221,.12);
+}
+textarea { resize: vertical; min-height: 64px; }
+.form-actions {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding-top: 8px; border-top: 0.5px solid var(--border); margin-top: 8px;
+}
+
+/* ── HUD preview ────────────────────────────────────────────────────── */
+#hud-preview {
+  background: #13101f; border-radius: var(--r);
+  padding: 10px 14px; font-family: monospace; font-size: 12px; line-height: 2; margin-top: 8px;
+}
+.prev-prize  { color: #ffe600; }
+.prev-sched  { color: #ffbb66; font-size: 11px; }
+
+/* ── User admin ─────────────────────────────────────────────────────── */
+.user-tabs { display: flex; border-bottom: 0.5px solid var(--border); margin-bottom: 16px; }
+.utab-btn {
+  padding: 8px 16px; border: none; border-bottom: 2px solid transparent;
+  background: transparent; font-size: 13px; font-weight: 500; color: var(--muted);
+  cursor: pointer; margin-bottom: -0.5px; font-family: inherit;
+  transition: color .12s, border-color .12s;
+}
+.utab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.search-inp {
+  width: 100%; padding: 9px 14px; border: 1px solid rgba(0,0,0,.15);
+  border-radius: var(--r); font-size: 13px; font-family: inherit;
+  color: var(--body); background: #fff; margin-bottom: 14px;
+}
+.search-inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(127,119,221,.12); }
+.user-cb { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+
+/* ── Event hub (past / active / upcoming) ───────────────────────────── */
+.event-hub-card { margin-bottom: 20px; }
+.etabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+.etab-btn {
+  padding: 6px 12px; border: none; border-radius: 6px;
+  background: var(--page-bg); font-size: 12px; font-weight: 500;
+  color: var(--muted); cursor: pointer; font-family: inherit;
+  transition: background .1s, color .1s;
+}
+.etab-btn:hover { color: var(--body); }
+.etab-btn.active { background: var(--card-bg); color: var(--accent-dark); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.ev-list { display: flex; flex-direction: column; gap: 8px; }
+.ev-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px; border: 0.5px solid var(--border); border-radius: var(--r);
+  background: var(--card-bg);
+}
+.ev-row-selected { border-color: var(--accent); background: var(--comp-bg); }
+.ev-row-main { flex: 1; min-width: 0; }
+.ev-row-title { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+.ev-row-meta { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.ev-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.event-winner-banner { margin-bottom: 16px; }
+.u-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Modal ──────────────────────────────────────────────────────────── */
+#modal-add-user {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.4); align-items: center; justify-content: center; padding: 20px;
+}
+#modal-add-user.open { display: flex; }
+.modal-inner {
+  background: var(--card-bg); border: 0.5px solid var(--border);
+  border-radius: var(--rc); padding: 24px; max-width: 400px; width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,.12);
+}
+.modal-inner h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+.modal-inner .fg { margin-bottom: 12px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+
+/* ── Toast ──────────────────────────────────────────────────────────── */
+#status-bar {
+  display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--card-bg); border: 0.5px solid var(--border);
+  border-radius: 10px; padding: 11px 20px; font-size: 13px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.12); z-index: 999; max-width: 420px; text-align: center;
+}
+#status-bar.ok  { border-color: #86EFAC; color: var(--ok-t);   background: var(--ok-bg); }
+#status-bar.err { border-color: var(--danger-b); color: var(--danger); background: #FEF2F2; }
+
+/* ── Empty state ────────────────────────────────────────────────────── */
+.empty { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 13px; }
+</style>
+<script src="supabase-config.js"></script>
+<script>window.__MINIGAMESHOW_SUPABASE__ = window.__MINIGAMESHOW_SUPABASE__ || { url:'', anonKey:'' };</script>
+</head>
+<body>
+
+<!-- ── Auth gate ──────────────────────────────────────────────────────── -->
+<div id="auth-gate">
+  <div>
+    <h2>Admin Panel</h2>
+    <p>Sign in with your admin account to manage competition events, prizes, and show schedule.</p>
+  </div>
+  <form class="auth-form" id="signin-form" onsubmit="return false" autocomplete="off">
+    <input id="g-email" type="email" autocomplete="email" placeholder="Email" required>
+    <input id="g-pass"  type="password" autocomplete="current-password" placeholder="Password" required>
+    <button type="submit" class="btn btn-primary" id="btn-signin" style="width:100%">Sign in</button>
+    <p id="signin-err" style="color:var(--danger);font-size:12px;text-align:center;display:none"></p>
+  </form>
+</div>
+
+<!-- ── Admin shell ────────────────────────────────────────────────────── -->
+<div id="admin-shell">
+
+  <!-- Sidebar -->
+  <nav id="sidebar">
+
+    <!-- Brand -->
+    <div class="sidebar-brand">
+      <div class="brand-icon">🎮</div>
+      <div>
+        <div class="brand-name">MiniGameshow</div>
+        <div class="brand-sub">Admin</div>
+      </div>
+    </div>
+
+    <!-- Live event rail — populated by renderSidebarRail() -->
+    <div class="rail-section">
+      <div class="rail-label">Live Now</div>
+      <div id="sidebar-rail-live">
+        <!-- JS populates this -->
+      </div>
+    </div>
+
+    <div class="rail-section">
+      <div class="rail-label">Upcoming</div>
+      <div id="sidebar-rail-upcoming">
+        <!-- JS populates this -->
+      </div>
+    </div>
+
+    <div class="rail-section">
+      <div class="rail-label">Past Events</div>
+      <div class="past-toggle" id="past-toggle-btn">
+        <span class="toggle-arrow" id="past-arrow">▶</span>
+        Show past events
+      </div>
+      <div class="past-list" id="past-list">
+        <div id="sidebar-rail-past">
+          <!-- JS populates this -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden nav buttons — keep for JS section switching compatibility -->
+    <div style="display:none">
+      <button class="nav-item active" data-section="live">Live competition</button>
+      <button class="nav-item" data-section="new">New competition</button>
+      <button class="nav-item" data-section="users">User admin</button>
+    </div>
+
+    <div class="sidebar-spacer"></div>
+
+    <!-- Footer nav -->
+    <div class="sidebar-footer-nav">
+      <div class="footer-nav-item" onclick="navigateTo('users')">
+        <span class="icon">👤</span>
+        User Admin
+      </div>
+      <div class="footer-nav-item" onclick="navigateTo('new')">
+        <span class="icon">＋</span>
+        New Event
+      </div>
+    </div>
+
+    <!-- User identity (preserved IDs) -->
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-avatar">?</div>
+      <div style="min-width:0">
+        <div class="user-role">Admin</div>
+        <div class="user-email" id="sidebar-email"></div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-admin-logout" style="width:100%;margin-top:8px">Log out</button>
+    </div>
+
+  </nav>
+
+  <!-- Content -->
+  <div id="content">
+    <div id="not-admin-note">
+      ⚠ <strong>Not an admin account.</strong>
+      Set <code style="background:var(--page-bg);padding:1px 5px;border-radius:4px;font-size:12px">is_admin = true</code>
+      on your profile in the Supabase Table Editor, then refresh this page.
+    </div>
+
+    <!-- ── Section 1: Live competition ── -->
+    <section id="section-live" class="admin-section active">
+      <div id="live-hero" style="
+        background: linear-gradient(135deg, #1e1b2e 0%, #2a2550 50%, #1e2d40 100%);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 14px 24px;
+        display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+        margin: -24px -24px 24px;
+        position: relative; overflow: hidden;
+      ">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(127,119,221,0.12) 0%,transparent 70%);pointer-events:none"></div>
+        <div id="live-hero-chip" style="
+          display:inline-flex;align-items:center;gap:5px;
+          background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);
+          border-radius:100px;padding:3px 10px;font-size:10.5px;font-weight:700;
+          color:#22c55e;letter-spacing:0.05em;text-transform:uppercase;
+          flex-shrink:0;position:relative;
+        ">
+          <div style="width:6px;height:6px;border-radius:50%;background:#22c55e;animation:pulse-dot 2s infinite"></div>
+          Live
+        </div>
+        <div id="live-hero-title" style="font-size:16px;font-weight:700;color:#fff;flex-shrink:0;position:relative;">
+          Live competition
+        </div>
+        <div style="width:1px;height:20px;background:rgba(255,255,255,0.12);flex-shrink:0;position:relative"></div>
+        <div id="live-hero-meta" style="font-size:12px;color:rgba(255,255,255,0.45);position:relative"></div>
+        <div id="live-hero-countdown" style="font-size:13px;font-weight:700;color:#22c55e;margin-left:auto;font-variant-numeric:tabular-nums;position:relative"></div>
+      </div>
+
+      <div class="card event-hub-card" id="event-hub-card">
+        <div class="card-header" style="margin-bottom:10px">
+          <span class="card-title">Competition events</span>
+          <span id="event-hub-sub" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+        <p id="event-hub-empty" class="empty" style="padding:12px;display:none">No events yet. Create one under New competition.</p>
+        <div id="event-hub-wrap" style="display:none">
+          <div class="etabs" id="event-etabs" role="tablist">
+            <button type="button" class="etab-btn active" data-etab="active" role="tab" aria-selected="true">Active <span id="etab-n-active" class="badge badge-active" style="margin-left:4px">0</span></button>
+            <button type="button" class="etab-btn" data-etab="upcoming" role="tab" aria-selected="false">Upcoming <span id="etab-n-upcoming" class="badge badge-upcoming" style="margin-left:4px">0</span></button>
+            <button type="button" class="etab-btn" data-etab="past" role="tab" aria-selected="false">Past <span id="etab-n-past" class="badge badge-past" style="margin-left:4px">0</span></button>
+          </div>
+          <div id="event-hub-panel" class="ev-list" role="tabpanel"></div>
+        </div>
+      </div>
+
+      <div id="event-winner-banner" class="notice notice-info event-winner-banner" style="display:none" aria-live="polite"></div>
+
+      <div class="stats-row">
+        <div class="stat-tile">
+          <div class="stat-value" id="sv-players">—</div>
+          <div class="stat-label">Players</div>
+          <div class="stat-sub"  id="ss-players"></div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="sv-runs">—</div>
+          <div class="stat-label">Total runs</div>
+          <div class="stat-sub"  id="ss-runs"></div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="sv-flagged">—</div>
+          <div class="stat-label">Flagged</div>
+          <div class="stat-sub"  id="ss-flagged">needs review</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="sv-time">—</div>
+          <div class="stat-label" id="sv-time-label">Scoring window</div>
+          <div class="stat-sub"  id="ss-time"></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- Leaderboard -->
+        <div class="lb-card" id="lb-card-wrap">
+          <div class="lb-header">
+            <span class="lb-title">Top 10 leaderboard</span>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <div class="tabs" id="lb-tabs">
+                <button type="button" class="tab-btn active" data-tab="competition">Competition</button>
+                <button type="button" class="tab-btn" data-tab="arcade">Arcade</button>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-csv">Export CSV</button>
+            </div>
+          </div>
+          <span id="lb-th-dots" style="display:none" aria-hidden="true"></span>
+          <div class="lb-body" id="lb-tbody"><div class="empty" style="padding:12px 18px">Loading…</div></div>
+          <div class="lb-footer lb-mock-footer" id="lb-footer">
+            <div class="lb-live-indicator" id="lb-live-indicator" style="display:none">
+              <div class="live-dot-sm"></div>
+              Updating live
+            </div>
+            <span id="lb-footer-text"></span>
+          </div>
+        </div>
+
+        <!-- Right stacked cards -->
+        <div class="right-col">
+
+          <!-- Week at a glance -->
+          <div class="card">
+            <div class="card-header" style="margin-bottom:12px">
+              <span class="card-title">Event at a glance</span>
+              <span id="glance-status"></span>
+            </div>
+            <div id="glance-body"><div class="empty" style="padding:12px">No active event</div></div>
+          </div>
+
+          <!-- Flagged runs -->
+          <div class="card">
+            <div class="card-header" style="margin-bottom:10px">
+              <span class="card-title">Flagged runs<span class="count-dot" id="flagged-badge" style="display:none"></span></span>
+            </div>
+            <div id="flagged-body"><div class="empty" style="padding:12px">Loading…</div></div>
+          </div>
+
+          <!-- Activity feed -->
+          <div class="card">
+            <div class="card-header" style="margin-bottom:10px">
+              <span class="card-title">Activity</span>
+              <span style="font-size:11px;color:var(--muted)">Live · 30s</span>
+            </div>
+            <div id="activity-body"><div class="empty" style="padding:12px">Loading…</div></div>
+          </div>
+
+        </div><!-- /right-col -->
+      </div><!-- /two-col -->
+
+      <!-- Danger zone -->
+      <div class="danger-zone">
+        <span class="dng-label">Danger zone</span>
+        <button class="btn btn-dng btn-sm" id="btn-close-scoring">Close scoring early</button>
+        <button class="btn btn-dng btn-sm" id="btn-end-event">End event &amp; freeze leaderboard</button>
+      </div>
+    </section>
+
+    <!-- ── Section 2: New competition ── -->
+    <section id="section-new" class="admin-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div class="page-title" style="margin-bottom:0">New competition event</div>
+        <button class="btn btn-secondary btn-sm" id="btn-form-cancel-top">Cancel</button>
+      </div>
+
+      <form id="event-form" onsubmit="return false">
+
+        <div class="form-sec">
+          <div class="sec-label">Game &amp; Scoring Window</div>
+          <hr class="sec-rule">
+          <div class="form-grid">
+            <div class="fg">
+              <label for="f-game">Game <span class="lhint">required</span></label>
+              <select id="f-game" required></select>
+            </div>
+            <div class="fg">
+              <label for="f-event-code">Event code <span class="lhint">auto-suggested, unique</span></label>
+              <input type="text" id="f-event-code" placeholder="2026-E01" required>
+            </div>
+            <div class="fg">
+              <label for="f-starts">Scoring opens <span class="lhint">players' local time</span></label>
+              <input type="datetime-local" id="f-starts" required>
+            </div>
+            <div class="fg">
+              <label for="f-ends">Scoring closes <span class="lhint">Sat 23:59 local — enforced server-side</span></label>
+              <input type="datetime-local" id="f-ends" required>
+            </div>
+            <div class="fg full">
+              <label for="f-seed">Competition seed <span class="lhint">auto from start date, overridable</span></label>
+              <input type="number" id="f-seed" placeholder="20260401">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-sec">
+          <div class="sec-label">Prize &amp; Sponsor</div>
+          <hr class="sec-rule">
+          <div class="form-grid">
+            <div class="fg full">
+              <label for="f-prize">Prize title <span class="lhint">shown in game HUD</span></label>
+              <input type="text" id="f-prize" placeholder="$250 Amazon Gift Card" required>
+              <div id="hud-preview">
+                <div class="prev-prize">PRIZE: <span id="prev-prize-val">···</span></div>
+                <div class="prev-sched" id="prev-sched">Scoring closes Sat midnight · Live show Sun ···</div>
+              </div>
+            </div>
+            <div class="fg">
+              <label for="f-sponsor">Sponsor name <span class="lhint">optional</span></label>
+              <input type="text" id="f-sponsor" placeholder="Acme Co.">
+            </div>
+            <div class="fg full">
+              <label for="f-prize-desc">Prize description <span class="lhint">share cards &amp; leaderboard</span></label>
+              <textarea id="f-prize-desc" rows="2" placeholder="Win a $250 Amazon gift card courtesy of Acme Co."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-sec">
+          <div class="sec-label">Live Show</div>
+          <hr class="sec-rule">
+          <div class="form-grid">
+            <div class="fg">
+              <label for="f-show-at">Show date &amp; time <span class="lhint">your local time — shown as PT in HUD</span></label>
+              <input type="datetime-local" id="f-show-at">
+            </div>
+            <div class="fg">
+              <label for="f-show-url">Stream URL <span class="lhint">optional</span></label>
+              <input type="url" id="f-show-url" placeholder="https://youtube.com/live/...">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-form">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-event">Create competition event</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ── Section 3: User admin ── -->
+    <section id="section-users" class="admin-section">
+      <div class="page-title">User admin</div>
+
+      <div class="user-tabs">
+        <button class="utab-btn active" data-utab="all">All players</button>
+        <button class="utab-btn" data-utab="flagged">Flagged</button>
+        <button class="utab-btn" data-utab="banned">Banned</button>
+      </div>
+
+      <!-- All players -->
+      <div id="utab-all">
+        <input type="search" class="search-inp" id="user-search" placeholder="Search by display name or email…">
+        <div id="users-fn-note" class="notice notice-info" style="display:none">
+          User list requires the <strong>admin-list-users</strong> Edge Function deployed with
+          <code style="font-size:12px;background:var(--page-bg);padding:1px 5px;border-radius:4px">SUPABASE_SERVICE_ROLE_KEY</code>.
+          See <code style="font-size:12px;background:var(--page-bg);padding:1px 5px;border-radius:4px">VERCEL.md</code>.
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" id="btn-users-refresh">Refresh list</button>
+          <button class="btn btn-secondary btn-sm" id="btn-user-add">+ Add user</button>
+          <span id="users-fn-status" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Display name</th>
+              <th>Email</th>
+              <th>Age</th>
+              <th>Admin</th>
+              <th>Joined</th>
+              <th>This event</th>
+              <th>Status</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="8" class="empty">Sign in as admin, then refresh.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer" id="users-footer"></div>
+      </div>
+
+      <!-- Flagged -->
+      <div id="utab-flagged" style="display:none">
+        <div id="flagged-tab-notice" class="notice notice-dng" style="display:none"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Player</th><th>Score</th><th>Flag reason</th><th>Run date</th><th></th>
+            </tr></thead>
+            <tbody id="flagged-tab-tbody">
+              <tr><td colspan="5" class="empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Banned -->
+      <div id="utab-banned" style="display:none">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Display name</th><th>Email</th><th>Banned since</th><th></th>
+            </tr></thead>
+            <tbody id="banned-tbody">
+              <tr><td colspan="4" class="empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </div><!-- /content -->
+</div><!-- /admin-shell -->
+
+<!-- Modal: Add user (preserved) -->
+<div id="modal-add-user" aria-hidden="true">
+  <div class="modal-inner">
+    <h3>Add user</h3>
+    <div class="fg">
+      <label for="add-email">Email</label>
+      <input type="email" id="add-email" autocomplete="off">
+    </div>
+    <div class="fg">
+      <label for="add-pass">Password</label>
+      <input type="password" id="add-pass" autocomplete="new-password">
+    </div>
+    <div class="fg">
+      <label for="add-dname">Display name <span class="lhint">optional</span></label>
+      <input type="text" id="add-dname">
+    </div>
+    <p id="add-user-err" style="color:var(--danger);font-size:12px;display:none"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-add-user-cancel">Cancel</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btn-add-user-save">Create</button>
+    </div>
+  </div>
+</div>
+
+<div id="status-bar"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+
+<script type="module">
+const cfg    = window.__MINIGAMESHOW_SUPABASE__ || {};
+const SB_URL = (cfg.url     || '').trim();
+const SB_KEY = (cfg.anonKey || '').trim();
+
+let sb                   = null;
+let currentUser          = null;
+let isAdmin              = false;
+let editingEventId       = null;
+let gamesCache           = [];
+let eventsDataCache      = [];
+let activeEvent          = null;
+let focusEvent           = null;
+let eventHubTab          = 'active';
+let lbMode               = 'competition';
+let lbDataCache          = [];
+let allUsersCache        = [];
+let eventRunCountMap     = {};
+let eventBestMap         = {};
+let activityTimer        = null;
+let countdownTimer       = null;
+let heroCountdownTimer   = null;
+let lbPrevRankMap        = new Map();
+let lbRealtimeChannel    = null;
+
+// ── Edge Function utilities (preserved) ─────────────────────────────────────
+
+function functionsBase(){
+  const c = window.__MINIGAMESHOW_SUPABASE__ || {};
+  const u = String(c.functionsUrl || '').trim();
+  if(u) return u.replace(/\/$/,'');
+  return SB_URL.replace(/\/$/,'') + '/functions/v1';
+}
+
+function makeEdgeFetchError(message, status, json){
+  const e = new Error(message);
+  e.status = status;
+  e.edgeJson = json && typeof json === 'object' ? json : null;
+  return e;
+}
+
+function hasFunctionsUrlOverride(){
+  return Boolean(String((window.__MINIGAMESHOW_SUPABASE__ || {}).functionsUrl || '').trim());
+}
+
+async function edgeFetchGetWithFetch(name, token){
+  const res = await fetch(`${functionsBase()}/${name}`, {
+    method: 'GET',
+    headers: { Authorization:`Bearer ${token}`, apikey:SB_KEY, 'X-User-JWT':token },
+  });
+  const text = await res.text();
+  let j; try{ j = JSON.parse(text); }catch{ j = { error: text }; }
+  if(!res.ok) throw makeEdgeFetchError(j.error || j.message || text || res.statusText, res.status, j);
+  return j;
+}
+
+async function edgeFetchGet(name){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session?.access_token) throw new Error('Not signed in');
+  const token = session.access_token;
+  if(hasFunctionsUrlOverride() || typeof sb.functions?.invoke !== 'function'){
+    return edgeFetchGetWithFetch(name, token);
+  }
+  const { data, error, response: fnRes } = await sb.functions.invoke(name, {
+    method: 'GET', headers: { Authorization:`Bearer ${token}`, 'X-User-JWT':token },
+  });
+  if(error){
+    let j = {}, status = 0;
+    const resp = fnRes || error.context;
+    if(resp && typeof resp.text === 'function'){
+      status = resp.status || 0;
+      try{ const t = await resp.text(); try{ j = JSON.parse(t); }catch{ j = { error:t }; } }catch{ j = { error:error.message||String(error) }; }
+    } else { j = { error:error.message||String(error) }; }
+    throw makeEdgeFetchError(j.error||j.message||error.message||String(status)||'Edge error', status, j);
+  }
+  return data;
+}
+
+async function edgeFetchPostWithFetch(name, body, token){
+  const res = await fetch(`${functionsBase()}/${name}`, {
+    method: 'POST',
+    headers: { Authorization:`Bearer ${token}`, apikey:SB_KEY, 'X-User-JWT':token, 'Content-Type':'application/json' },
+    body: JSON.stringify(body || {}),
+  });
+  const text = await res.text();
+  let j; try{ j = JSON.parse(text); }catch{ j = { error: text }; }
+  if(!res.ok) throw makeEdgeFetchError(j.error || j.message || text || res.statusText, res.status, j);
+  return j;
+}
+
+async function edgeFetchPost(name, body){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session?.access_token) throw new Error('Not signed in');
+  const token = session.access_token;
+  if(hasFunctionsUrlOverride() || typeof sb.functions?.invoke !== 'function'){
+    return edgeFetchPostWithFetch(name, body, token);
+  }
+  const { data, error, response: fnRes } = await sb.functions.invoke(name, {
+    method: 'POST', body: body || {},
+    headers: { Authorization:`Bearer ${token}`, 'X-User-JWT':token },
+  });
+  if(error){
+    let j = {}, status = 0;
+    const resp = fnRes || error.context;
+    if(resp && typeof resp.text === 'function'){
+      status = resp.status || 0;
+      try{ const t = await resp.text(); try{ j = JSON.parse(t); }catch{ j = { error:t }; } }catch{ j = { error:error.message||String(error) }; }
+    } else { j = { error:error.message||String(error) }; }
+    throw makeEdgeFetchError(j.error||j.message||error.message||String(status)||'Edge error', status, j);
+  }
+  return data;
+}
+
+// ── Overlap check (preserved logic) ─────────────────────────────────────────
+
+function updateWeekOverlapWarn(data){
+  const byGame = {};
+  for(const w of data || []) (byGame[w.game_id] ??= []).push(w);
+  const pairs = [];
+  for(const gid of Object.keys(byGame)){
+    const arr = byGame[gid];
+    for(let i = 0; i < arr.length; i++){
+      for(let j = i+1; j < arr.length; j++){
+        const a = arr[i], b = arr[j];
+        const a0 = new Date(a.starts_at).getTime(), a1 = new Date(a.ends_at).getTime();
+        const b0 = new Date(b.starts_at).getTime(), b1 = new Date(b.ends_at).getTime();
+        if(a0 <= b1 && b0 <= a1) pairs.push([a.event_code, b.event_code]);
+      }
+    }
+  }
+  if(pairs.length){
+    toast(`Overlapping scoring windows: ${pairs.map(([x,y])=>`${x} ↔ ${y}`).join(', ')}`, 'err', 7000);
+  }
+}
+
+// ── General helpers ──────────────────────────────────────────────────────────
+
+function toast(msg, type='ok', ms=3000){
+  const el = document.getElementById('status-bar');
+  el.textContent = msg; el.className = type; el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>{ el.style.display='none'; }, ms);
+}
+
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+function dt(iso){
+  if(!iso) return '';
+  const d = new Date(iso), pad = n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function dtToIso(val){ return val ? new Date(val).toISOString() : null; }
+
+function fmtDate(iso){
+  if(!iso) return '—';
+  return new Date(iso).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function fmtDateShort(iso){
+  if(!iso) return '—';
+  return new Date(iso).toLocaleDateString([],{month:'short',day:'numeric'});
+}
+function relTime(iso){
+  if(!iso) return '—';
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff/60000);
+  if(min < 1)  return 'just now';
+  if(min < 60) return `${min}m ago`;
+  const h = Math.floor(min/60);
+  if(h < 24)   return `${h}h ago`;
+  return `${Math.floor(h/24)}d ago`;
+}
+function maskEmail(email){
+  if(!email) return '—';
+  const at = email.indexOf('@');
+  if(at < 1) return email;
+  return email[0] + '***' + email.slice(at);
+}
+function eventStatusOf(row){
+  const now = Date.now(), s = new Date(row.starts_at).getTime(), e = new Date(row.ends_at).getTime();
+  if(now < s) return 'upcoming';
+  if(now > e) return 'past';
+  return 'active';
+}
+
+function prizeHintFromEvent(e){
+  if(!e || !e.prize_title) return '';
+  const m = String(e.prize_title).match(/\$[\d,]+/);
+  return m ? ` · ${m[0]}` : '';
+}
+
+function renderSidebarRail(events) {
+  const now = new Date();
+
+  const live     = events.filter(e => new Date(e.starts_at) <= now && new Date(e.ends_at) >= now);
+  const upcoming = events.filter(e => new Date(e.starts_at) > now);
+  const past     = events.filter(e => new Date(e.ends_at) < now).sort((a,b) => new Date(b.ends_at) - new Date(a.ends_at));
+
+  function eventLabel(e) {
+    return e.prize_title ? `${e.prize_title}` : (e.game_id || 'Event');
+  }
+
+  const liveEl = document.getElementById('sidebar-rail-live');
+  if (liveEl) {
+    liveEl.innerHTML = live.length === 0
+      ? `<div style="padding:6px 10px;font-size:12px;color:var(--sidebar-text)">No live event</div>`
+      : live.map(e => `
+        <div class="event-item${focusEvent && focusEvent.id===e.id ? ' active' : ''}" data-event-id="${e.id}" onclick="sidebarSelectEvent(this, '${e.id}')">
+          <div class="event-dot live"></div>
+          <div class="event-info">
+            <div class="event-name">${esc(eventLabel(e))}</div>
+            <div class="live-badge">● Live</div>
+            <div class="event-meta">Ends ${new Date(e.ends_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}${prizeHintFromEvent(e)}</div>
+          </div>
+        </div>`).join('');
+  }
+
+  const upEl = document.getElementById('sidebar-rail-upcoming');
+  if (upEl) {
+    upEl.innerHTML = upcoming.length === 0
+      ? `<div style="padding:6px 10px;font-size:12px;color:var(--sidebar-text)">None scheduled</div>`
+      : upcoming.slice(0,3).map(e => `
+        <div class="event-item${focusEvent && focusEvent.id===e.id ? ' active' : ''}" data-event-id="${e.id}" onclick="sidebarSelectEvent(this, '${e.id}')">
+          <div class="event-dot upcoming"></div>
+          <div class="event-info">
+            <div class="event-name">${esc(eventLabel(e))}</div>
+            <div class="event-meta">Starts ${new Date(e.starts_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+          </div>
+        </div>`).join('');
+  }
+
+  const pastEl = document.getElementById('sidebar-rail-past');
+  if (pastEl) {
+    pastEl.innerHTML = past.length === 0
+      ? `<div style="padding:6px 10px;font-size:12px;color:var(--sidebar-text)">No past events</div>`
+      : past.slice(0,8).map(e => `
+        <div class="past-item${focusEvent && focusEvent.id===e.id ? ' active' : ''}" data-event-id="${e.id}" onclick="sidebarSelectEvent(this, '${e.id}')">
+          <div class="past-name">${esc(eventLabel(e))}</div>
+          <div class="past-meta">Ended ${new Date(e.ends_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}${prizeHintFromEvent(e)}</div>
+        </div>`).join('');
+  }
+
+  const toggleBtn = document.getElementById('past-toggle-btn');
+  if (toggleBtn) {
+    toggleBtn.onclick = () => {
+      const list = document.getElementById('past-list');
+      const arrow = document.getElementById('past-arrow');
+      list.classList.toggle('open');
+      if (arrow) arrow.textContent = list.classList.contains('open') ? '▼' : '▶';
+    };
+  }
+}
+
+function sidebarSelectEvent(el, eventId) {
+  document.querySelectorAll('#sidebar .event-item, #sidebar .past-item').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  window._selectFocusEventById(eventId);
+  navigateTo('live');
+}
+
+function navigateTo(name){ showSection(name); }
+
+function partitionEventsByStatus(){
+  const active=[], upcoming=[], past=[];
+  for(const row of eventsDataCache){
+    const st = eventStatusOf(row);
+    if(st==='active') active.push(row);
+    else if(st==='upcoming') upcoming.push(row);
+    else past.push(row);
+  }
+  upcoming.sort((a,b)=> new Date(a.starts_at)-new Date(b.starts_at));
+  past.sort((a,b)=> new Date(b.ends_at)-new Date(a.ends_at));
+  active.sort((a,b)=> new Date(b.starts_at)-new Date(a.starts_at));
+  return { active, upcoming, past };
+}
+
+function resolveDefaultFocus(){
+  const act = getActiveEvent();
+  if(act) return act;
+  const { past, upcoming } = partitionEventsByStatus();
+  if(past.length) return past[0];
+  if(upcoming.length) return upcoming[0];
+  return null;
+}
+
+function syncFocusEvent(){
+  if(focusEvent){
+    const fresh = eventsDataCache.find(e=>e.id===focusEvent.id);
+    if(fresh){ focusEvent = fresh; return; }
+  }
+  focusEvent = resolveDefaultFocus();
+}
+
+function updateDangerZoneState(){
+  const closeBtn = document.getElementById('btn-close-scoring');
+  const endBtn   = document.getElementById('btn-end-event');
+  const ok = !!(focusEvent && eventStatusOf(focusEvent)==='active');
+  if(closeBtn){ closeBtn.disabled = !ok; closeBtn.title = ok ? '' : 'Only available while the selected event is in its active scoring window.'; }
+  if(endBtn){ endBtn.disabled = !ok; endBtn.title = ok ? '' : 'Only available while the selected event is in its active scoring window.'; }
+}
+
+function renderEventHub(){
+  const emptyEl = document.getElementById('event-hub-empty');
+  const wrapEl  = document.getElementById('event-hub-wrap');
+  const panel   = document.getElementById('event-hub-panel');
+  const subEl   = document.getElementById('event-hub-sub');
+  if(!emptyEl||!wrapEl||!panel) return;
+
+  const parts = partitionEventsByStatus();
+  document.getElementById('etab-n-active').textContent   = String(parts.active.length);
+  document.getElementById('etab-n-upcoming').textContent = String(parts.upcoming.length);
+  document.getElementById('etab-n-past').textContent     = String(parts.past.length);
+
+  if(!eventsDataCache.length){
+    emptyEl.style.display = 'block';
+    wrapEl.style.display = 'none';
+    if(subEl) subEl.textContent = '';
+    updateDangerZoneState();
+    renderSidebarRail(eventsDataCache);
+    return;
+  }
+  emptyEl.style.display = 'none';
+  wrapEl.style.display = 'block';
+
+  let tab = eventHubTab;
+  const listFor = (t)=>{
+    if(t==='active') return parts.active;
+    if(t==='upcoming') return parts.upcoming;
+    return parts.past;
+  };
+  if(!listFor(tab).length){
+    if(parts.active.length) tab = 'active';
+    else if(parts.upcoming.length) tab = 'upcoming';
+    else tab = 'past';
+    eventHubTab = tab;
+  }
+
+  document.querySelectorAll('#event-etabs .etab-btn').forEach(b=>{
+    const on = b.dataset.etab === tab;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+
+  const gameMap = Object.fromEntries(gamesCache.map(g=>[g.id,g.name]));
+  const rows = listFor(tab);
+  if(!rows.length){
+    panel.innerHTML = `<div class="empty" style="padding:12px">No ${tab} events.</div>`;
+  } else {
+    panel.innerHTML = rows.map(r=>{
+      const sel = focusEvent && focusEvent.id===r.id;
+      const st  = eventStatusOf(r);
+      const badge = st==='active' ? 'badge-active' : st==='upcoming' ? 'badge-upcoming' : 'badge-past';
+      return `<div class="ev-row${sel?' ev-row-selected':''}" data-event-id="${r.id}">
+        <div class="ev-row-main">
+          <div class="ev-row-title"><span class="badge ${badge}" style="margin-right:8px;text-transform:capitalize">${st}</span>${esc(r.event_code||'—')}</div>
+          <div class="ev-row-meta">${esc(gameMap[r.game_id]||'Game')} · ${fmtDateShort(r.starts_at)} → ${fmtDateShort(r.ends_at)}</div>
+        </div>
+        <div class="ev-row-actions">
+          <button type="button" class="btn btn-primary btn-sm btn-ev-focus">View</button>
+          <button type="button" class="btn btn-secondary btn-sm btn-ev-edit">Edit</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  if(subEl){
+    if(focusEvent){
+      const fst = eventStatusOf(focusEvent);
+      subEl.textContent = `Viewing: ${focusEvent.event_code||focusEvent.id} (${fst})`;
+    } else subEl.textContent = '';
+  }
+  updateDangerZoneState();
+  renderSidebarRail(eventsDataCache);
+}
+
+window._selectFocusEventById = function(id){
+  const row = eventsDataCache.find(e=>e.id===id);
+  if(!row) return;
+  focusEvent = row;
+  eventHubTab = eventStatusOf(row);
+  renderEventHub();
+  void refreshFocusDrivenLiveCards();
+};
+
+async function refreshFocusDrivenLiveCards(){
+  await Promise.all([
+    loadLiveStats(),
+    loadLeaderboard(lbMode),
+    loadWeekGlance(),
+    loadFlaggedCard(),
+    loadWinnerBanner(),
+  ]);
+}
+
+function getTodaySeed(){
+  const d = new Date(), pad = n=>String(n).padStart(2,'0');
+  return Number(`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`);
+}
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+
+function showSection(name){
+  document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  const sec = document.getElementById(`section-${name}`);
+  if(sec) sec.classList.add('active');
+  const btn = document.querySelector(`.nav-item[data-section="${name}"]`);
+  if(btn) btn.classList.add('active');
+  if(name === 'live')  { if(isAdmin) loadLiveSection(); }
+  if(name === 'new')   { if(isAdmin) openFormNew(); }
+  if(name === 'users') { if(isAdmin) loadUserAdminTab('all'); }
+}
+// Inline onclick handlers run in global scope; this script is type="module" so names are not globals.
+window.showSection = showSection;
+window.navigateTo = navigateTo;
+window.sidebarSelectEvent = sidebarSelectEvent;
+
+// ── Live stats ────────────────────────────────────────────────────────────────
+
+function getActiveEvent(){
+  const now = Date.now();
+  return eventsDataCache.find(w =>
+    new Date(w.starts_at).getTime() <= now && new Date(w.ends_at).getTime() >= now
+  ) || null;
+}
+
+function updateLiveHero(){
+  const heroTitle = document.getElementById('live-hero-title');
+  const heroMeta = document.getElementById('live-hero-meta');
+  const heroCountdown = document.getElementById('live-hero-countdown');
+  const heroChip = document.getElementById('live-hero-chip');
+  const act = getActiveEvent();
+  clearInterval(heroCountdownTimer);
+  heroCountdownTimer = null;
+
+  if(!act && heroChip){
+    heroChip.style.display = 'none';
+    if(heroTitle) heroTitle.textContent = 'No live event';
+    if(heroMeta) heroMeta.innerHTML = '';
+    if(heroCountdown) heroCountdown.textContent = '';
+    return;
+  }
+  if(heroChip) heroChip.style.display = '';
+  if(act && heroTitle){
+    heroTitle.textContent = act.prize_title || act.event_code || 'Live competition';
+    const prizeLabel = act.prize_title ? esc(act.prize_title) : '—';
+    if(heroMeta) heroMeta.innerHTML = `Prize: <span style="font-weight:600;color:rgba(255,255,255,0.85)">${prizeLabel}</span>`;
+  }
+  if(act && heroCountdown){
+    function tickHero(){
+      const end = new Date(act.ends_at);
+      const diff = end - Date.now();
+      if(diff <= 0){ heroCountdown.textContent = 'Scoring closed'; return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000)  / 60000);
+      const s = Math.floor((diff % 60000)    / 1000);
+      heroCountdown.textContent = `${d}d ${h}h ${m}m ${s}s left`;
+    }
+    tickHero();
+    heroCountdownTimer = setInterval(tickHero, 1000);
+  }
+}
+
+async function loadLiveSection(){
+  activeEvent = getActiveEvent();
+  syncFocusEvent();
+  renderEventHub();
+  await Promise.all([
+    loadLiveStats(),
+    loadLeaderboard(),
+    loadWeekGlance(),
+    loadFlaggedCard(),
+    loadWinnerBanner(),
+    loadActivityFeed(),
+  ]);
+  updateLiveHero();
+}
+
+async function loadLiveStats(){
+  const aw = focusEvent;
+
+  function updateCountdown(){
+    const tEl = document.getElementById('sv-time');
+    const sEl = document.getElementById('ss-time');
+    const lbl = document.getElementById('sv-time-label');
+    if(!aw){
+      tEl.textContent = '—'; sEl.textContent = '';
+      if(lbl) lbl.textContent = 'Scoring window';
+      return;
+    }
+    const curSt = eventStatusOf(aw);
+    if(lbl){
+      if(curSt==='past') lbl.textContent = 'Status';
+      else if(curSt==='upcoming') lbl.textContent = 'Starts in';
+      else lbl.textContent = 'Until scoring closes';
+    }
+    if(curSt==='past'){
+      tEl.textContent = 'Ended';
+      sEl.textContent = fmtDateShort(aw.ends_at);
+      return;
+    }
+    if(curSt==='upcoming'){
+      const diff = new Date(aw.starts_at).getTime() - Date.now();
+      if(diff<=0){ tEl.textContent = 'Starting'; sEl.textContent = ''; return; }
+      const d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000);
+      tEl.textContent = d>0 ? `${d}d ${h}h` : `${Math.max(0,h)}h`;
+      sEl.textContent = `until open · ${fmtDateShort(aw.starts_at)}`;
+      return;
+    }
+    const diff = new Date(aw.ends_at).getTime() - Date.now();
+    if(diff <= 0){ tEl.textContent = 'Closed'; sEl.textContent = ''; return; }
+    const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000);
+    tEl.textContent = `${h}h ${m}m`;
+    sEl.textContent = `until ${fmtDateShort(aw.ends_at)}`;
+  }
+  clearInterval(countdownTimer);
+  updateCountdown();
+  countdownTimer = setInterval(()=>{
+    if(document.getElementById('section-live')?.classList.contains('active')) updateCountdown();
+  }, 30000);
+
+  if(!aw){
+    ['sv-players','sv-runs','sv-flagged'].forEach(id=>{ document.getElementById(id).textContent='—'; });
+    document.getElementById('ss-runs').textContent = '';
+    document.getElementById('ss-players').textContent = '';
+    const lbl0 = document.getElementById('sv-time-label');
+    if(lbl0) lbl0.textContent = 'Scoring window';
+    return;
+  }
+
+  const { count: pCount } = await sb.from('leaderboard')
+    .select('user_id', { count:'exact', head:true }).eq('event_id', aw.id);
+  document.getElementById('sv-players').textContent = pCount ?? '—';
+
+  try{
+    const t = new Date(); t.setHours(0,0,0,0);
+    const { count: newT } = await sb.from('profiles')
+      .select('id',{count:'exact',head:true}).gte('created_at', t.toISOString());
+    if(newT != null) document.getElementById('ss-players').textContent = `${newT} new today`;
+  }catch{ /* RLS may block */ }
+
+  const { count: rCount } = await sb.from('runs')
+    .select('id',{count:'exact',head:true}).eq('event_id', aw.id);
+  document.getElementById('sv-runs').textContent = rCount ?? '—';
+  if(rCount != null && pCount) document.getElementById('ss-runs').textContent = `avg ${(rCount/pCount).toFixed(1)} per player`;
+
+  try{
+    const { count: fCount } = await sb.from('runs')
+      .select('id',{count:'exact',head:true}).eq('event_id', aw.id).eq('is_validated', false);
+    const fEl = document.getElementById('sv-flagged');
+    fEl.textContent = fCount ?? '0';
+    fEl.className = 'stat-value' + (fCount > 0 ? ' red' : '');
+  }catch{ document.getElementById('sv-flagged').textContent = 'N/A'; }
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+
+function playerInitialsFromRow(profile){
+  const name = profile?.display_name||profile?.username||'Player';
+  const s = String(name).replace(/\s+/g,' ').trim();
+  if(!s) return '?';
+  const parts = s.split(/\s+/);
+  if(parts.length>=2 && parts[0][0] && parts[1][0]) return (parts[0][0]+parts[1][0]).toUpperCase();
+  return s.slice(0,2).toUpperCase();
+}
+
+function lbChangeHtml(prev, userId, newRank){
+  const old = prev.get(userId);
+  if(old === undefined) return '<span class="lb-change same">—</span>';
+  if(newRank < old) return `<span class="lb-change up">▲${old-newRank}</span>`;
+  if(newRank > old) return `<span class="lb-change down">▼${newRank-old}</span>`;
+  return '<span class="lb-change same">—</span>';
+}
+
+function lbFlashClass(prev, userId, newRank){
+  const old = prev.get(userId);
+  if(old === undefined) return '';
+  if(newRank < old) return ' flash-up';
+  if(newRank > old) return ' flash-down';
+  return '';
+}
+
+function setLbFooterTextAndLive(text){
+  const ft = document.getElementById('lb-footer-text');
+  const li = document.getElementById('lb-live-indicator');
+  if(ft) ft.textContent = text;
+  if(li){
+    const liveOk = lbMode === 'competition' && focusEvent && eventStatusOf(focusEvent)==='active';
+    li.style.display = liveOk ? 'flex' : 'none';
+  }
+}
+
+function attachLeaderboardRealtime(){
+  if(!sb || lbRealtimeChannel) return;
+  lbRealtimeChannel = sb.channel('leaderboard-admin')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'runs',
+    }, () => {
+      if(document.getElementById('section-live')?.classList.contains('active')) void loadLeaderboard();
+    })
+    .subscribe();
+}
+
+async function loadLeaderboard(mode){
+  if(mode) lbMode = mode;
+  const tbody = document.getElementById('lb-tbody');
+  const thDots = document.getElementById('lb-th-dots');
+  const prevRanks = lbPrevRankMap;
+  tbody.innerHTML = '<div class="empty" style="padding:12px 18px">Loading…</div>';
+  if(thDots) thDots.style.display = lbMode === 'competition' ? '' : 'none';
+
+  if(lbMode === 'arcade'){
+    const { data: rows, error } = await sb.from('arcade_best')
+      .select('user_id, best_score, profiles(display_name, username)')
+      .order('best_score',{ascending:false}).limit(10);
+    if(error){
+      tbody.innerHTML = '<div class="empty" style="padding:12px 18px">Arcade board coming soon — run Phase 2b migration.</div>';
+      lbDataCache = [];
+      setLbFooterTextAndLive('');
+      return;
+    }
+    lbDataCache = rows || [];
+    const nextMap = new Map();
+    (rows||[]).forEach((r,i)=> nextMap.set(r.user_id, i+1));
+    tbody.innerHTML = (rows||[]).map((r,i)=>{
+      const rank = i+1;
+      const rc = rank===1 ? 'rank-1' : rank===2 ? 'rank-2' : rank===3 ? 'rank-3' : '';
+      const flash = lbFlashClass(prevRanks, r.user_id, rank);
+      return `<div class="lb-row ${rc}${flash}" data-user-id="${r.user_id}">
+        <div class="lb-rank">${rank}</div>
+        <div class="lb-avatar">${esc(playerInitialsFromRow(r.profiles))}</div>
+        <div class="lb-info">
+          <div class="lb-username">${esc(r.profiles?.display_name||r.profiles?.username||'Player')}</div>
+          <div class="lb-attempts">Arcade</div>
+        </div>
+        <div class="lb-score mono">${(r.best_score??0).toLocaleString()}</div>
+        ${lbChangeHtml(prevRanks, r.user_id, rank)}
+        <div class="lb-lastrun">—</div>
+        <div class="lb-actions"><button class="btn btn-dng btn-xs" onclick="window._banUser('${r.user_id}')">Ban</button></div>
+      </div>`;
+    }).join('') || '<div class="empty" style="padding:12px 18px">No entries yet.</div>';
+    lbPrevRankMap = nextMap;
+    setLbFooterTextAndLive(`Showing ${rows?.length||0} players`);
+    return;
+  }
+
+  if(!focusEvent){
+    tbody.innerHTML = '<div class="empty" style="padding:12px 18px">No competition event selected.</div>';
+    lbDataCache = [];
+    lbPrevRankMap = new Map();
+    setLbFooterTextAndLive('');
+    return;
+  }
+
+  const { data: rows, error } = await sb.from('leaderboard')
+    .select('rank, user_id, best_score, profiles(display_name, username)')
+    .eq('event_id', focusEvent.id).order('rank').limit(10);
+  if(error){
+    tbody.innerHTML = `<div class="empty" style="padding:12px 18px;color:var(--danger)">${esc(error.message)}</div>`;
+    setLbFooterTextAndLive('');
+    return;
+  }
+  lbDataCache = rows || [];
+
+  const todaySeed = getTodaySeed();
+  const userIds = (rows||[]).map(r=>r.user_id);
+  let attMap = {};
+  if(userIds.length){
+    const { data: atts } = await sb.from('daily_attempts')
+      .select('user_id, attempts_used').in('user_id', userIds).eq('day_seed', todaySeed);
+    for(const a of atts||[]) attMap[a.user_id] = a.attempts_used;
+  }
+
+  let lastMap = {};
+  if(userIds.length){
+    const { data: recents } = await sb.from('runs')
+      .select('user_id, created_at').in('user_id', userIds)
+      .eq('event_id', focusEvent.id).order('created_at',{ascending:false}).limit(userIds.length * 5);
+    for(const r of recents||[]){ if(!lastMap[r.user_id]) lastMap[r.user_id] = r.created_at; }
+  }
+
+  const { count: totalCount } = await sb.from('leaderboard')
+    .select('user_id',{count:'exact',head:true}).eq('event_id', focusEvent.id);
+
+  const nextMap = new Map();
+  (rows||[]).forEach(r=> nextMap.set(r.user_id, r.rank));
+
+  tbody.innerHTML = (rows||[]).map(r=>{
+    const used = attMap[r.user_id] || 0;
+    const dots = Array.from({length:5},(_,i)=>`<span class="dot${i<used?' on':''}"></span>`).join('');
+    const rc = r.rank===1 ? 'rank-1' : r.rank===2 ? 'rank-2' : r.rank===3 ? 'rank-3' : '';
+    const flash = lbFlashClass(prevRanks, r.user_id, r.rank);
+    const attemptsLine = `<span class="dots">${dots}</span> · ${used}/5 today`;
+    return `<div class="lb-row ${rc}${flash}" data-user-id="${r.user_id}">
+      <div class="lb-rank">${r.rank}</div>
+      <div class="lb-avatar">${esc(playerInitialsFromRow(r.profiles))}</div>
+      <div class="lb-info">
+        <div class="lb-username">${esc(r.profiles?.display_name||r.profiles?.username||'Player')}</div>
+        <div class="lb-attempts">${attemptsLine}</div>
+      </div>
+      <div class="lb-score mono">${(r.best_score??0).toLocaleString()}</div>
+      ${lbChangeHtml(prevRanks, r.user_id, r.rank)}
+      <div class="lb-lastrun">${relTime(lastMap[r.user_id])}</div>
+      <div class="lb-actions"><button class="btn btn-dng btn-xs" onclick="window._banUser('${r.user_id}')">Ban</button></div>
+    </div>`;
+  }).join('') || '<div class="empty" style="padding:12px 18px">No entries yet.</div>';
+
+  lbPrevRankMap = nextMap;
+
+  const frozen = focusEvent && eventStatusOf(focusEvent)==='past';
+  setLbFooterTextAndLive(frozen
+    ? `Frozen · showing ${rows?.length||0} of ${totalCount||0} players`
+    : `Showing ${rows?.length||0} of ${totalCount||0} players`);
+}
+
+// ── Event at a glance ─────────────────────────────────────────────────────────
+
+async function loadWeekGlance(){
+  const aw = focusEvent;
+  const statusEl = document.getElementById('glance-status');
+  const bodyEl   = document.getElementById('glance-body');
+  if(!aw){
+    if(statusEl) statusEl.innerHTML = '';
+    bodyEl.innerHTML = `<div class="empty" style="padding:12px">No event selected.<br>
+      <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="showSection('new')">Create one</button></div>`;
+    return;
+  }
+  const gameMap = Object.fromEntries(gamesCache.map(g=>[g.id,g.name]));
+  const st = eventStatusOf(aw);
+  if(statusEl) statusEl.innerHTML = `<span class="badge badge-${st}">${st.charAt(0).toUpperCase()+st.slice(1)}</span>`;
+  const now = Date.now(), s = new Date(aw.starts_at).getTime(), e = new Date(aw.ends_at).getTime();
+  const pct = Math.max(0, Math.min(100, ((now-s)/(e-s))*100)).toFixed(1);
+  bodyEl.innerHTML = `
+    <div class="glance-row"><span class="glance-lbl">Game</span><span class="glance-val">${esc(gameMap[aw.game_id]||'—')}</span></div>
+    <div class="glance-row"><span class="glance-lbl">Prize</span><span class="glance-val">${esc(aw.prize_title||'—')}</span></div>
+    <div class="glance-row"><span class="glance-lbl">Live show</span><span class="glance-val">${aw.show_at?fmtDate(aw.show_at):'—'}</span></div>
+    <div class="glance-row"><span class="glance-lbl">Seed</span><span class="mono">${aw.seed??'—'}</span></div>
+    <div class="prog-wrap">
+      <div class="prog-bg"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <div class="prog-labels"><span>${fmtDateShort(aw.starts_at)}</span><span>${fmtDateShort(aw.ends_at)}</span></div>
+    </div>`;
+}
+
+// ── Flagged runs card ─────────────────────────────────────────────────────────
+
+async function loadFlaggedCard(){
+  const aw = focusEvent;
+  const bodyEl  = document.getElementById('flagged-body');
+  const badge   = document.getElementById('flagged-badge');
+  if(!aw){
+    badge.style.display = 'none';
+    bodyEl.innerHTML = '<div class="empty" style="padding:12px">No event selected.</div>';
+    return;
+  }
+  try{
+    // Step 1: fetch unvalidated runs (no join — avoids PostgREST FK ambiguity)
+    const { data: flagged, count } = await sb.from('runs')
+      .select('id, user_id, score, created_at', {count:'exact'})
+      .eq('event_id', aw.id).eq('is_validated', false)
+      .order('score',{ascending:false}).limit(3);
+    const total = count || 0;
+    badge.textContent   = total;
+    badge.style.display = total > 0 ? 'inline-flex' : 'none';
+    if(!total){
+      bodyEl.innerHTML = '<div class="empty" style="padding:12px;color:var(--ok-t)">✓ No flagged runs</div>';
+      return;
+    }
+    // Step 2: fetch profiles for those user_ids
+    const uids = [...new Set((flagged||[]).map(r=>r.user_id).filter(Boolean))];
+    const { data: profiles } = uids.length
+      ? await sb.from('profiles').select('id, display_name, username').in('id', uids)
+      : { data: [] };
+    const pMap = Object.fromEntries((profiles||[]).map(p=>[p.id, p]));
+    const label = r => { const p=pMap[r.user_id]; return p?.display_name||p?.username||'Unknown'; };
+
+    const warnHtml = `<div class="notice notice-warn" style="margin-bottom:10px">Review before Sunday's live show. Top 3 must be clean to award prize.</div>`;
+    const itemsHtml = (flagged||[]).slice(0,2).map(r=>`
+      <div class="flag-item">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${esc(label(r))}</div>
+          <div class="flag-reason">High outlier score</div>
+        </div>
+        <span class="mono" style="font-size:13px">${(r.score??0).toLocaleString()}</span>
+        <button class="btn btn-secondary btn-xs" onclick="window._approveRun('${r.id}')">OK</button>
+        <button class="btn btn-dng btn-xs" onclick="window._deleteRun('${r.id}')">Del</button>
+      </div>`).join('');
+    const moreHtml = total > 2
+      ? `<div style="font-size:12px;color:var(--accent);padding-top:8px;cursor:pointer"
+           onclick="showSection('users');window._switchUserTab('flagged')">+${total-2} more flagged →</div>`
+      : '';
+    bodyEl.innerHTML = warnHtml + itemsHtml + moreHtml;
+  }catch(e){
+    console.error('loadFlaggedCard', e);
+    badge.style.display = 'none';
+    bodyEl.innerHTML = '<div class="empty" style="padding:12px;color:var(--muted)">Error loading flagged runs — see console.</div>';
+  }
+}
+
+async function loadWinnerBanner(){
+  const el = document.getElementById('event-winner-banner');
+  if(!el) return;
+  if(!focusEvent || eventStatusOf(focusEvent)!=='past'){
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  try{
+    const { data: top, error } = await sb.from('leaderboard')
+      .select('rank,best_score,user_id,profiles(display_name,username)')
+      .eq('event_id', focusEvent.id).eq('rank', 1).maybeSingle();
+    if(error || !top){
+      el.style.display = 'none';
+      el.innerHTML = '';
+      return;
+    }
+    const name = esc(top.profiles?.display_name || top.profiles?.username || 'Player');
+    el.style.display = 'block';
+    el.innerHTML = `<strong>Winner (${esc(focusEvent.event_code||'event')})</strong> — ${name} · <span class="mono">${(top.best_score??0).toLocaleString()}</span> pts (frozen leaderboard)`;
+  }catch(e){
+    console.error('loadWinnerBanner', e);
+    el.style.display = 'none';
+  }
+}
+
+// ── Activity feed ─────────────────────────────────────────────────────────────
+
+async function loadActivityFeed(){
+  const bodyEl = document.getElementById('activity-body');
+  const { data: events, error } = await sb.from('content_events')
+    .select('event_type, metadata, created_at')
+    .order('created_at',{ascending:false}).limit(5);
+  if(error || !events?.length){
+    bodyEl.innerHTML = '<div class="empty" style="padding:12px">No recent activity.</div>';
+    return;
+  }
+  const rows = events.map(ev=>{
+    let dot = 'purple', text = ev.event_type;
+    const meta = ev.metadata || {};
+    if(ev.event_type === 'new_high_score'){
+      dot = 'purple'; text = `New high score: ${(meta.score??0).toLocaleString()}`;
+    } else if(ev.event_type === 'run_submitted'){
+      dot = 'purple'; text = `Run submitted: ${(meta.score??0).toLocaleString()}`;
+    } else if(ev.event_type === 'player_joined'){
+      dot = 'green'; text = 'New player joined';
+    } else if(ev.event_type === 'run_flagged'){
+      dot = 'red'; text = 'Run flagged for review';
+    }
+    return `<div class="act-row">
+      <span class="act-dot ${dot}"></span>
+      <span class="act-txt">${esc(text)}</span>
+      <span class="act-time">${relTime(ev.created_at)}</span>
+    </div>`;
+  }).join('');
+  bodyEl.innerHTML = `<div class="act-list">${rows}</div>`;
+}
+
+function startActivityPoll(){
+  if(activityTimer) clearInterval(activityTimer);
+  activityTimer = setInterval(()=>{
+    if(document.getElementById('section-live').classList.contains('active')){
+      activeEvent = getActiveEvent();
+      syncFocusEvent();
+      renderEventHub();
+      loadActivityFeed();
+      loadLiveStats();
+    }
+  }, 30000);
+}
+
+// ── New competition form ──────────────────────────────────────────────────────
+
+function openFormNew(){
+  editingEventId = null;
+  const sel = document.getElementById('f-game');
+  sel.innerHTML = gamesCache.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');
+  document.getElementById('f-event-code').value  = suggestEventCode();
+  document.getElementById('f-starts').value      = suggestStart();
+  document.getElementById('f-ends').value        = suggestEnd();
+  document.getElementById('f-show-at').value     = suggestShow();
+  document.getElementById('f-show-url').value    = '';
+  document.getElementById('f-prize').value       = '';
+  document.getElementById('f-prize-desc').value  = '';
+  document.getElementById('f-sponsor').value     = '';
+  document.getElementById('f-seed').value        = suggestSeed();
+  document.getElementById('btn-save-event').textContent = 'Create competition event';
+  updatePreview();
+}
+
+// ── Suggest helpers (preserved) ──────────────────────────────────────────────
+
+function nextMonday(){
+  const d = new Date(); d.setHours(0,0,0,0);
+  const day = d.getDay(), add = day===0 ? 1 : (8-day)%7||7;
+  d.setDate(d.getDate()+add); return d;
+}
+function suggestEventCode(){
+  const d = nextMonday(), jan4 = new Date(d.getFullYear(),0,4);
+  const week = Math.ceil(((d-jan4)/86400000+jan4.getDay()+1)/7);
+  return `${d.getFullYear()}-W${String(week).padStart(2,'0')}`;
+}
+function p2(n){ return String(n).padStart(2,'0'); }
+function toLocal(d){ return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}T${p2(d.getHours())}:${p2(d.getMinutes())}`; }
+function suggestStart(){ const d = nextMonday(); d.setHours(0,0,0); return toLocal(d); }
+function suggestEnd(){ const d = nextMonday(); d.setDate(d.getDate()+5); d.setHours(23,59,0); return toLocal(d); }
+function suggestShow(){ const d = nextMonday(); d.setDate(d.getDate()+6); d.setHours(19,0,0); return toLocal(d); }
+function suggestSeed(){ const d = nextMonday(); return `${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}`; }
+
+// ── HUD preview (preserved) ──────────────────────────────────────────────────
+
+function updatePreview(){
+  const prize  = document.getElementById('f-prize')?.value.trim() || '···';
+  const showAt = document.getElementById('f-show-at')?.value;
+  const pEl = document.getElementById('prev-prize-val');
+  const sEl = document.getElementById('prev-sched');
+  if(pEl) pEl.textContent = prize;
+  if(sEl && showAt){
+    const d = new Date(showAt);
+    const t = d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',timeZoneName:'short'}).replace(':00','').toLowerCase();
+    sEl.textContent = `Scoring closes Sat midnight · Live show Sun ${t}`;
+  }
+}
+
+// ── Save event ───────────────────────────────────────────────────────────────
+
+async function saveEvent(e){
+  e.preventDefault();
+  const row = {
+    game_id:           document.getElementById('f-game').value,
+    event_code:        document.getElementById('f-event-code').value.trim(),
+    starts_at:         dtToIso(document.getElementById('f-starts').value),
+    ends_at:           dtToIso(document.getElementById('f-ends').value),
+    show_at:           dtToIso(document.getElementById('f-show-at').value) || null,
+    show_url:          document.getElementById('f-show-url').value.trim() || null,
+    prize_title:       document.getElementById('f-prize').value.trim() || null,
+    prize_description: document.getElementById('f-prize-desc').value.trim() || null,
+    sponsor_name:      document.getElementById('f-sponsor').value.trim() || null,
+    seed:              document.getElementById('f-seed').value ? Number(document.getElementById('f-seed').value) : null,
+  };
+  if(!row.starts_at||!row.ends_at){ toast('Start and end dates are required','err'); return; }
+  if(new Date(row.ends_at)<=new Date(row.starts_at)){ toast('End must be after start','err'); return; }
+  const btn = document.getElementById('btn-save-event');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  let error;
+  if(editingEventId){
+    ({error} = await sb.from('events').update(row).eq('id', editingEventId));
+  } else {
+    ({error} = await sb.from('events').insert(row));
+  }
+  btn.disabled = false; btn.textContent = editingEventId ? 'Save changes' : 'Create competition event';
+  if(error){ toast('Save failed: '+error.message,'err',5000); return; }
+  toast(editingEventId ? 'Event updated ✓' : 'Event created ✓','ok');
+  editingEventId = null;
+  await loadGames();
+  await loadEvents();
+  showSection('live');
+}
+
+// expose for console / future use
+window._editEvent = async (id)=>{
+  const { data } = await sb.from('events').select('*').eq('id',id).single();
+  if(!data) return;
+  editingEventId = data.id;
+  const sel = document.getElementById('f-game');
+  sel.innerHTML = gamesCache.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');
+  sel.value = data.game_id;
+  document.getElementById('f-event-code').value = data.event_code;
+  document.getElementById('f-starts').value     = dt(data.starts_at);
+  document.getElementById('f-ends').value       = dt(data.ends_at);
+  document.getElementById('f-show-at').value    = dt(data.show_at);
+  document.getElementById('f-show-url').value   = data.show_url || '';
+  document.getElementById('f-prize').value      = data.prize_title || '';
+  document.getElementById('f-prize-desc').value = data.prize_description || '';
+  document.getElementById('f-sponsor').value    = data.sponsor_name || '';
+  document.getElementById('f-seed').value       = data.seed ?? '';
+  document.getElementById('btn-save-event').textContent = 'Save changes';
+  updatePreview();
+  showSection('new');
+};
+
+// ── Load data (preserved) ────────────────────────────────────────────────────
+
+async function loadGames(){
+  const { data } = await sb.from('games').select('id,name,slug').order('name');
+  gamesCache = data || [];
+}
+
+async function loadEvents(){
+  const { data, error } = await sb.from('events')
+    .select('id,event_code,game_id,starts_at,ends_at,show_at,show_url,prize_title,prize_description,sponsor_name,seed')
+    .order('starts_at',{ascending:false});
+  if(error){
+    console.error('loadEvents', error);
+    toast('Could not load events: '+error.message,'err',5000);
+    return;
+  }
+  eventsDataCache = data || [];
+  updateWeekOverlapWarn(data);
+  activeEvent = getActiveEvent();
+  syncFocusEvent();
+  renderSidebarRail(eventsDataCache);
+}
+
+// ── Users (preserved + enhanced) ────────────────────────────────────────────
+
+async function loadUsers(){
+  const tbody  = document.getElementById('users-tbody');
+  const st     = document.getElementById('users-fn-status');
+  const noteEl = document.getElementById('users-fn-note');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="8" class="empty">Loading…</td></tr>';
+  if(st) st.textContent = '';
+  if(noteEl) noteEl.style.display = 'none';
+  try{
+    const { users } = await edgeFetchGet('admin-list-users');
+    allUsersCache = users || [];
+    if(st) st.textContent = 'Loaded via Edge Functions ✓';
+    // Per-user run counts and best for active event
+    if(activeEvent && allUsersCache.length){
+      const { data: runRows } = await sb.from('runs').select('user_id').eq('event_id', activeEvent.id);
+      eventRunCountMap = {};
+      for(const r of runRows||[]) eventRunCountMap[r.user_id] = (eventRunCountMap[r.user_id]||0)+1;
+      const { data: lbRows } = await sb.from('leaderboard').select('user_id,best_score').eq('event_id', activeEvent.id);
+      eventBestMap = {};
+      for(const r of lbRows||[]) eventBestMap[r.user_id] = r.best_score;
+    }
+    renderUsersTable(allUsersCache);
+  }catch(e){
+    if(noteEl && e.status && e.status !== 0) noteEl.style.display = 'block';
+    tbody.innerHTML = `<tr><td colspan="8" class="empty" style="color:var(--danger)">${esc(e.message||String(e))}</td></tr>`;
+    if(st) st.textContent = 'List failed — see notice above';
+  }
+}
+
+function renderUsersTable(users){
+  const tbody  = document.getElementById('users-tbody');
+  const footer = document.getElementById('users-footer');
+  if(!users.length){
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">No users found.</td></tr>';
+    if(footer) footer.textContent = ''; return;
+  }
+  tbody.innerHTML = users.map(u=>{
+    const self = currentUser && u.id === currentUser.id;
+    const dname = esc(u.display_name || u.username || '—');
+    const ageBadge   = u.is_18_plus ? `<span class="badge badge-18">18+</span>` : `<span class="badge badge-prac">Practice</span>`;
+    const statBadge  = u.is_banned  ? `<span class="badge badge-banned">Banned</span>` : `<span class="badge badge-active">Active</span>`;
+    const runs = eventRunCountMap[u.id], best = eventBestMap[u.id];
+    const eventStr = (runs!=null||best!=null) ? `${runs??0} run${runs!==1?'s':''} · best ${best!=null?best.toLocaleString():'—'}` : '—';
+    const banBtn = u.is_banned
+      ? `<button type="button" class="btn btn-secondary btn-xs btn-unban-inline">Unban</button>`
+      : `<button type="button" class="btn btn-dng btn-xs btn-ban-inline">Ban</button>`;
+    return `<tr data-user-id="${u.id}">
+      <td style="font-weight:500">${dname}</td>
+      <td style="font-size:12px;color:var(--muted)">${maskEmail(u.email||'')}</td>
+      <td>${ageBadge}</td>
+      <td><input type="checkbox" class="user-cb cb-admin" ${u.is_admin?'checked':''}${self?' disabled title="Cannot remove your own admin"':''} aria-label="Admin"></td>
+      <td style="font-size:12px;color:var(--muted)">${u.created_at?fmtDateShort(u.created_at):'—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${eventStr}</td>
+      <td>${statBadge}</td>
+      <td class="u-actions">
+        ${banBtn}
+        <button type="button" class="btn btn-secondary btn-xs btn-clear-scores">Clear scores</button>
+        ${self?'':`<button type="button" class="btn btn-dng btn-xs btn-delete-user">Delete</button>`}
+      </td>
+    </tr>`;
+  }).join('');
+  if(footer) footer.textContent = `Showing ${users.length} of ${users.length} players`;
+}
+
+function filterUsers(q){
+  if(!q.trim()){ renderUsersTable(allUsersCache); return; }
+  const lq = q.toLowerCase();
+  renderUsersTable(allUsersCache.filter(u=>
+    (u.display_name||'').toLowerCase().includes(lq) ||
+    (u.username||'').toLowerCase().includes(lq) ||
+    (u.email||'').toLowerCase().includes(lq)
+  ));
+}
+
+// ── User admin tabs ───────────────────────────────────────────────────────────
+
+async function loadUserAdminTab(tab){
+  document.querySelectorAll('[id^="utab-"]').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.utab-btn').forEach(b=>b.classList.remove('active'));
+  const tabEl = document.getElementById(`utab-${tab}`);
+  const tabBtn = document.querySelector(`.utab-btn[data-utab="${tab}"]`);
+  if(tabEl) tabEl.style.display = 'block';
+  if(tabBtn) tabBtn.classList.add('active');
+  if(tab==='all')     await loadUsers();
+  if(tab==='flagged') await loadFlaggedTab();
+  if(tab==='banned')  await loadBannedTab();
+}
+
+window._switchUserTab = (tab) => loadUserAdminTab(tab);
+
+async function loadFlaggedTab(){
+  const tbody  = document.getElementById('flagged-tab-tbody');
+  const notice = document.getElementById('flagged-tab-notice');
+  if(!focusEvent){ tbody.innerHTML='<tr><td colspan="5" class="empty">No event selected on Live — pick an event first.</td></tr>'; return; }
+  tbody.innerHTML = '<tr><td colspan="5" class="empty">Loading…</td></tr>';
+  try{
+    // Step 1: fetch unvalidated runs without join
+    const { data: flagged, count } = await sb.from('runs')
+      .select('id, user_id, score, created_at',{count:'exact'})
+      .eq('event_id', focusEvent.id).eq('is_validated', false).order('score',{ascending:false});
+    if(notice){
+      if(count){ notice.textContent=`${count} run${count!==1?'s':''} flagged this event. Review before the show to confirm the winner.`; notice.style.display='block'; }
+      else notice.style.display='none';
+    }
+    if(!flagged?.length){ tbody.innerHTML='<tr><td colspan="5" class="empty">No flagged runs this event.</td></tr>'; return; }
+    // Step 2: fetch profiles for those user_ids
+    const uids = [...new Set(flagged.map(r=>r.user_id).filter(Boolean))];
+    const { data: profiles } = uids.length
+      ? await sb.from('profiles').select('id, display_name, username').in('id', uids)
+      : { data: [] };
+    const pMap = Object.fromEntries((profiles||[]).map(p=>[p.id, p]));
+    const label = r => { const p=pMap[r.user_id]; return p?.display_name||p?.username||'Unknown'; };
+
+    tbody.innerHTML = flagged.map(r=>`
+      <tr data-run-id="${r.id}" data-user-id="${r.user_id}">
+        <td>${esc(label(r))}</td>
+        <td class="mono">${(r.score??0).toLocaleString()}</td>
+        <td style="color:var(--danger);font-size:12px">High outlier</td>
+        <td style="font-size:12px;color:var(--muted)">${fmtDate(r.created_at)}</td>
+        <td class="u-actions">
+          <button class="btn btn-secondary btn-xs btn-fl-approve" style="color:var(--ok-t)">Approve</button>
+          <button class="btn btn-dng btn-xs btn-fl-remove">Remove run</button>
+          <button class="btn btn-dng btn-xs btn-fl-ban">Ban player</button>
+        </td>
+      </tr>`).join('');
+  }catch(e){ console.error('loadFlaggedTab', e); tbody.innerHTML='<tr><td colspan="5" class="empty">Error loading — see console.</td></tr>'; }
+}
+
+async function loadBannedTab(){
+  const tbody = document.getElementById('banned-tbody');
+  tbody.innerHTML = '<tr><td colspan="4" class="empty">Loading…</td></tr>';
+  const { data: banned, error } = await sb.from('profiles')
+    .select('id, display_name, username, created_at').eq('is_banned', true).order('created_at',{ascending:false});
+  if(error){ tbody.innerHTML=`<tr><td colspan="4" class="empty" style="color:var(--danger)">${esc(error.message)}</td></tr>`; return; }
+  if(!banned?.length){ tbody.innerHTML='<tr><td colspan="4" class="empty">No banned players yet.</td></tr>'; return; }
+  tbody.innerHTML = banned.map(p=>`
+    <tr data-user-id="${p.id}">
+      <td>${esc(p.display_name||p.username||'—')}</td>
+      <td style="font-size:12px;color:var(--muted)">—</td>
+      <td style="font-size:12px;color:var(--muted)">${fmtDateShort(p.created_at)}</td>
+      <td><button class="btn btn-secondary btn-sm btn-unban">Unban</button></td>
+    </tr>`).join('');
+}
+
+// ── persistUserFlags (preserved) ─────────────────────────────────────────────
+
+async function persistUserFlags(tr){
+  const id  = tr.dataset.userId;
+  const adm = tr.querySelector('.cb-admin')?.checked === true;
+  const u   = allUsersCache.find(x=>x.id===id);
+  const ban = u?.is_banned === true;
+  const { error } = await sb.rpc('admin_set_profile_flags', { target_user_id:id, p_is_admin:adm, p_is_banned:ban });
+  if(error) throw error;
+}
+
+// ── Global helpers (ban / approve / delete run) ───────────────────────────────
+
+window._banUser = async (userId)=>{
+  if(!userId) return;
+  if(!confirm('Ban this player? Their score submissions will be blocked.')) return;
+  const u = allUsersCache.find(x=>x.id===userId);
+  const { error } = await sb.rpc('admin_set_profile_flags', { target_user_id:userId, p_is_admin:u?.is_admin===true, p_is_banned:true });
+  if(error){ toast('Ban failed: '+error.message,'err'); return; }
+  toast('Player banned','ok');
+  loadLeaderboard();
+};
+window._approveRun = async (runId)=>{
+  const { error } = await sb.from('runs').update({ is_validated:true }).eq('id', runId);
+  if(error){ toast('Approve failed: '+error.message,'err'); return; }
+  toast('Run approved ✓','ok');
+  loadFlaggedCard(); loadLiveStats(); void loadWinnerBanner();
+};
+window._deleteRun = async (runId)=>{
+  if(!confirm('Remove this run? This cannot be undone.')) return;
+  const { error } = await sb.from('runs').delete().eq('id', runId);
+  if(error){ toast('Delete failed: '+error.message,'err'); return; }
+  toast('Run removed','ok');
+  loadFlaggedCard(); loadLiveStats(); loadLeaderboard(); void loadWinnerBanner();
+};
+
+// ── CSV export ────────────────────────────────────────────────────────────────
+
+function exportCsv(){
+  if(!lbDataCache.length){ toast('No data to export','err'); return; }
+  const header = 'Rank,Player,Best Score\n';
+  const body   = lbDataCache.map((r,i)=>{
+    const rank = r.rank ?? (i+1);
+    const name = (r.profiles?.display_name||r.profiles?.username||'Player').replace(/"/g,'""');
+    return `${rank},"${name}",${r.best_score??0}`;
+  }).join('\n');
+  const blob = new Blob([header+body],{type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `leaderboard-${focusEvent?.event_code||activeEvent?.event_code||'export'}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ── Auth (preserved) ─────────────────────────────────────────────────────────
+
+function ensureAuthGateInDom(){
+  if(document.getElementById('auth-gate')) return;
+  const shell = document.getElementById('admin-shell');
+  if(!shell) return;
+  const gate = document.createElement('div');
+  gate.id = 'auth-gate';
+  gate.innerHTML = `
+  <div>
+    <h2>Admin Panel</h2>
+    <p>Sign in with your admin account to manage competition events, prizes, and show schedule.</p>
+  </div>
+  <form class="auth-form" id="signin-form" onsubmit="return false" autocomplete="off">
+    <input id="g-email" type="email" autocomplete="email" placeholder="Email" required>
+    <input id="g-pass"  type="password" autocomplete="current-password" placeholder="Password" required>
+    <button type="submit" class="btn btn-primary" id="btn-signin" style="width:100%">Sign in</button>
+    <p id="signin-err" style="color:var(--danger);font-size:12px;text-align:center;display:none"></p>
+  </form>`;
+  shell.before(gate);
+  wireSignInForm();
+}
+
+function showAuthGate(){
+  ensureAuthGateInDom();
+  const g = document.getElementById('auth-gate');
+  if(g) g.style.display = 'flex';
+  document.getElementById('admin-shell').classList.remove('visible');
+}
+
+function showAdminPanel(){
+  const gate = document.getElementById('auth-gate');
+  if(gate) gate.remove(); // remove from DOM so password manager stops watching inputs
+  document.getElementById('admin-shell').classList.add('visible');
+}
+
+function wireSignInForm(){
+  const signinForm = document.getElementById('signin-form');
+  if(!signinForm || signinForm.dataset.wired === '1') return;
+  signinForm.dataset.wired = '1';
+  signinForm.addEventListener('submit', async()=>{
+    const email = document.getElementById('g-email').value.trim();
+    const pass  = document.getElementById('g-pass').value;
+    const errEl = document.getElementById('signin-err');
+    errEl.style.display = 'none';
+    const { error } = await sb.auth.signInWithPassword({email, password:pass});
+    if(error){ errEl.textContent=error.message; errEl.style.display='block'; }
+  });
+}
+
+async function onSignedIn(session){
+  currentUser = session.user;
+  const email    = currentUser.email || '';
+  const initials = email.substring(0,2).toUpperCase();
+  document.getElementById('sidebar-avatar').textContent = initials;
+  document.getElementById('sidebar-email').textContent  = email;
+
+  const { data: prof } = await sb.from('profiles').select('is_admin').eq('id', currentUser.id).maybeSingle();
+  isAdmin = prof?.is_admin === true;
+  document.getElementById('not-admin-note').style.display = isAdmin ? 'none' : 'block';
+
+  showAdminPanel();
+  if(isAdmin){
+    await loadGames();
+    await loadEvents();
+    loadLiveSection();
+    startActivityPoll();
+    attachLeaderboardRealtime();
+  }
+}
+
+function onSignedOut(){
+  currentUser = null; isAdmin = false;
+  focusEvent = null;
+  clearInterval(activityTimer); clearInterval(countdownTimer);
+  clearInterval(heroCountdownTimer);
+  heroCountdownTimer = null;
+  if(lbRealtimeChannel && sb){
+    try{ sb.removeChannel(lbRealtimeChannel); }catch{ /* noop */ }
+    lbRealtimeChannel = null;
+  }
+  const av = document.getElementById('sidebar-avatar');
+  const em = document.getElementById('sidebar-email');
+  if(av) av.textContent = '?';
+  if(em) em.textContent = '';
+  showAuthGate();
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+
+async function boot(){
+  if(!SB_URL||!SB_KEY){
+    document.getElementById('auth-gate').innerHTML='<p style="color:var(--danger)">⚠ supabase-config.js not configured.<br>Copy supabase-config.example.js → supabase-config.js and add your keys.</p>';
+    return;
+  }
+  const Sb = globalThis.supabase;
+  if(!Sb||typeof Sb.createClient!=='function'){
+    document.getElementById('auth-gate').innerHTML='<p style="color:var(--danger)">⚠ Supabase client script failed to load. Check network/adblock or try another browser.</p>';
+    return;
+  }
+  sb = Sb.createClient(SB_URL, SB_KEY, {auth:{persistSession:true,autoRefreshToken:true}});
+
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session?.user) await onSignedIn(session);
+  else showAuthGate();
+
+  sb.auth.onAuthStateChange(async(_e,session)=>{
+    if(session?.user) await onSignedIn(session);
+    else onSignedOut();
+  });
+
+  wireSignInForm();
+
+  document.getElementById('btn-admin-logout')?.addEventListener('click', async()=>{
+    try{
+      const { error } = await sb.auth.signOut();
+      if(error){ toast(error.message,'err'); return; }
+    }catch(e){
+      toast(e.message||String(e),'err');
+    }
+  });
+
+  // Sidebar nav
+  document.querySelectorAll('.nav-item').forEach(btn=>{
+    btn.addEventListener('click', ()=> showSection(btn.dataset.section));
+  });
+
+  // Leaderboard tabs
+  document.querySelectorAll('#lb-tabs .tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#lb-tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      loadLeaderboard(btn.dataset.tab);
+    });
+  });
+
+  document.getElementById('btn-csv').addEventListener('click', exportCsv);
+
+  // Event form
+  document.getElementById('event-form').addEventListener('submit', saveEvent);
+  document.getElementById('btn-cancel-form').addEventListener('click', ()=>showSection('live'));
+  document.getElementById('btn-form-cancel-top').addEventListener('click', ()=>showSection('live'));
+
+  // HUD preview + seed auto-populate
+  ['f-prize','f-show-at'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('input', updatePreview);
+  });
+  document.getElementById('f-starts')?.addEventListener('change', ()=>{
+    const val = document.getElementById('f-starts').value;
+    if(val){
+      const d = new Date(val);
+      document.getElementById('f-seed').value = `${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}`;
+    }
+  });
+
+  // Danger zone
+  document.getElementById('btn-close-scoring').addEventListener('click', async()=>{
+    if(!focusEvent || eventStatusOf(focusEvent)!=='active') return;
+    if(!confirm('Close scoring now? Players will not be able to submit new runs.')) return;
+    const { error } = await sb.from('events').update({ends_at: new Date().toISOString()}).eq('id', focusEvent.id);
+    if(error){ toast('Failed: '+error.message,'err'); return; }
+    toast('Scoring closed ✓','ok');
+    await loadEvents(); activeEvent = getActiveEvent(); syncFocusEvent(); await loadLiveSection();
+  });
+  document.getElementById('btn-end-event').addEventListener('click', async()=>{
+    if(!focusEvent || eventStatusOf(focusEvent)!=='active') return;
+    if(!confirm('End this event and freeze the leaderboard? Scoring closes now.')) return;
+    if(!confirm('Are you sure? This cannot be easily undone.')) return;
+    const { error } = await sb.from('events').update({ends_at: new Date().toISOString()}).eq('id', focusEvent.id);
+    if(error){ toast('Failed: '+error.message,'err'); return; }
+    toast('Event ended — leaderboard frozen ✓','ok');
+    await loadEvents(); activeEvent = getActiveEvent(); syncFocusEvent(); await loadLiveSection();
+  });
+
+  document.getElementById('event-etabs')?.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.etab-btn');
+    if(!btn?.dataset.etab) return;
+    eventHubTab = btn.dataset.etab;
+    renderEventHub();
+  });
+  document.getElementById('event-hub-panel')?.addEventListener('click', (e)=>{
+    const row = e.target.closest('.ev-row');
+    if(e.target.closest('.btn-ev-focus') && row?.dataset.eventId){
+      window._selectFocusEventById(row.dataset.eventId);
+    }
+    if(e.target.closest('.btn-ev-edit') && row?.dataset.eventId){
+      void window._editEvent(row.dataset.eventId);
+    }
+  });
+
+  // User admin tabs
+  document.querySelectorAll('.utab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> loadUserAdminTab(btn.dataset.utab));
+  });
+
+  // User search
+  document.getElementById('user-search')?.addEventListener('input', e=>filterUsers(e.target.value));
+
+  // Users toolbar
+  document.getElementById('btn-users-refresh')?.addEventListener('click', ()=> loadUsers());
+  document.getElementById('btn-user-add')?.addEventListener('click', ()=>{
+    document.getElementById('add-email').value = '';
+    document.getElementById('add-pass').value  = '';
+    document.getElementById('add-dname').value = '';
+    document.getElementById('add-user-err').style.display = 'none';
+    document.getElementById('modal-add-user').classList.add('open');
+    document.getElementById('modal-add-user').setAttribute('aria-hidden','false');
+  });
+  document.getElementById('btn-add-user-cancel')?.addEventListener('click', ()=>{
+    document.getElementById('modal-add-user').classList.remove('open');
+    document.getElementById('modal-add-user').setAttribute('aria-hidden','true');
+  });
+  document.getElementById('btn-add-user-save')?.addEventListener('click', async()=>{
+    const errEl = document.getElementById('add-user-err');
+    errEl.style.display = 'none';
+    try{
+      await edgeFetchPost('admin-auth-create-user', {
+        email:        document.getElementById('add-email').value.trim(),
+        password:     document.getElementById('add-pass').value,
+        display_name: document.getElementById('add-dname').value.trim() || undefined,
+      });
+      document.getElementById('modal-add-user').classList.remove('open');
+      document.getElementById('modal-add-user').setAttribute('aria-hidden','true');
+      toast('User created ✓','ok');
+      loadUsers();
+    }catch(e){
+      errEl.textContent = e.message||String(e);
+      errEl.style.display = 'block';
+    }
+  });
+
+  // Users table: admin checkbox (preserved RPC call)
+  document.getElementById('users-tbody')?.addEventListener('change', async(e)=>{
+    const t = e.target;
+    if(!t.classList.contains('cb-admin')) return;
+    const tr = t.closest('tr');
+    if(!tr) return;
+    try{
+      await persistUserFlags(tr);
+      toast('Saved profile flags','ok',2000);
+    }catch(err){
+      toast('Save failed: '+(err.message||err),'err',5000);
+      loadUsers();
+    }
+  });
+
+  // Users table: action buttons (preserved + ban/unban)
+  document.getElementById('users-tbody')?.addEventListener('click', async(e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const tr = btn.closest('tr'), uid = tr?.dataset.userId;
+    if(!tr||!uid) return;
+
+    if(btn.classList.contains('btn-ban-inline')){
+      if(!confirm('Ban this player?')) return;
+      const u = allUsersCache.find(x=>x.id===uid);
+      const { error } = await sb.rpc('admin_set_profile_flags', { target_user_id:uid, p_is_admin:u?.is_admin===true, p_is_banned:true });
+      if(error){ toast('Ban failed: '+error.message,'err'); return; }
+      toast('Player banned','ok'); loadUsers();
+    }
+    if(btn.classList.contains('btn-unban-inline')){
+      if(!confirm('Unban this player?')) return;
+      const u = allUsersCache.find(x=>x.id===uid);
+      const { error } = await sb.rpc('admin_set_profile_flags', { target_user_id:uid, p_is_admin:u?.is_admin===true, p_is_banned:false });
+      if(error){ toast('Unban failed: '+error.message,'err'); return; }
+      toast('Player unbanned ✓','ok'); loadUsers();
+    }
+    if(btn.classList.contains('btn-clear-scores')){
+      if(!confirm('Clear all runs, leaderboard rows, and daily attempt counts for this user?')) return;
+      try{
+        const { error } = await sb.rpc('admin_clear_user_competition_data', { target_user_id:uid });
+        if(error) throw error;
+        toast('Competition data cleared','ok');
+      }catch(err){ toast('Clear failed: '+(err.message||err),'err',5000); }
+    }
+    if(btn.classList.contains('btn-delete-user')){
+      if(!confirm('Permanently delete this Auth user and all related data?')) return;
+      try{
+        const out = await edgeFetchPost('admin-auth-delete-user', { user_id:uid });
+        if(!out||out.ok!==true) throw new Error((out&&out.error)||'Server did not confirm delete');
+        toast('User deleted','ok');
+        await loadUsers();
+      }catch(err){ toast('Delete failed: '+(err.message||err),'err',8000); }
+    }
+  });
+
+  // Flagged tab actions
+  document.getElementById('flagged-tab-tbody')?.addEventListener('click', async(e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const tr = btn.closest('tr');
+    if(!tr) return;
+    const runId = tr.dataset.runId, uid = tr.dataset.userId;
+    if(btn.classList.contains('btn-fl-approve')){
+      const { error } = await sb.from('runs').update({is_validated:true}).eq('id', runId);
+      if(error){ toast('Approve failed: '+error.message,'err'); return; }
+      toast('Run approved ✓','ok'); loadFlaggedTab(); loadLiveStats(); loadFlaggedCard(); void loadWinnerBanner();
+    }
+    if(btn.classList.contains('btn-fl-remove')){
+      if(!confirm('Remove this run?')) return;
+      const { error } = await sb.from('runs').delete().eq('id', runId);
+      if(error){ toast('Delete failed: '+error.message,'err'); return; }
+      toast('Run removed','ok'); loadFlaggedTab(); loadLiveStats(); loadFlaggedCard(); loadLeaderboard(); void loadWinnerBanner();
+    }
+    if(btn.classList.contains('btn-fl-ban')){
+      if(!confirm('Ban this player?')) return;
+      const u = allUsersCache.find(x=>x.id===uid);
+      const { error } = await sb.rpc('admin_set_profile_flags', { target_user_id:uid, p_is_admin:u?.is_admin===true, p_is_banned:true });
+      if(error){ toast('Ban failed: '+error.message,'err'); return; }
+      toast('Player banned','ok'); loadFlaggedTab();
+    }
+  });
+
+  // Banned tab: unban
+  document.getElementById('banned-tbody')?.addEventListener('click', async(e)=>{
+    const btn = e.target.closest('.btn-unban');
+    if(!btn) return;
+    const tr = btn.closest('tr'), uid = tr?.dataset.userId;
+    if(!uid) return;
+    if(!confirm('Unban this player?')) return;
+    const u = allUsersCache.find(x=>x.id===uid);
+    const { error } = await sb.rpc('admin_set_profile_flags', { target_user_id:uid, p_is_admin:u?.is_admin===true, p_is_banned:false });
+    if(error){ toast('Unban failed: '+error.message,'err'); return; }
+    toast('Player unbanned ✓','ok'); loadBannedTab();
+  });
+}
+
+boot().catch(console.error);
+</script>
+</body>
+</html>
