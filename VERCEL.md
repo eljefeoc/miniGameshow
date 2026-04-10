@@ -53,6 +53,13 @@ Deployed functions get `SUPABASE_URL` and `SUPABASE_ANON_KEY` from the project a
 
 **Browser config:** only the **anon** key belongs in `supabase-config.js` / Vercel env. Optional: set `functionsUrl` if the functions base is not `{SUPABASE_URL}/functions/v1`.
 
+### Admin panel — live leaderboard (Realtime)
+
+The admin ([`prototypes/admin.html`](prototypes/admin.html)) subscribes to **`INSERT` on `public.runs`** so the competition leaderboard can update without a full page refresh. That requires **`public.runs`** to be part of the **`supabase_realtime` publication** for your project.
+
+- **Supabase Dashboard** → **Database** → **Publications** (or **Settings → API → Realtime** depending on dashboard version) → ensure **`runs`** is enabled for Realtime, or run SQL such as: `alter publication supabase_realtime add table public.runs;` (skip if already listed).
+- If Realtime is off or blocked, the admin still **polls** the leaderboard (10s while a competition event is **active** and you are on Live + Competition tab; otherwise 30s).
+
 ## Custom domain: Namecheap → Vercel (`theminigameshow.com`)
 
 Use **DNS records** (Advanced DNS), not Namecheap’s **URL Redirect** for the same hostnames you want Vercel to serve—redirect records can fight HTTPS routing.

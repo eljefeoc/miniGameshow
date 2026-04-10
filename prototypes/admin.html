@@ -1136,6 +1136,7 @@ let countdownTimer       = null;
 let heroCountdownTimer   = null;
 let lbPrevRankMap        = new Map();
 let lbRealtimeChannel    = null;
+let lbRealtimeWarned     = false;
 
 // ── Edge Function utilities (preserved) ─────────────────────────────────────
 
@@ -1743,15 +1744,31 @@ function setLbFooterTextAndLive(text){
 
 function attachLeaderboardRealtime(){
   if(!sb || lbRealtimeChannel) return;
+  // Live updates require `public.runs` in the supabase_realtime publication (see VERCEL.md).
   lbRealtimeChannel = sb.channel('leaderboard-admin')
     .on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
       table: 'runs',
     }, () => {
-      if(document.getElementById('section-live')?.classList.contains('active')) void loadLeaderboard();
+      if(document.getElementById('section-live')?.classList.contains('active')) void loadLeaderboard(lbMode);
     })
-    .subscribe();
+    .subscribe((status, err)=>{
+      if(status === 'SUBSCRIBED'){
+        if(/^(localhost|127\.0\.0\.1)$/i.test(location.hostname||'')){
+          console.info('[admin] Leaderboard Realtime: SUBSCRIBED');
+        }
+        return;
+      }
+      if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+        const msg = err && (err.message || String(err)) || status;
+        console.warn('[admin] Leaderboard Realtime:', status, msg);
+        if(!lbRealtimeWarned){
+          lbRealtimeWarned = true;
+          toast('Live leaderboard push updates unavailable (check Realtime publication for runs). Polling still refreshes the list.', 'err', 8000);
+        }
+      }
+    });
 }
 
 async function loadLeaderboard(mode){
@@ -2013,16 +2030,29 @@ async function loadActivityFeed(){
 }
 
 function startActivityPoll(){
-  if(activityTimer) clearInterval(activityTimer);
-  activityTimer = setInterval(()=>{
-    if(document.getElementById('section-live').classList.contains('active')){
+  if(activityTimer) clearTimeout(activityTimer);
+  function tick(){
+    if(!isAdmin) return;
+    const liveSec = document.getElementById('section-live');
+    if(liveSec?.classList.contains('active')){
       activeEvent = getActiveEvent();
       syncFocusEvent();
       renderEventHub();
       loadActivityFeed();
       loadLiveStats();
+      void loadLeaderboard(lbMode);
     }
-  }, 30000);
+    const fastPoll =
+      liveSec?.classList.contains('active') &&
+      lbMode === 'competition' &&
+      focusEvent &&
+      eventStatusOf(focusEvent) === 'active';
+    const delay = fastPoll ? 10000 : 30000;
+    activityTimer = setTimeout(tick, delay);
+  }
+  const live0 = document.getElementById('section-live');
+  const fast0 = live0?.classList.contains('active') && lbMode === 'competition' && focusEvent && eventStatusOf(focusEvent) === 'active';
+  activityTimer = setTimeout(tick, fast0 ? 10000 : 30000);
 }
 
 // ── New competition form ──────────────────────────────────────────────────────
@@ -2491,7 +2521,8 @@ async function adminSignOut(){
 function onSignedOut(){
   currentUser = null; isAdmin = false;
   focusEvent = null;
-  clearInterval(activityTimer); clearInterval(countdownTimer);
+  lbRealtimeWarned = false;
+  clearTimeout(activityTimer); clearInterval(countdownTimer);
   clearInterval(heroCountdownTimer);
   heroCountdownTimer = null;
   if(lbRealtimeChannel && sb){
