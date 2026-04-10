@@ -919,9 +919,7 @@ textarea { resize: vertical; min-height: 64px; }
       <!-- Danger zone -->
       <div class="danger-zone">
         <span class="dng-label">Danger zone</span>
-        <button type="button" class="btn btn-dng btn-sm" id="btn-close-scoring">Close scoring early</button>
-        <button type="button" class="btn btn-dng btn-sm" id="btn-end-event">End event &amp; freeze leaderboard</button>
-        <button type="button" class="btn btn-dng btn-sm" id="btn-cancel-competition">Cancel competition event</button>
+        <button type="button" class="btn btn-dng btn-sm" id="btn-cancel-event">Cancel Event</button>
       </div>
     </section>
 
@@ -1429,12 +1427,7 @@ function syncFocusEvent(){
 }
 
 function updateDangerZoneState(){
-  const closeBtn = document.getElementById('btn-close-scoring');
-  const endBtn   = document.getElementById('btn-end-event');
-  const cancelBtn = document.getElementById('btn-cancel-competition');
-  const ok = !!(focusEvent && eventStatusOf(focusEvent)==='active');
-  if(closeBtn){ closeBtn.disabled = !ok; closeBtn.title = ok ? '' : 'Only available while the selected event is in its active scoring window.'; }
-  if(endBtn){ endBtn.disabled = !ok; endBtn.title = ok ? '' : 'Only available while the selected event is in its active scoring window.'; }
+  const cancelBtn = document.getElementById('btn-cancel-event');
   if(cancelBtn){
     const can = !!(focusEvent && !focusEvent.canceled_at);
     cancelBtn.disabled = !can;
@@ -2103,7 +2096,7 @@ async function cancelFocusCompetitionEvent(){
   if(nowMs < startsMs){
     ends_at = new Date(startsMs + 1000).toISOString();
   }
-  const btn = document.getElementById('btn-cancel-competition');
+  const btn = document.getElementById('btn-cancel-event');
   const prevText = btn ? btn.textContent : '';
   if(btn){ btn.disabled = true; btn.textContent = 'Canceling…'; }
   try{
@@ -2117,7 +2110,7 @@ async function cancelFocusCompetitionEvent(){
   }catch(err){
     toast('Cancel failed: '+(err.message||String(err)),'err',6000);
   }finally{
-    if(btn) btn.textContent = prevText || 'Cancel competition event';
+    if(btn) btn.textContent = prevText || 'Cancel Event';
     updateDangerZoneState();
   }
 }
@@ -2576,25 +2569,7 @@ async function boot(){
     }
   });
 
-  // Danger zone
-  document.getElementById('btn-close-scoring').addEventListener('click', async()=>{
-    if(!focusEvent || eventStatusOf(focusEvent)!=='active') return;
-    if(!confirm('Close scoring now? Players will not be able to submit new runs.')) return;
-    const { error } = await sb.from('events').update({ends_at: new Date().toISOString()}).eq('id', focusEvent.id);
-    if(error){ toast('Failed: '+error.message,'err'); return; }
-    toast('Scoring closed ✓','ok');
-    await loadEvents(); activeEvent = getActiveEvent(); syncFocusEvent(); await loadLiveSection();
-  });
-  document.getElementById('btn-end-event').addEventListener('click', async()=>{
-    if(!focusEvent || eventStatusOf(focusEvent)!=='active') return;
-    if(!confirm('End this event and freeze the leaderboard? Scoring closes now.')) return;
-    if(!confirm('Are you sure? This cannot be easily undone.')) return;
-    const { error } = await sb.from('events').update({ends_at: new Date().toISOString()}).eq('id', focusEvent.id);
-    if(error){ toast('Failed: '+error.message,'err'); return; }
-    toast('Event ended — leaderboard frozen ✓','ok');
-    await loadEvents(); activeEvent = getActiveEvent(); syncFocusEvent(); await loadLiveSection();
-  });
-  document.getElementById('btn-cancel-competition').addEventListener('click', ()=> void cancelFocusCompetitionEvent());
+  document.getElementById('btn-cancel-event').addEventListener('click', ()=> void cancelFocusCompetitionEvent());
 
   document.getElementById('event-etabs')?.addEventListener('click', (e)=>{
     const btn = e.target.closest('.etab-btn');
