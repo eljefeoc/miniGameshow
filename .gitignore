@@ -73,6 +73,9 @@ web_modules/
 # Local Supabase keys for static HTML prototypes (copy from supabase-config.example.js)
 prototypes/supabase-config.js
 
+# Local dated admin snapshot (keep on disk only)
+prototypes/admin_april8.html
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
