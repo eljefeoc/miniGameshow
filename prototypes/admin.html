@@ -425,6 +425,29 @@ html, body {
 @media(max-width:1000px){ .two-col { grid-template-columns: 1fr; } }
 .right-col { display: flex; flex-direction: column; gap: 14px; }
 
+/* ── Mockup-style right stack ───────────────────────────────────────── */
+.content-grid {
+  display: grid; grid-template-columns: 1fr 280px;
+  gap: 16px; margin-bottom: 20px;
+}
+@media(max-width:900px){ .content-grid { grid-template-columns: 1fr; } }
+.right-stack { display: flex; flex-direction: column; gap: 14px; }
+.mini-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--rc);
+  padding: 16px;
+}
+.mini-card-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--accent); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.stat-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.stat-box  { background: var(--page-bg); border-radius: 8px; padding: 12px; text-align: center; }
+.stat-box-val { font-size: 22px; font-weight: 800; line-height: 1; }
+.stat-box-lbl { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
 /* ── Cards ─────────────────────────────────────────────────────────── */
 .card {
   background: var(--card-bg); border: 1px solid var(--border);
@@ -781,12 +804,13 @@ textarea { resize: vertical; min-height: 64px; }
         <div id="live-hero-countdown" class="hero-b-countdown"></div>
       </div>
 
-      <div class="card event-hub-card" id="event-hub-card">
+      <!-- Hidden: event hub kept for JS compatibility -->
+      <div class="card event-hub-card" id="event-hub-card" style="display:none" aria-hidden="true">
         <div class="card-header" style="margin-bottom:10px">
           <span class="card-title">Competition events</span>
           <span id="event-hub-sub" style="font-size:12px;color:var(--muted)"></span>
         </div>
-        <p id="event-hub-empty" class="empty" style="padding:12px;display:none">No events yet. Create one under New competition.</p>
+        <p id="event-hub-empty" class="empty" style="padding:12px;display:none">No events yet.</p>
         <div id="event-hub-wrap" style="display:none">
           <div class="etabs" id="event-etabs" role="tablist">
             <button type="button" class="etab-btn active" data-etab="active" role="tab" aria-selected="true">Active <span id="etab-n-active" class="badge badge-active" style="margin-left:4px">0</span></button>
@@ -799,34 +823,22 @@ textarea { resize: vertical; min-height: 64px; }
 
       <div id="event-winner-banner" class="notice notice-info event-winner-banner" style="display:none" aria-live="polite"></div>
 
-      <div class="stats-row">
-        <div class="stat-tile">
-          <div class="stat-value" id="sv-players">—</div>
-          <div class="stat-label">Players</div>
-          <div class="stat-sub"  id="ss-players"></div>
-        </div>
-        <div class="stat-tile">
-          <div class="stat-value" id="sv-runs">—</div>
-          <div class="stat-label">Total runs</div>
-          <div class="stat-sub"  id="ss-runs"></div>
-        </div>
-        <div class="stat-tile">
-          <div class="stat-value" id="sv-flagged">—</div>
-          <div class="stat-label">Flagged</div>
-          <div class="stat-sub"  id="ss-flagged">needs review</div>
-        </div>
-        <div class="stat-tile">
-          <div class="stat-value" id="sv-time">—</div>
-          <div class="stat-label" id="sv-time-label">Scoring window</div>
-          <div class="stat-sub"  id="ss-time"></div>
-        </div>
+      <!-- Hidden: stat IDs kept for JS compatibility -->
+      <div style="display:none" aria-hidden="true">
+        <span id="sv-flagged"></span>
+        <span id="sv-time"></span>
+        <span id="sv-time-label">Scoring window</span>
+        <span id="ss-time"></span>
+        <span id="ss-flagged">needs review</span>
       </div>
 
-      <div class="two-col">
+      <!-- Main layout — matches mockup -->
+      <div class="content-grid">
+
         <!-- Leaderboard -->
         <div class="lb-card" id="lb-card-wrap">
           <div class="lb-header">
-            <span class="lb-title">Top 10 leaderboard</span>
+            <span class="lb-title">Leaderboard</span>
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
               <div class="tabs" id="lb-tabs">
                 <button type="button" class="tab-btn active" data-tab="competition">Competition</button>
@@ -846,37 +858,43 @@ textarea { resize: vertical; min-height: 64px; }
           </div>
         </div>
 
-        <!-- Right stacked cards -->
-        <div class="right-col">
+        <!-- Right stack — matches mockup -->
+        <div class="right-stack">
 
           <!-- Week at a glance -->
-          <div class="card">
-            <div class="card-header" style="margin-bottom:12px">
-              <span class="card-title">Event at a glance</span>
-              <span id="glance-status"></span>
+          <div class="mini-card">
+            <div class="mini-card-title">Week at a glance <span id="glance-status"></span></div>
+            <div class="stat-pair">
+              <div class="stat-box">
+                <div class="stat-box-val" id="sv-players">—</div>
+                <div class="stat-box-lbl">Players</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-box-val" id="sv-runs">—</div>
+                <div class="stat-box-lbl">Runs today</div>
+              </div>
             </div>
-            <div id="glance-body"><div class="empty" style="padding:12px">No active event</div></div>
+            <div style="display:none"><span id="ss-players"></span><span id="ss-runs"></span></div>
+            <div id="glance-body"><div class="empty" style="padding:4px">No active event</div></div>
           </div>
 
           <!-- Flagged runs -->
-          <div class="card">
-            <div class="card-header" style="margin-bottom:10px">
-              <span class="card-title">Flagged runs<span class="count-dot" id="flagged-badge" style="display:none"></span></span>
+          <div class="mini-card">
+            <div class="mini-card-title">
+              Flagged runs
+              <span class="count-dot" id="flagged-badge" style="display:none"></span>
             </div>
-            <div id="flagged-body"><div class="empty" style="padding:12px">Loading…</div></div>
+            <div id="flagged-body"><div class="empty" style="padding:4px">Loading…</div></div>
           </div>
 
           <!-- Activity feed -->
-          <div class="card">
-            <div class="card-header" style="margin-bottom:10px">
-              <span class="card-title">Activity</span>
-              <span style="font-size:11px;color:var(--muted)">Live · 30s</span>
-            </div>
-            <div id="activity-body"><div class="empty" style="padding:12px">Loading…</div></div>
+          <div class="mini-card">
+            <div class="mini-card-title">Activity feed</div>
+            <div id="activity-body"><div class="empty" style="padding:4px">Loading…</div></div>
           </div>
 
-        </div><!-- /right-col -->
-      </div><!-- /two-col -->
+        </div><!-- /right-stack -->
+      </div><!-- /content-grid -->
 
       <!-- Danger zone -->
       <div class="danger-zone">
@@ -1517,7 +1535,10 @@ function updateLiveHero(){
   if(act && heroTitle){
     heroTitle.textContent = act.prize_title || act.event_code || 'Live competition';
     const prizeLabel = act.prize_title ? esc(act.prize_title) : '—';
-    if(heroMeta) heroMeta.innerHTML = `Prize: <span style="font-weight:600;color:rgba(255,255,255,0.85)">${prizeLabel}</span>`;
+    const players = document.getElementById('sv-players')?.textContent || '—';
+    const runs    = document.getElementById('sv-runs')?.textContent    || '—';
+    if(heroMeta) heroMeta.innerHTML =
+      `Prize: <span>${prizeLabel}</span> · Players: <span>${players}</span> · Runs today: <span>${runs}</span>`;
   }
   if(act && heroCountdown){
     function tickHero(){
