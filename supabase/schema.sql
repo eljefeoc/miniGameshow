@@ -477,6 +477,12 @@ CREATE POLICY "runs_delete_admin"
     )
   );
 
+-- Public read of runs for score leaderboards (select safe columns in clients only)
+CREATE POLICY "runs_select_leaderboard_public"
+  ON public.runs FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
 -- Leaderboard: public read
 CREATE POLICY "leaderboard_select_all"
   ON public.leaderboard FOR SELECT
@@ -502,6 +508,16 @@ CREATE POLICY "daily_attempts_select_own"
   ON public.daily_attempts FOR SELECT
   TO authenticated
   USING (user_id = auth.uid());
+
+CREATE POLICY "daily_attempts_select_admin"
+  ON public.daily_attempts FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_admin = true
+    )
+  );
 
 CREATE POLICY "daily_attempts_delete_own"
   ON public.daily_attempts FOR DELETE

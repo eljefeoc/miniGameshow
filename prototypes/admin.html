@@ -1751,7 +1751,7 @@ function attachLeaderboardRealtime(){
       schema: 'public',
       table: 'runs',
     }, () => {
-      if(document.getElementById('section-live')?.classList.contains('active')) void loadLeaderboard(lbMode);
+      if(document.getElementById('section-live')?.classList.contains('active')) void loadLeaderboard(lbMode, { silent: true });
     })
     .subscribe((status, err)=>{
       if(status === 'SUBSCRIBED'){
@@ -1771,12 +1771,18 @@ function attachLeaderboardRealtime(){
     });
 }
 
-async function loadLeaderboard(mode){
+async function loadLeaderboard(mode, opts = {}){
   if(mode) lbMode = mode;
+  const silent = opts.silent === true;
   const tbody = document.getElementById('lb-tbody');
   const thDots = document.getElementById('lb-th-dots');
   const prevRanks = lbPrevRankMap;
-  tbody.innerHTML = '<div class="empty" style="padding:12px 18px">Loading…</div>';
+  const ctxKey = lbMode === 'arcade' ? 'arcade' : (focusEvent ? `competition:${focusEvent.id}` : 'competition:none');
+  const hadRows = !!(tbody && tbody.querySelector('.lb-row'));
+  const sameCtx = tbody?.dataset?.lbCtx === ctxKey;
+  if(!silent || !hadRows || !sameCtx){
+    tbody.innerHTML = '<div class="empty" style="padding:12px 18px">Loading…</div>';
+  }
   if(thDots) thDots.style.display = lbMode === 'competition' ? '' : 'none';
 
   if(lbMode === 'arcade'){
@@ -1785,6 +1791,7 @@ async function loadLeaderboard(mode){
       .order('best_score',{ascending:false}).limit(10);
     if(error){
       tbody.innerHTML = '<div class="empty" style="padding:12px 18px">Arcade board coming soon — run Phase 2b migration.</div>';
+      delete tbody.dataset.lbCtx;
       lbDataCache = [];
       setLbFooterTextAndLive('');
       return;
@@ -1808,6 +1815,7 @@ async function loadLeaderboard(mode){
         <div class="lb-lastrun">—</div>
       </div>`;
     }).join('') || '<div class="empty" style="padding:12px 18px">No entries yet.</div>';
+    tbody.dataset.lbCtx = ctxKey;
     lbPrevRankMap = nextMap;
     setLbFooterTextAndLive(`Showing ${rows?.length||0} players`);
     return;
@@ -1815,24 +1823,29 @@ async function loadLeaderboard(mode){
 
   if(!focusEvent){
     tbody.innerHTML = '<div class="empty" style="padding:12px 18px">No competition event selected.</div>';
+    delete tbody.dataset.lbCtx;
     lbDataCache = [];
     lbPrevRankMap = new Map();
     setLbFooterTextAndLive('');
     return;
   }
 
-  const { data: rows, error } = await sb.from('leaderboard')
-    .select('rank, user_id, best_score, profiles(display_name, username)')
-    .eq('event_id', focusEvent.id).order('rank').limit(10);
+  const { data: rows, error } = await sb.from('runs')
+    .select('id, score, created_at, user_id, attempt_num, profiles(display_name, username)')
+    .eq('event_id', focusEvent.id)
+    .order('score', { ascending: false })
+    .order('created_at', { ascending: true })
+    .limit(25);
   if(error){
     tbody.innerHTML = `<div class="empty" style="padding:12px 18px;color:var(--danger)">${esc(error.message)}</div>`;
+    delete tbody.dataset.lbCtx;
     setLbFooterTextAndLive('');
     return;
   }
   lbDataCache = rows || [];
 
   const todaySeed = getTodaySeed();
-  const userIds = (rows||[]).map(r=>r.user_id);
+  const userIds = [...new Set((rows||[]).map(r=>r.user_id).filter(Boolean))];
   let attMap = {};
   if(userIds.length){
     const { data: atts } = await sb.from('daily_attempts')
@@ -1840,46 +1853,40 @@ async function loadLeaderboard(mode){
     for(const a of atts||[]) attMap[a.user_id] = a.attempts_used;
   }
 
-  let lastMap = {};
-  if(userIds.length){
-    const { data: recents } = await sb.from('runs')
-      .select('user_id, created_at').in('user_id', userIds)
-      .eq('event_id', focusEvent.id).order('created_at',{ascending:false}).limit(userIds.length * 5);
-    for(const r of recents||[]){ if(!lastMap[r.user_id]) lastMap[r.user_id] = r.created_at; }
-  }
-
-  const { count: totalCount } = await sb.from('leaderboard')
-    .select('user_id',{count:'exact',head:true}).eq('event_id', focusEvent.id);
+  const { count: totalCount } = await sb.from('runs')
+    .select('id',{count:'exact',head:true}).eq('event_id', focusEvent.id);
 
   const nextMap = new Map();
-  (rows||[]).forEach(r=> nextMap.set(r.user_id, r.rank));
+  (rows||[]).forEach((r,i)=> nextMap.set(r.id, i+1));
 
-  tbody.innerHTML = (rows||[]).map(r=>{
+  tbody.innerHTML = (rows||[]).map((r,i)=>{
+    const rank = i+1;
     const used = attMap[r.user_id] || 0;
-    const dots = Array.from({length:5},(_,i)=>`<span class="dot${i<used?' on':''}"></span>`).join('');
-    const rc = r.rank===1 ? 'rank-1' : r.rank===2 ? 'rank-2' : r.rank===3 ? 'rank-3' : '';
-    const flash = lbFlashClass(prevRanks, r.user_id, r.rank);
+    const dots = Array.from({length:5},(_,j)=>`<span class="dot${j<used?' on':''}"></span>`).join('');
+    const rc = rank===1 ? 'rank-1' : rank===2 ? 'rank-2' : rank===3 ? 'rank-3' : '';
+    const flash = lbFlashClass(prevRanks, r.id, rank);
     const attemptsLine = `<span class="dots">${dots}</span> · ${used}/5 today`;
-    return `<div class="lb-row ${rc}${flash}" data-user-id="${r.user_id}">
-      <div class="lb-rank">${r.rank}</div>
+    return `<div class="lb-row ${rc}${flash}" data-user-id="${r.user_id}" data-run-id="${r.id}">
+      <div class="lb-rank">${rank}</div>
       <div class="lb-avatar">${esc(playerInitialsFromRow(r.profiles))}</div>
       <div class="lb-info">
         <div class="lb-username">${esc(r.profiles?.display_name||r.profiles?.username||'Player')}</div>
         <div class="lb-attempts">${attemptsLine}</div>
       </div>
-      <div class="lb-score mono">${(r.best_score??0).toLocaleString()}</div>
-      ${lbChangeHtml(prevRanks, r.user_id, r.rank)}
-      <div class="lb-lastrun">${relTime(lastMap[r.user_id])}</div>
+      <div class="lb-score mono">${(r.score??0).toLocaleString()}</div>
+      ${lbChangeHtml(prevRanks, r.id, rank)}
+      <div class="lb-lastrun">${relTime(r.created_at)}</div>
     </div>`;
   }).join('') || '<div class="empty" style="padding:12px 18px">No entries yet.</div>';
 
+  tbody.dataset.lbCtx = ctxKey;
   lbPrevRankMap = nextMap;
 
   const stLb = focusEvent ? eventStatusOf(focusEvent) : '';
   const frozen = focusEvent && (stLb === 'past' || stLb === 'canceled');
   setLbFooterTextAndLive(frozen
-    ? `Frozen · showing ${rows?.length||0} of ${totalCount||0} players`
-    : `Showing ${rows?.length||0} of ${totalCount||0} players`);
+    ? `Frozen · top ${rows?.length||0} of ${totalCount||0} runs`
+    : `Top ${rows?.length||0} of ${totalCount||0} runs`);
 }
 
 // ── Event at a glance ─────────────────────────────────────────────────────────
@@ -1979,9 +1986,13 @@ async function loadWinnerBanner(){
     return;
   }
   try{
-    const { data: top, error } = await sb.from('leaderboard')
-      .select('rank,best_score,user_id,profiles(display_name,username)')
-      .eq('event_id', focusEvent.id).eq('rank', 1).maybeSingle();
+    const { data: top, error } = await sb.from('runs')
+      .select('score, user_id, profiles(display_name,username)')
+      .eq('event_id', focusEvent.id)
+      .order('score', { ascending: false })
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
     if(error || !top){
       el.style.display = 'none';
       el.innerHTML = '';
@@ -1990,7 +2001,7 @@ async function loadWinnerBanner(){
     const name = esc(top.profiles?.display_name || top.profiles?.username || 'Player');
     const suffix = wst === 'canceled' ? 'frozen leaderboard (canceled event)' : 'frozen leaderboard';
     el.style.display = 'block';
-    el.innerHTML = `<strong>Winner (${esc(focusEvent.event_code||'event')})</strong> — ${name} · <span class="mono">${(top.best_score??0).toLocaleString()}</span> pts (${suffix})`;
+    el.innerHTML = `<strong>Winner (${esc(focusEvent.event_code||'event')})</strong> — ${name} · <span class="mono">${(top.score??0).toLocaleString()}</span> pts (${suffix})`;
   }catch(e){
     console.error('loadWinnerBanner', e);
     el.style.display = 'none';
@@ -2040,7 +2051,7 @@ function startActivityPoll(){
       renderEventHub();
       loadActivityFeed();
       loadLiveStats();
-      void loadLeaderboard(lbMode);
+      void loadLeaderboard(lbMode, { silent: true });
     }
     const fastPoll =
       liveSec?.classList.contains('active') &&
@@ -2424,11 +2435,15 @@ window._deleteRun = async (runId)=>{
 
 function exportCsv(){
   if(!lbDataCache.length){ toast('No data to export','err'); return; }
-  const header = 'Rank,Player,Best Score\n';
+  const scoreKey = lbMode === 'arcade' ? 'best_score' : 'score';
+  const header = lbMode === 'arcade' ? 'Rank,Player,Best Score\n' : 'Rank,Player,Score,Run time\n';
   const body   = lbDataCache.map((r,i)=>{
     const rank = r.rank ?? (i+1);
     const name = (r.profiles?.display_name||r.profiles?.username||'Player').replace(/"/g,'""');
-    return `${rank},"${name}",${r.best_score??0}`;
+    const sc = r[scoreKey] ?? 0;
+    if(lbMode === 'arcade') return `${rank},"${name}",${sc}`;
+    const when = r.created_at ? new Date(r.created_at).toISOString() : '';
+    return `${rank},"${name}",${sc},"${when}"`;
   }).join('\n');
   const blob = new Blob([header+body],{type:'text/csv'});
   const url  = URL.createObjectURL(blob);
