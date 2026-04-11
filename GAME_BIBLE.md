@@ -2,7 +2,7 @@
 
 ### [WORLD NAME — TBD] — Working Title
 
-*Last updated: April 5, 2026 | Version 1.10*
+*Last updated: April 10, 2026 | Version 1.11*
 
 ---
 
@@ -675,7 +675,11 @@ are in.
 - Seed: date-derived integer — `YYYYMMDD` — same for every player worldwide that day
 - Attempts: 5 per day, enforced server-side via `daily_attempts` table
 - Who scores: signed-in players with `is_18_plus = true` (set at sign-up)
-- Leaderboard: weekly, resets every Monday when the new week goes live
+- Leaderboard: **top runs** for the active event (ordered by score, then earlier
+  `created_at` as tie-breaker). The same player can hold multiple ranks; the
+  weekly champion is the **owner of the #1 run**. Resets when the new event goes
+  live. (`leaderboard` may still be maintained for other aggregates; **public
+  UI** reads from `runs`.)
 - Scores validated: `event_id` and `day_seed` must match the active event on insert
 - Prize eligible: yes — top score wins Sunday's live event prize
 - Cannot be practiced: Arcade uses a different random seed, so players can never
@@ -706,12 +710,14 @@ mode = 'arcade',  day_seed = 'a3f9c821',  event_id = NULL
 `event_id` is nullable — arcade runs do not belong to a competition event.
 `day_seed` for arcade is a random hex string, not a date integer.
 
-Leaderboard queries filter by mode first:
+Leaderboard queries filter by mode first (Arcade still personal-best oriented;
+Competition **board display** is run-ordered as shipped April 2026):
 ```sql
--- Competition leaderboard (this week)
-SELECT * FROM leaderboard WHERE mode = 'competition' AND event_id = '2026-E01'
+-- Competition public board (top runs — implemented in admin + game)
+SELECT * FROM runs WHERE event_id = '<event_uuid>'
+ORDER BY score DESC, created_at ASC;
 
--- Arcade leaderboard (all-time best per player)
+-- Arcade leaderboard (all-time best per player; requires runs.mode when migrated)
 SELECT user_id, MAX(score) FROM runs WHERE mode = 'arcade' GROUP BY user_id
 ```
 
@@ -1028,6 +1034,19 @@ Nightly job → checks content_events
 
 *Update this section at the end of every meaningful work session.*
 
+### Recent engineering (session log)
+
+| Date (UTC) | Summary |
+|------------|---------|
+| **2026-04-10** | **Run-based competition leaderboard:** Admin and in-game shell load the public board from **`runs`** (score desc, `created_at` asc). Same user may appear multiple times; frozen winner = top run. **RLS:** migration **`20260411120000_runs_public_read_and_daily_attempts_admin`** — `anon` + `authenticated` may `SELECT` `runs` for public boards; **`daily_attempts_select_admin`** so operators see other users’ **x/5 today** on the live table. **Admin UX:** silent refresh avoids wiping the leaderboard tbody on every poll/Realtime tick; CSV export includes run timestamp in competition mode. **Game:** `fetchUserRank` / HUD rank uses global run order (count-based); `refreshGspLeaderboard` lists top runs. See commit **`a709b9e`** on `main`. |
+
+### Future — operator analytics (not built)
+
+These are **product ideas**, not current behavior:
+
+1. **Live “who is on now”** — Approximate concurrent players with **Supabase Realtime Presence** (channel per event) or a **slow heartbeat** (e.g. every 30–60s, tab visible only) writing `last_seen_at` for aggregation. **Gameplay impact** should be negligible if heartbeats are batched, out of the animation loop, and not more frequent than needed; optional stricter mode: heartbeat only while `state === 'playing'` to mean “in a run” vs “on the page.”
+2. **Post-event recap** — For ended events: **unique player count** (`COUNT(DISTINCT user_id)` on `runs`), optional **geo** (country/region from an edge route header or opt-in browser geolocation — **privacy/legal** review before shipping), and **time-of-day histogram** (bucket `runs.created_at` by hour local or UTC) with a simple bar chart in admin.
+
 ### What Exists
 
 - **Game 01 — Pengu Fisher:** Fully playable HTML5 prototype (see **Section 7,
@@ -1131,7 +1150,7 @@ Nightly job → checks content_events
   [`LEGAL_IMPLEMENTATION_BRIEF.md`](LEGAL_IMPLEMENTATION_BRIEF.md). **Roadmap
   entrypoint:** `CURSOR_ROADMAP.md` → “Start here next session (legal compliance)”.
 
-### Repository Structure (Actual, as of v1.10)
+### Repository Structure (Actual, as of v1.11)
 
 ```
 /
@@ -1164,7 +1183,8 @@ Nightly job → checks content_events
     ├── seed_event.sql        ← example active event + game linkage
     ├── pre_flight_check.sql
     └── migrations/           ← … display_name/is_18_plus (20260403); admin runs_select (20260404);
-                              legal consent / prize_awards / disqualifications (20260405120000 — not applied until legal build)
+                              legal consent / prize_awards / disqualifications (20260405120000 — not applied until legal build);
+                              runs public read + daily_attempts admin read (20260411120000 — competition LB + attempt dots)
 ```
 
 *Target structure (src/, audio/, pwa/ dirs) to be created when prototype is promoted to production build.*
@@ -1246,6 +1266,9 @@ Never delete entries — cross them out if reversed and note why.*
 | Apr 2026 | Admin panel redesigned: three sections (live dashboard / create week / user admin) | Dark theme was hard to read; new week form opens inline not as page expansion; live competition section shows top-10 leaderboard + stats + flagged runs at a glance |
 | Apr 2026 | Admin live competition view: top-10 with attempt dots, flagged runs inline, activity feed | Pre-Sunday review of flagged runs is critical path for prize award; all needed info in one view |
 | Apr 2026 | Legal implementation captured in repo docs only | [`LEGAL_IMPLEMENTATION_BRIEF.md`](LEGAL_IMPLEMENTATION_BRIEF.md) is the engineering checklist; Game Bible §8 + Roadmap point to it; SQL migration exists but is **not** applied until counsel-approved build starts |
+| Apr 2026 | Competition public leaderboard = **ordered `runs`** (not one row per player); winner = **#1 run**; tie-break earlier `created_at` | Matches “Wordle-style” clarity of a single ordered list; same player can place multiple times; requires public `SELECT` on `runs` for anon/auth clients |
+| Apr 2026 | Operators with **`profiles.is_admin`** may read all **`daily_attempts`** rows | Attempt dots on live competition rows reflect real x/5 for any player |
+| Apr 2026 | Future analytics (Presence / heartbeat + post-event histograms) documented only | Live concurrency and geo/time charts are **not implemented** — see §11 “Future — operator analytics” |
 
 ---
 

@@ -71,14 +71,14 @@ Plans:
 1. Event data model & admin CRUD — extend or confirm the `weeks` table covers event name, game selection, start/end time, optional prize field, and test/internal flag; build admin create/edit/delete event forms with validation; harden admin panel behind `is_admin = true` check
 2. Active event enforcement — enforce one-active-event-at-a-time constraint; wire `EVNT-05` server-side cutoff (runs submitted after `ends_at` are rejected by DB trigger); implement `EVNT-07` "scoring closed" state visible to players after event ends
 3. HUD event awareness — connect HUD to active event data (event name, prize, countdown); update `fetchActiveWeek()` to read event name and prize from the events table; show correct state when no event is active
-4. Admin winner surface & moderation tools — implement frozen leaderboard view in admin after event ends with winner (#1 on 18+ board) prominently identified; add "new event live" manual trigger (`ADMN-03`); add player ban controls (`ADMN-05`) and admin dashboard summary (`ADMN-06`)
+4. Admin winner surface & moderation tools — implement frozen leaderboard view in admin after event ends with winner (**#1 run** / top run owner for the event) prominently identified; add "new event live" manual trigger (`ADMN-03`); add player ban controls (`ADMN-05`) and admin dashboard summary (`ADMN-06`)
 
 **Done when:**
 - [ ] Admin can create an event with game, name, start/end time, and optional prize; it appears immediately in the game HUD
 - [ ] A test event (no prize) does not trigger any public winner announcement path
 - [ ] A run submitted 1 second after `ends_at` is rejected by the database; the player sees a "scoring closed" message
 - [ ] Only one event can be active at a time; attempting to create a second active event is blocked
-- [ ] After an event ends, the admin panel shows the frozen leaderboard with the #1 player clearly identified
+- [ ] After an event ends, the admin panel shows the frozen leaderboard with the **#1 run** (champion) clearly identified
 - [ ] Admin can ban a player; subsequent score submissions from that player are blocked (SECU-04 dependency addressed here at the data model level)
 - [ ] Admin dashboard shows active event name, player count, and top 3 scores at a glance
 

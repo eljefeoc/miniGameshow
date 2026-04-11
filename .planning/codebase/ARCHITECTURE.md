@@ -134,18 +134,18 @@
 2. `hud.js` sets `window.GameshowHud`; game script boots
 3. `bootSupabaseAuth()` dynamically imports `@supabase/supabase-js` from CDN; initializes Supabase client into `window._miniGameshowSb`
 4. Supabase checks persisted session → calls `onSignedIn(session)` or `updateAuthUI(null)`
-5. `fetchActiveWeek()` queries `public.weeks` (public read, no auth required) → pushes prize + scheduling into `GameshowHud`
+5. `fetchActiveEvent()` (or equivalent) queries the active **`public.events`** row → pushes prize + scheduling into `GameshowHud`
 6. If signed in: `fetchAttemptsAndSetMode(userId)` queries `public.daily_attempts` → sets `playMode` (`competing` | `freeplay`)
-7. `fetchUserRank(userId)` queries `public.leaderboard` → updates HUD stats
+7. `fetchUserRank(userId)` derives rank from **`public.runs`** for the active event (global ordering: score desc, `created_at` asc; rank = count of strictly better runs + 1) → updates HUD stats (`best_score` = that run’s score)
 
 **Score submission:**
 
 1. Game loop detects lives = 0 → sets `state = 'dead'` → calls `submitRunToSupabase()`
-2. Validates signed-in session and active week row in `public.weeks`
+2. Validates signed-in session and active event window (client checks `public.events` / `event_id`)
 3. Inserts row into `public.runs` (includes `score`, `day_seed`, `input_count`, `game_version`, `replay_payload`)
 4. Database `runs_before_insert` trigger: validates `user_id = auth.uid()`, increments `daily_attempts`, sets `attempt_num`, enforces 5/day cap
 5. Database `runs_after_insert` trigger: upserts `leaderboard` best score, recalculates all ranks via `refresh_leaderboard_ranks()`, writes two `content_events` rows (`run_submitted` and optionally `new_high_score`)
-6. Client re-fetches `daily_attempts` and `leaderboard` → updates HUD and overlay
+6. Client re-fetches `daily_attempts` and run-ordered rank (from `runs`) → updates HUD and overlay (`leaderboard` may still be updated by DB triggers for other paths)
 
 **Auth state change:**
 

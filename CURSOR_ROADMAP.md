@@ -1,5 +1,19 @@
 # MiniGameshow — Cursor Roadmap
-*Last updated: 2026-04-05*
+*Last updated: 2026-04-10*
+
+---
+
+## Shipped 2026-04-10 — Run-based competition leaderboard + RLS
+
+**Commit:** `a709b9e` on `main`.
+
+| Area | Change |
+|------|--------|
+| **DB** | Migration [`supabase/migrations/20260411120000_runs_public_read_and_daily_attempts_admin.sql`](supabase/migrations/20260411120000_runs_public_read_and_daily_attempts_admin.sql): public `SELECT` on **`runs`** (`anon` + `authenticated`); admin `SELECT` on all **`daily_attempts`**. [`supabase/schema.sql`](supabase/schema.sql) updated to match. |
+| **Admin** | [`prototypes/admin.html`](prototypes/admin.html): competition leaderboard from **`runs`** (top N runs, tie-break `created_at`); winner banner from top run; silent tbody refresh on poll/Realtime; CSV includes run time in competition mode. |
+| **Game** | [`prototypes/penguin-game.html`](prototypes/penguin-game.html): in-shell leaderboard + rank / top score derived from **`runs`** (rank = global run order for the player’s best-placed run). |
+
+**Follow-up (not blocking):** Admin “Players” stat in [`loadLiveStats`](prototypes/admin.html) still counts **`leaderboard`** rows; consider **`COUNT(DISTINCT user_id)` on `runs`** for the focused event so the hero stat matches run-based semantics.
 
 ---
 
@@ -164,7 +178,7 @@ package.json                     ← build (supabase-config) + deploy:functions
 - `events` — competition windows: game_id, starts_at, ends_at, prize fields, show_at, show_url, seed, …
 - `runs` — score rows: user_id, event_id, day_seed, attempt_num, replay_payload, …
 - `daily_attempts` — 5 attempts per user per day_seed (enforced in `before_run_insert`)
-- `leaderboard` — best score per user per week (+ rank refresh)
+- `leaderboard` — best score per user per event (+ rank refresh); **public competition board UI** reads ordered **`runs`** (see **Shipped 2026-04-10**)
 
 ---
 
@@ -391,6 +405,7 @@ correctly on every insert, and the arcade name loop works for guests.
 
 ## Known Future Work (Not Scheduled Yet)
 
+- **Operator analytics — live + post-event** — **Live:** approximate “players on now” via **Supabase Realtime Presence** or a **low-frequency heartbeat** (e.g. 30–60s, `document.visibilityState === 'visible'`), optionally only while the game loop is **`playing`** to mean “in a run” vs “tab open.” Keep work off the hot path (no per-frame network) so gameplay stays smooth. **Post-event (ended competition):** admin recap with **unique players** (`COUNT(DISTINCT user_id)` on `runs`), optional **location** (country from edge/request metadata or opt-in geolocation — privacy/legal first), and a **histogram** (e.g. bar chart of submissions by hour-of-day from `runs.created_at`). Spec bullets live in **`GAME_BIBLE.md` §11** (“Future — operator analytics”).
 - **OAuth sign-in (Google / Apple)** — Wired in [`prototypes/penguin-game.html`](prototypes/penguin-game.html) (`auth-google`, `auth-apple`, `startOAuth`) but **hidden** for now: remove the CSS rule **`.fp-auth-oauth-block { display:none !important; }`** to show the buttons again. Before launch: enable providers in Supabase, set Google/Apple redirect URIs to `https://<project-ref>.supabase.co/auth/v1/callback`, and follow [`VERCEL.md`](VERCEL.md) → *Supabase — Google, Apple, and phone*. Test OAuth return to `/penguin-game.html` on the canonical domain.
 - **Phone (SMS) sign-in** — Also **hidden**: remove **`.fp-auth-phone-block { display:none !important; }`** to show the number + OTP flow again (Twilio / provider setup per Supabase).
 - **Auth hardening** — The page uses a **honeypot** field and a **short minimum delay** after opening the form before email sign-in / sign-up runs; that only blocks naive bots. For real abuse resistance, turn on **Supabase Auth CAPTCHA** (or similar) and rate limits in the project dashboard.

@@ -16,7 +16,7 @@ progress:
 
 **Project:** miniGameshow
 **Milestone:** v1.0 — Launch-Ready Game Show Platform
-**Last updated:** 2026-04-02
+**Last updated:** 2026-04-10
 
 ## Project Reference
 
@@ -58,6 +58,8 @@ See: `.planning/PROJECT.md` (updated 2026-04-02)
 - [Phase 02-auth-player-profiles]: practice mode submits scores to Supabase same as competing — leaderboard separation by is_18_plus deferred to Phase 4
 - [Phase 02-auth-player-profiles]: practice mode uses dailySeed (same daily challenge as 18+ competitors) — under-18 players experience the same course without prize eligibility
 - [Phase 02-auth-player-profiles]: playerIs18Plus reset to false on sign-out to prevent stale state if a different user signs in on the same device
+- [2026-04-10] Competition public leaderboard is **run-ordered** (`runs`: score desc, `created_at` asc); same user can appear multiple times; winner = **#1 run**. Migration `20260411120000_runs_public_read_and_daily_attempts_admin`: public `SELECT` on `runs`; admins `SELECT` all `daily_attempts`. Documented in `GAME_BIBLE.md` §11, `CURSOR_ROADMAP.md` “Shipped 2026-04-10”.
+- [Future] Operator analytics (live presence or heartbeat; post-event unique players / geo / hour histogram) captured in `GAME_BIBLE.md` §11 and `CURSOR_ROADMAP.md` Known Future Work — not implemented.
 
 ## Planning Artifacts
 

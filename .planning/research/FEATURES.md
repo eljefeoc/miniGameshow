@@ -25,7 +25,7 @@ These are features users expect from any daily-challenge or competition game. Ab
 ### 3. Score persistence and visible rank
 **What:** After each run, users see their current rank on the leaderboard. Rank updates in near-real-time or on page refresh.
 **Why expected:** Competition without visible standing is not a competition. Players need to know whether it's worth using another attempt. "You are #47 of 1,203" is motivating. "You scored 3,400" in isolation is not.
-**Complexity:** Low — already built (leaderboard table, rank display in HUD).
+**Complexity:** Low — built; **competition** rank/board read from **`runs`** (global run order) as of April 2026; `leaderboard` may still exist for aggregates/triggers.
 
 ### 4. Attempt limiting with transparency
 **What:** A clear, visible indicator of how many plays remain today. The 5-attempt limit is explained, not just enforced silently.
@@ -48,9 +48,9 @@ These are features users expect from any daily-challenge or competition game. Ab
 **Complexity:** Low — already built (Supabase auth, profiles table).
 
 ### 8. Leaderboard (event-scoped, final snapshot)
-**What:** A ranked list of all players in the current event, sorted by best score. Visible during and after the event. After cutoff, it is frozen.
+**What:** A ranked list for the current event. **Shipped behavior (Competition):** top **runs** (one row per run; same player can appear more than once); tie-break by earlier submission time; after cutoff, frozen. **Arcade (planned):** typically best single run per player across time.
 **Why expected:** Without a public leaderboard, there is no competition. The leaderboard is the scoreboard — it's the object of the game.
-**Complexity:** Low — already built. The key implementation detail is "best score" semantics (not sum, not latest — best single run score should be used unless game design calls for otherwise).
+**Complexity:** Low — implemented for Competition via **`runs`** + RLS; see `GAME_BIBLE.md` §8 / §11 session log.
 
 ---
 
@@ -326,6 +326,19 @@ These are the elements the platform needs before any public launch with real pri
 - The platform must not constitute "illegal gambling" — which requires: prize + chance + consideration (something of value paid to enter). miniGameshow: free to play (no consideration), skill-determined winner (no chance). Both elements that would make it gambling are absent.
 - The seeded RNG and identical-conditions design are structural protections against a "substantial chance" argument.
 - **Confidence: MEDIUM** — The "three elements" test for gambling is standard US legal doctrine. State-level variations exist.
+
+---
+
+## Future — operator analytics (backlog)
+
+*Added 2026-04-10. Not in the prototype yet.*
+
+| Idea | Notes |
+|------|--------|
+| **Live concurrent players** | **Presence** (Supabase Realtime) on an event channel, or **heartbeat** every 30–60s while the tab is visible. Optional: send only during **`playing`** so “live” means in-run, not just site traffic. **Performance:** keep off the frame loop; batch/debounce so gameplay is unaffected. |
+| **Post-event recap** | **Unique players** from `runs` for the event. **Location:** country/region only with clear privacy policy (edge-derived IP region vs opt-in geolocation). **Charts:** e.g. bar graph of **hour-of-day** vs **run count** from `runs.created_at` (UTC or normalized timezone — product choice). |
+
+**Doc pointers:** [`GAME_BIBLE.md`](../../GAME_BIBLE.md) §11 “Future — operator analytics”; [`CURSOR_ROADMAP.md`](../../CURSOR_ROADMAP.md) Known Future Work.
 
 ---
 
